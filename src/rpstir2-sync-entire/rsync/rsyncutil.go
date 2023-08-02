@@ -3,7 +3,6 @@ package rsync
 import (
 	"runtime"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -70,7 +69,7 @@ func parseCerFiles(parseModelChan ParseModelChan) {
 
 	// if have erorr, should set RsyncingParsingCount -1
 	// get all cer files, include subcer
-	m := make(map[string]string, 0)
+	m := make(map[string]string)
 	m[".cer"] = ".cer"
 	cerFiles, err := osutil.GetAllFilesBySuffixs(parseModelChan.FilePathName, m)
 	if err != nil {
@@ -191,7 +190,7 @@ func tryAgainFailRsyncUrls() bool {
 			return true
 		})
 		// clear fail rsync urls
-		rpQueue.RsyncResult.FailUrls = sync.Map{}
+		rpQueue.RsyncResult.FailUrls = jsonutil.JsonSyncMap{}
 
 		belogs.Debug("TryAgainFailRsyncUrls(): failRysncUrl:", len(failRsyncUrls), failRsyncUrls,
 			"   rpQueue.RsyncResult.FailRsyncUrlsTryCount: ", rpQueue.RsyncResult.FailUrlsTryCount)

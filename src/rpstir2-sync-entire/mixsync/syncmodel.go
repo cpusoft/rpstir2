@@ -59,8 +59,8 @@ func NewSyncParseQueue() *SyncParseQueue {
 
 	spq.SyncResult.StartTime = time.Now()
 	spq.SyncResult.OkUrls = make([]string, 0, 100000)
-	spq.SyncResult.FailUrls = sync.Map{}
-	spq.SyncResult.FailParseValidateCerts = sync.Map{}
+	spq.SyncResult.FailUrls = jsonutil.JsonSyncMap{}
+	spq.SyncResult.FailParseValidateCerts = jsonutil.JsonSyncMap{}
 	belogs.Debug("NewQueue():spq:", jsonutil.MarshalJson(spq))
 	return spq
 }
@@ -72,8 +72,8 @@ func (r *SyncParseQueue) Close() {
 	r.syncUrlsMutex = nil
 	r.syncUrls = nil
 	r.SyncResult.OkUrls = nil
-	r.SyncResult.FailUrls = sync.Map{}
-	r.SyncResult.FailParseValidateCerts = sync.Map{}
+	r.SyncResult.FailUrls = jsonutil.JsonSyncMap{}
+	r.SyncResult.FailParseValidateCerts = jsonutil.JsonSyncMap{}
 	r = nil
 
 }
@@ -188,14 +188,4 @@ type ParseChan struct {
 
 // rrdp and parse end channel, may be end
 type SyncAndParseEndChan struct {
-}
-
-type SyncState struct {
-	SyncStyle string `json:"syncStyle"`
-
-	StartTime time.Time `json:"startTime,omitempty"`
-	EndTime   time.Time `json:"endTime,omitempty"`
-
-	SyncUrls   []string         `json:"syncUrls"`
-	SyncResult model.SyncResult `json:"syncResult"`
 }

@@ -13,12 +13,12 @@ import (
 )
 
 func InsertSyncLogFiles(syncLogId uint64,
-	addFiles, delFiles, updateFiles map[string]rsyncutil.RsyncFileHash, syncLogFilesCh chan []model.SyncLogFile) (err error) {
+	addFiles, delFiles, updateFiles map[string]rsyncutil.RsyncFileHash, syncLogFilesCh chan []model.LabRpkiSyncLogFile) (err error) {
 	belogs.Debug("InsertSyncLogFiles():rsync, syncLogId:", syncLogId,
 		"   len(addFiles):", len(addFiles), "   len(delFiles):", len(delFiles), "   len(updateFiles):", len(updateFiles))
 
 	rsyncTime := time.Now()
-	syncLogFiles := make([]model.SyncLogFile, 0, 2*(len(addFiles)+len(delFiles)+len(updateFiles)))
+	syncLogFiles := make([]model.LabRpkiSyncLogFile, 0, 2*(len(addFiles)+len(delFiles)+len(updateFiles)))
 
 	// add
 	rsyncType := "add"
@@ -61,14 +61,14 @@ func InsertSyncLogFiles(syncLogId uint64,
 }
 
 func ConvertToSyncLogFile(syncLogId uint64, rsyncTime time.Time,
-	syncType string, rsyncFileHash *rsyncutil.RsyncFileHash) (syncLogFile model.SyncLogFile) {
+	syncType string, rsyncFileHash *rsyncutil.RsyncFileHash) (syncLogFile model.LabRpkiSyncLogFile) {
 
 	rtr := "notNeed"
 	if rsyncFileHash.FileType == "roa" || rsyncFileHash.FileType == "asa" {
 		rtr = "notYet"
 	}
 
-	syncLogFileState := model.SyncLogFileState{
+	syncLogFileState := model.LabRpkiSyncLogFileState{
 		Sync:            "finished",
 		UpdateCertTable: "notYet",
 		Rtr:             rtr,
@@ -78,7 +78,7 @@ func ConvertToSyncLogFile(syncLogId uint64, rsyncTime time.Time,
 	// so, when replace, keep "/" and add "rsync:/"
 	sourceUrl := strings.Replace(rsyncFileHash.FilePath, conf.VariableString("rsync::destPath"), "rsync:/", -1)
 	// syncLogFile
-	syncLogFile = model.SyncLogFile{
+	syncLogFile = model.LabRpkiSyncLogFile{
 		SyncLogId: syncLogId,
 		FileType:  rsyncFileHash.FileType,
 		SyncTime:  rsyncTime,

@@ -1,4 +1,4 @@
-package parsevalidate
+package parsevalidatecentralized
 
 import (
 	"errors"
@@ -8,10 +8,11 @@ import (
 
 	"github.com/cpusoft/goutil/belogs"
 	"github.com/cpusoft/goutil/conf"
-	"github.com/cpusoft/goutil/jsonutil"
 	"github.com/cpusoft/goutil/osutil"
 	"golang.org/x/sync/errgroup"
 	model "rpstir2-model"
+	parsevalidatecore "rpstir2-parsevalidate-core"
+	parsevalidatedb "rpstir2-parsevalidate-db"
 )
 
 // ParseValidateStart: start
@@ -20,7 +21,7 @@ func parseValidateStart() (nextStep string, err error) {
 	start := time.Now()
 	belogs.Info("parseValidateStart(): start")
 	// save starttime to lab_rpki_sync_log
-	labRpkiSyncLogId, err := updateRsyncLogParseValidateStartDb("parsevalidating")
+	labRpkiSyncLogId, err := parsevalidatedb.UpdateSyncLogParseValidateStartDb("parsevalidating")
 	if err != nil {
 		belogs.Error("parseValidateStart():updateRsyncLogParseValidateStartDb fail:", err)
 		return "", err
@@ -58,7 +59,7 @@ func parseValidateStart() (nextStep string, err error) {
 	}
 
 	// save to db
-	err = updateRsyncLogParseValidateStateEndDb(labRpkiSyncLogId, "parsevalidated", make([]string, 0))
+	err = parsevalidatedb.UpdateSyncLogParseValidateStateEndDb(labRpkiSyncLogId, "parsevalidated", make([]string, 0))
 	if err != nil {
 		belogs.Debug("parseValidateStart(): UpdateRsyncLogAndCert fail: ", err)
 		return "", err
@@ -171,7 +172,7 @@ func insertCertByAddAndUpdate(syncLogFileModels *SyncLogFileModels) (err error) 
 	return nil
 }
 
-func parseValidateAndAddCerts(syncLogFileModels []SyncLogFileModel, fileType string, wg *sync.WaitGroup) {
+func parseValidateAndAddCerts(syncLogFileModels []model.SyncLogFileModel, fileType string, wg *sync.WaitGroup) {
 	defer func() {
 		wg.Done()
 	}()
@@ -208,7 +209,7 @@ func parseValidateAndAddCerts(syncLogFileModels []SyncLogFileModel, fileType str
 	belogs.Info("parseValidateAndAddCerts():end add***Db(), len(syncLogFileModels):", len(syncLogFileModels), "  fileType:", fileType, "  time(s):", time.Since(start))
 }
 
-func parseValidateCert(syncLogFileModel *SyncLogFileModel,
+func parseValidateCert(syncLogFileModel *model.SyncLogFileModel,
 	wg *sync.WaitGroup, parseValidateCh chan int) (parseFailFile string, err error) {
 	defer func() {
 		wg.Done()
@@ -216,7 +217,7 @@ func parseValidateCert(syncLogFileModel *SyncLogFileModel,
 	}()
 
 	start := time.Now()
-	belogs.Debug("parseValidateCert(): syncLogFileModel :", jsonutil.MarshalJson(syncLogFileModel))
+	belogs.Debug("parseValidateCert(): syncLogFileModel :", syncLogFileModel.String())
 	file := osutil.JoinPathFile(syncLogFileModel.FilePath, syncLogFileModel.FileName)
 	belogs.Debug("parseValidateCert(): file :", file)
 	_, certModel, stateModel, err := parseValidateFile(file)
@@ -276,27 +277,27 @@ func parseValidateFile(certFile string) (certType string, certModel interface{},
 	belogs.Debug("parseValidateFile(): parsevalidate start:", certFile)
 
 	if strings.HasSuffix(certFile, ".cer") {
-		cerModel, stateModel, err := ParseValidateCer(certFile)
+		cerModel, stateModel, err := parsevalidatecore.ParseValidateCer(certFile)
 		belogs.Debug("parseValidateFile():  after ParseValidateCer():certFile, stateModel:", certFile, stateModel, "  err:", err)
 		return "cer", cerModel, stateModel, err
 	} else if strings.HasSuffix(certFile, ".crl") {
-		crlModel, stateModel, err := ParseValidateCrl(certFile)
+		crlModel, stateModel, err := parsevalidatecore.ParseValidateCrl(certFile)
 		belogs.Debug("parseValidateFile(): after ParseValidateCrl(): certFile,stateModel:", certFile, stateModel, "  err:", err)
 		return "crl", crlModel, stateModel, err
 	} else if strings.HasSuffix(certFile, ".mft") {
-		mftModel, stateModel, err := ParseValidateMft(certFile)
+		mftModel, stateModel, err := parsevalidatecore.ParseValidateMft(certFile)
 		belogs.Debug("parseValidateFile(): after ParseValidateMft():certFile,stateModel:", certFile, stateModel, "  err:", err)
 		return "mft", mftModel, stateModel, err
 	} else if strings.HasSuffix(certFile, ".roa") {
-		roaModel, stateModel, err := ParseValidateRoa(certFile)
+		roaModel, stateModel, err := parsevalidatecore.ParseValidateRoa(certFile)
 		belogs.Debug("parseValidateFile():after ParseValidateRoa(): certFile,stateModel:", certFile, stateModel, "  err:", err)
 		return "roa", roaModel, stateModel, err
 	} else if strings.HasSuffix(certFile, ".sig") {
-		sigModel, stateModel, err := ParseValidateSig(certFile)
+		sigModel, stateModel, err := parsevalidatecore.ParseValidateSig(certFile)
 		belogs.Debug("parseValidateFile():after ParseValidateSig(): certFile,stateModel:", certFile, stateModel, "  err:", err)
 		return "sig", sigModel, stateModel, err
 	} else if strings.HasSuffix(certFile, ".asa") {
-		asaModel, stateModel, err := ParseValidateAsa(certFile)
+		asaModel, stateModel, err := parsevalidatecore.ParseValidateAsa(certFile)
 		belogs.Debug("parseValidateFile():after ParseValidateAsa(): certFile,stateModel:", certFile, stateModel, "  err:", err)
 		return "asa", asaModel, stateModel, err
 	} else {
@@ -307,7 +308,7 @@ func parseValidateFile(certFile string) (certType string, certModel interface{},
 func parseFile(certFile string) (certModel interface{}, err error) {
 	belogs.Debug("parseFile(): parsevalidate start:", certFile)
 	if strings.HasSuffix(certFile, ".cer") {
-		cerModel, _, err := ParseValidateCer(certFile)
+		cerModel, _, err := parsevalidatecore.ParseValidateCer(certFile)
 		if err != nil {
 			belogs.Error("parseFile(): ParseValidateCer:", certFile, "  err:", err)
 			return nil, err
@@ -317,7 +318,7 @@ func parseFile(certFile string) (certModel interface{}, err error) {
 		return cerModel, nil
 
 	} else if strings.HasSuffix(certFile, ".crl") {
-		crlModel, _, err := ParseValidateCrl(certFile)
+		crlModel, _, err := parsevalidatecore.ParseValidateCrl(certFile)
 		if err != nil {
 			belogs.Error("parseFile(): ParseValidateCrl:", certFile, "  err:", err)
 			return nil, err
@@ -327,7 +328,7 @@ func parseFile(certFile string) (certModel interface{}, err error) {
 		return crlModel, nil
 
 	} else if strings.HasSuffix(certFile, ".mft") {
-		mftModel, _, err := ParseValidateMft(certFile)
+		mftModel, _, err := parsevalidatecore.ParseValidateMft(certFile)
 		if err != nil {
 			belogs.Error("parseFile(): ParseValidateMft:", certFile, "  err:", err)
 			return nil, err
@@ -337,7 +338,7 @@ func parseFile(certFile string) (certModel interface{}, err error) {
 		return mftModel, nil
 
 	} else if strings.HasSuffix(certFile, ".roa") {
-		roaModel, _, err := ParseValidateRoa(certFile)
+		roaModel, _, err := parsevalidatecore.ParseValidateRoa(certFile)
 		if err != nil {
 			belogs.Error("parseFile(): ParseValidateRoa:", certFile, "  err:", err)
 			return nil, err
@@ -347,7 +348,7 @@ func parseFile(certFile string) (certModel interface{}, err error) {
 		return roaModel, nil
 
 	} else if strings.HasSuffix(certFile, ".sig") {
-		sigModel, _, err := ParseValidateSig(certFile)
+		sigModel, _, err := parsevalidatecore.ParseValidateSig(certFile)
 		if err != nil {
 			belogs.Error("parseFile(): ParseValidateSig:", certFile, "  err:", err)
 			return nil, err
@@ -357,7 +358,7 @@ func parseFile(certFile string) (certModel interface{}, err error) {
 		return sigModel, nil
 
 	} else if strings.HasSuffix(certFile, ".asa") {
-		asaModel, _, err := ParseValidateAsa(certFile)
+		asaModel, _, err := parsevalidatecore.ParseValidateAsa(certFile)
 		if err != nil {
 			belogs.Error("parseFile(): ParseValidateAsa:", certFile, "  err:", err)
 			return nil, err
@@ -375,7 +376,7 @@ func parseFile(certFile string) (certModel interface{}, err error) {
 func parseFileSimple(certFile string) (parseCerSimple model.ParseCerSimple, err error) {
 	belogs.Info("parseCerSimple(): certFile:", certFile)
 	if strings.HasSuffix(certFile, ".cer") {
-		return ParseCerSimpleModel(certFile)
+		return parsevalidatecore.ParseCerSimpleModel(certFile)
 	}
 	return parseCerSimple, errors.New("unknown file type")
 }
@@ -387,40 +388,40 @@ func updateCertByCheckAll() (err error) {
 
 	var g errgroup.Group
 	g.Go(func() error {
-		er := updateCerByCheckAll(start)
+		er := parsevalidatedb.UpdateCerByCheckAll(start)
 		if er != nil {
-			belogs.Error("updateCertByCheckAll(): updateCerByCheckAll:  err:", er)
+			belogs.Error("updateCertByCheckAll(): UpdateCerByCheckAll:  err:", er)
 		}
 		return er
 	})
 
 	g.Go(func() error {
-		er := updateCrlByCheckAll(start)
+		er := parsevalidatedb.UpdateCrlByCheckAll(start)
 		if er != nil {
-			belogs.Error("updateCertByCheckAll(): updateCrlByCheckAll:  err:", er)
+			belogs.Error("updateCertByCheckAll(): UpdateCrlByCheckAll:  err:", er)
 		}
 		return er
 	})
 
 	g.Go(func() error {
-		er := updateMftByCheckAll(start)
+		er := parsevalidatedb.UpdateMftByCheckAll(start)
 		if er != nil {
-			belogs.Error("updateCertByCheckAll(): updateMftByCheckAll:  err:", er)
+			belogs.Error("updateCertByCheckAll(): UpdateMftByCheckAll:  err:", er)
 		}
 		return er
 	})
 
 	g.Go(func() error {
-		er := updateRoaByCheckAll(start)
+		er := parsevalidatedb.UpdateRoaByCheckAll(start)
 		if er != nil {
-			belogs.Error("updateCertByCheckAll(): updateRoaByCheckAll:  err:", er)
+			belogs.Error("updateCertByCheckAll(): UpdateRoaByCheckAll:  err:", er)
 		}
 		return er
 	})
 	g.Go(func() error {
-		er := updateAsaByCheckAll(start)
+		er := parsevalidatedb.UpdateAsaByCheckAll(start)
 		if er != nil {
-			belogs.Error("updateCertByCheckAll(): updateAsaByCheckAll:  err:", er)
+			belogs.Error("updateCertByCheckAll(): UpdateAsaByCheckAll:  err:", er)
 		}
 		return er
 	})

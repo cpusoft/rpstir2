@@ -1,15 +1,13 @@
-package parsevalidate
+package parsevalidatecore
 
 import (
 	"errors"
 	"math/big"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/cpusoft/goutil/asn1util"
 	"github.com/cpusoft/goutil/belogs"
-	"github.com/cpusoft/goutil/conf"
 	"github.com/cpusoft/goutil/convert"
 	"github.com/cpusoft/goutil/fileutil"
 	"github.com/cpusoft/goutil/hashutil"
@@ -41,7 +39,7 @@ func ParseValidateMft(certFile string) (mftModel model.MftModel, stateModel mode
 	if len(stateModel.Errors) > 0 || len(stateModel.Warnings) > 0 {
 		belogs.Info("ParseValidateMft():stateModel have errors or warnings", certFile, "     stateModel:", jsonutil.MarshalJson(stateModel))
 	}
-
+	stateModel.JudgeState()
 	belogs.Debug("ParseValidateMft(): mftModel.FilePath, mftModel.FileName, mftModel.Ski, mftModel.Aki:",
 		mftModel.FilePath, mftModel.FileName, mftModel.Ski, mftModel.Aki)
 	return mftModel, stateModel, nil
@@ -447,53 +445,4 @@ func validateMftModel(mftModel *model.MftModel, stateModel *model.StateModel) (e
 	belogs.Debug("validateMftModel():filePath, fileName,stateModel:",
 		mftModel.FilePath, mftModel.FileName, jsonutil.MarshalJson(stateModel))
 	return nil
-}
-
-func updateMftByCheckAll(now time.Time) error {
-	// check expire
-	curCertIdStateModels, err := getExpireMftDb(now)
-	if err != nil {
-		belogs.Error("updateMftByCheckAll(): getExpireMftDb:  err: ", err)
-		return err
-	}
-	belogs.Info("updateMftByCheckAll(): len(curCertIdStateModels):", len(curCertIdStateModels))
-
-	newCertIdStateModels := make([]CertIdStateModel, 0)
-	for i := range curCertIdStateModels {
-		// if have this error, ignore
-		belogs.Debug("updateMftByCheckAll(): old curCertIdStateModels[i]:", jsonutil.MarshalJson(curCertIdStateModels[i]))
-		if strings.Contains(curCertIdStateModels[i].StateStr, "NextUpdate is earlier than the current time") {
-			continue
-		}
-
-		// will add error
-		stateModel := model.StateModel{}
-		jsonutil.UnmarshalJson(curCertIdStateModels[i].StateStr, &stateModel)
-
-		stateMsg := model.StateMsg{Stage: "parsevalidate",
-			Fail:   "NextUpdate is earlier than the current time",
-			Detail: "The current time is " + convert.Time2StringZone(now) + ", nextUpdate is " + convert.Time2StringZone(curCertIdStateModels[i].EndTime)}
-		if conf.Bool("policy::allowStaleMft") {
-			stateModel.AddWarning(&stateMsg)
-		} else {
-			stateModel.AddError(&stateMsg)
-		}
-
-		certIdStateModel := CertIdStateModel{
-			Id:       curCertIdStateModels[i].Id,
-			StateStr: jsonutil.MarshalJson(stateModel),
-		}
-		newCertIdStateModels = append(newCertIdStateModels, certIdStateModel)
-		belogs.Debug("updateMftByCheckAll(): new certIdStateModel:", jsonutil.MarshalJson(certIdStateModel))
-	}
-
-	// update db
-	err = updateMftStateDb(newCertIdStateModels)
-	if err != nil {
-		belogs.Error("updateMftByCheckAll(): updateMftStateDb:  err: ", len(newCertIdStateModels), err)
-		return err
-	}
-	belogs.Info("updateMftByCheckAll(): ok len(newCertIdStateModels):", len(newCertIdStateModels))
-	return nil
-
 }

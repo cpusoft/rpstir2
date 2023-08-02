@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/cpusoft/goutil/belogs"
+	"github.com/cpusoft/goutil/jsonutil"
 	model "rpstir2-model"
 )
 
@@ -51,8 +52,8 @@ func NewQueue() *RsyncParseQueue {
 
 	rq.RsyncResult.StartTime = time.Now()
 	rq.RsyncResult.OkUrls = make([]string, 0, 100000)
-	rq.RsyncResult.FailUrls = sync.Map{}
-	rq.RsyncResult.FailParseValidateCerts = sync.Map{}
+	rq.RsyncResult.FailUrls = jsonutil.JsonSyncMap{}
+	rq.RsyncResult.FailParseValidateCerts = jsonutil.JsonSyncMap{}
 	return rq
 }
 
@@ -63,8 +64,8 @@ func (r *RsyncParseQueue) Close() {
 	r.rsyncAddedUrlsMutex = nil
 	r.rsyncAddedUrls = nil
 	r.RsyncResult.OkUrls = nil
-	r.RsyncResult.FailUrls = sync.Map{}
-	r.RsyncResult.FailParseValidateCerts = sync.Map{}
+	r.RsyncResult.FailUrls = jsonutil.JsonSyncMap{}
+	r.RsyncResult.FailParseValidateCerts = jsonutil.JsonSyncMap{}
 	r = nil
 
 }

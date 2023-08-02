@@ -16,6 +16,10 @@ func updateRsyncLogRtrStateStartDb(state string) (labRpkiSyncLogId uint64, err e
 	belogs.Debug("updateRsyncLogRtrStateStartDb():  state:", state)
 
 	session, err := xormdb.NewSession()
+	if err != nil {
+		belogs.Error("updateRsyncLogRtrStateStartDb(): NewSession fail :", err)
+		return 0, err
+	}
 	defer session.Close()
 
 	var id int64
@@ -51,6 +55,10 @@ func updateRsyncLogRtrStateEndDb(labRpkiSyncLogId uint64, state string) (err err
 	belogs.Debug("updateRsyncLogRtrStateEndDb(): labRpkiSyncLogId:", labRpkiSyncLogId, " state:", state)
 
 	session, err := xormdb.NewSession()
+	if err != nil {
+		belogs.Error("updateRsyncLogRtrStateEndDb(): NewSession fail :", err)
+		return err
+	}
 	defer session.Close()
 
 	var rtrState string

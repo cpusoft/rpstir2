@@ -1,4 +1,4 @@
-package parsevalidate
+package parsevalidatecore
 
 import (
 	"net/url"

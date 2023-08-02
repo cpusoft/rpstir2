@@ -301,7 +301,7 @@ func convertRtrAsaIncrementalsToRtrPduModels(rtrAsaIncrementals []model.LabRpkiR
 	belogs.Debug("convertRtrAsaIncrementalsToRtrPduModels(): len(rtrAsaIncrementals): ", len(rtrAsaIncrementals), "  protocolVersion:", protocolVersion)
 
 	start := time.Now()
-	sameCustomerAsnAfi := make(map[string]*RtrAsaModel, 0)
+	sameCustomerAsnAfi := make(map[string]*RtrAsaModel)
 	rtrAsaPduModels = make([]RtrPduModel, 0)
 	for i := range rtrAsaIncrementals {
 		rtrPduModel := NewRtrAsaModelFromDb(protocolVersion, getModelFlagsFromStyle(rtrAsaIncrementals[i].Style),

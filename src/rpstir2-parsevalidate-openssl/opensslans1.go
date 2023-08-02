@@ -434,7 +434,7 @@ func ParseByOpensslAns1ToX509(certFile string, results []string) (cerFile *os.Fi
 	cerEndStr1 := "INTEGER           :03"
 	cerEndStr2 := "prim: EOC"
 	for i := range results {
-		belogs.Debug("ParseByOpensslAns1ToX509(): certFile:", certFile, "  i:", i, "   results[i]:", results[i])
+		belogs.Debug("ParseByOpensslAns1ToX509(): certFile:", certFile, "  i:", i, "   len(results[i]):", len(results[i]))
 		if cerStartIndex == 0 && strings.HasSuffix(results[i], cerStartStr1) {
 			one := results[i-3] // last line 3
 			end := strings.Index(one, ":")

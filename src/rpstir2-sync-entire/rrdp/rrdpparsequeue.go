@@ -58,8 +58,8 @@ func NewQueue() *RrdpParseQueue {
 
 	rq.RrdpResult.StartTime = time.Now()
 	rq.RrdpResult.OkUrls = make([]string, 0, 100000)
-	rq.RrdpResult.FailUrls = sync.Map{}
-	rq.RrdpResult.FailParseValidateCerts = sync.Map{}
+	rq.RrdpResult.FailUrls = jsonutil.JsonSyncMap{}
+	rq.RrdpResult.FailParseValidateCerts = jsonutil.JsonSyncMap{}
 	belogs.Debug("NewQueue():rq:", jsonutil.MarshalJson(rq))
 	return rq
 }
@@ -71,8 +71,8 @@ func (r *RrdpParseQueue) Close() {
 	r.rrdpAddedUrlsMutex = nil
 	r.rrdpAddedUrls = nil
 	r.RrdpResult.OkUrls = nil
-	r.RrdpResult.FailUrls = sync.Map{}
-	r.RrdpResult.FailParseValidateCerts = sync.Map{}
+	r.RrdpResult.FailUrls = jsonutil.JsonSyncMap{}
+	r.RrdpResult.FailParseValidateCerts = jsonutil.JsonSyncMap{}
 	r = nil
 
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/cpusoft/goutil/httpclient"
 	"github.com/cpusoft/goutil/jsonutil"
 	model "rpstir2-model"
+	coremodel "rpstir2-sync-core/model"
 	"rpstir2-sync-core/rrdp"
 	coresync "rpstir2-sync-core/sync"
 )
@@ -22,7 +23,7 @@ func syncStart(syncStyle model.SyncStyle) (nextStep string, err error) {
 
 	belogs.Info("syncStart():syncStyle:", syncStyle)
 
-	syncState := SyncState{StartTime: time.Now(), SyncStyle: syncStyle.SyncStyle}
+	syncState := coremodel.SyncState{StartTime: time.Now(), SyncStyle: syncStyle.SyncStyle}
 
 	// syncStyle: sync/rsync/rrdp,state: syncing;
 	syncLogId, err := coresync.InsertSyncLogStartDb(syncStyle.SyncStyle, "syncing")
@@ -80,7 +81,7 @@ func getTals() (talModels []model.TalModel, err error) {
 	return talModelsResponse.TalModels, nil
 }
 
-func callSync(syncLogId uint64, talModels []model.TalModel, syncState *SyncState) (err error) {
+func callSync(syncLogId uint64, talModels []model.TalModel, syncState *coremodel.SyncState) (err error) {
 	start := time.Now()
 	belogs.Info("callSync(): syncLogId:", syncLogId, "   talModels:", jsonutil.MarshalJson(talModels))
 

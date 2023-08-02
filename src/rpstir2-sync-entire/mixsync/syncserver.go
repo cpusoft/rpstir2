@@ -12,12 +12,13 @@ import (
 	"github.com/cpusoft/goutil/jsonutil"
 	"github.com/cpusoft/goutil/osutil"
 	"github.com/cpusoft/goutil/urlutil"
+	coremodel "rpstir2-sync-core/model"
 	"rpstir2-sync-core/rsync"
 	coresync "rpstir2-sync-core/sync"
 )
 
 // start server ,wait input channel
-func startSyncServer(spQueue *SyncParseQueue, syncState *SyncState, syncServerWg *sync.WaitGroup) {
+func startSyncServer(spQueue *SyncParseQueue, syncState *coremodel.SyncState, syncServerWg *sync.WaitGroup) {
 	defer func() {
 		belogs.Info("startSyncServer():syncServerWg.Done()")
 		syncServerWg.Done()

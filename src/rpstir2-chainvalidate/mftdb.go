@@ -82,6 +82,7 @@ func updateMftsDb(chains *Chains, wg *sync.WaitGroup) {
 	start := time.Now()
 	session, err := xormdb.NewSession()
 	if err != nil {
+		belogs.Error("updateMftsDb(): NewSession fail:", err)
 		return
 	}
 	defer session.Close()
@@ -115,7 +116,7 @@ func updateMftDb(session *xorm.Session, chains *Chains, mftId uint64) (err error
 	}
 
 	chainDbMftModel := NewChainDbMftModel(&chainMft)
-	originModel := model.JudgeOrigin(chainMft.FilePath)
+	originModel := model.JudgeOriginByFilePath(chainMft.FilePath)
 
 	chainCerts := jsonutil.MarshalJson(*chainDbMftModel)
 	state := jsonutil.MarshalJson(chainMft.StateModel)

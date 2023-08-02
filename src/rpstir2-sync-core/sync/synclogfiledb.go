@@ -7,17 +7,21 @@ import (
 	model "rpstir2-model"
 )
 
-func InsertSyncLogFilesDb(syncLogFiles []model.SyncLogFile) error {
+func InsertSyncLogFilesDb(syncLogFiles []model.LabRpkiSyncLogFile) error {
 	belogs.Debug("InsertSyncLogFilesDb(): len(syncLogFiles):", len(syncLogFiles))
 	if len(syncLogFiles) == 0 {
 		return nil
 	}
 
 	session, err := xormdb.NewSession()
+	if err != nil {
+		belogs.Error("InsertSyncLogFilesDb(): NewSession fail :", err)
+		return err
+	}
 	defer session.Close()
 
 	//lab_rpki_sync_log_file
-	sqlStr := `INSERT ignore lab_rpki_sync_log_file
+	sqlStr := `INSERT lab_rpki_sync_log_file
 	               (syncLogId,fileType,syncTime,
 	               filePath,fileName,sourceUrl,
 				   syncType,syncStyle,state,

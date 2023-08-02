@@ -1,61 +1,45 @@
-package parsevalidate
+package parsevalidatecentralized
 
 import (
 	model "rpstir2-model"
 )
 
-type SyncLogFileModel struct {
-	Id         uint64           `json:"id" xorm:"pk autoincr"`
-	SyncLogId  uint64           `json:"syncLogId" xorm:"syncLogId int"`
-	FilePath   string           `json:"filePath" xorm:"filePath varchar(512)"`
-	FileName   string           `json:"fileName" xorm:"fileName varchar(128)"`
-	FileType   string           `json:"fileType" xorm:"fileType varchar(16)"`
-	SyncType   string           `json:"syncType" xorm:"syncType varchar(16)"`
-	CertModel  interface{}      `json:"-"`
-	StateModel model.StateModel `json:"-"`
-
-	//cerId / mftId / roaId / crlId / asaId
-	CertId uint64 `json:"certId" xorm:"certId int"`
-	// db.rows index
-	Index uint64 `json:"index"`
-}
-
 type SyncLogFileModels struct {
-	SyncLogId                  uint64             `json:"syncLogId"`
-	UpdateCerSyncLogFileModels []SyncLogFileModel `json:"updateCerSyncLogFileModels"`
-	DelCerSyncLogFileModels    []SyncLogFileModel `json:"delCerSyncLogFileModels"`
+	SyncLogId                  uint64                   `json:"syncLogId"`
+	UpdateCerSyncLogFileModels []model.SyncLogFileModel `json:"updateCerSyncLogFileModels"`
+	DelCerSyncLogFileModels    []model.SyncLogFileModel `json:"delCerSyncLogFileModels"`
 
-	UpdateMftSyncLogFileModels []SyncLogFileModel `json:"updateMftSyncLogFileModels"`
-	DelMftSyncLogFileModels    []SyncLogFileModel `json:"delMftSyncLogFileModels"`
+	UpdateMftSyncLogFileModels []model.SyncLogFileModel `json:"updateMftSyncLogFileModels"`
+	DelMftSyncLogFileModels    []model.SyncLogFileModel `json:"delMftSyncLogFileModels"`
 
-	UpdateCrlSyncLogFileModels []SyncLogFileModel `json:"updateCrlSyncLogFileModels"`
-	DelCrlSyncLogFileModels    []SyncLogFileModel `json:"delCrlSyncLogFileModels"`
+	UpdateCrlSyncLogFileModels []model.SyncLogFileModel `json:"updateCrlSyncLogFileModels"`
+	DelCrlSyncLogFileModels    []model.SyncLogFileModel `json:"delCrlSyncLogFileModels"`
 
-	UpdateRoaSyncLogFileModels []SyncLogFileModel `json:"updateRoaSyncLogFileModels"`
-	DelRoaSyncLogFileModels    []SyncLogFileModel `json:"delRoaSyncLogFileModels"`
+	UpdateRoaSyncLogFileModels []model.SyncLogFileModel `json:"updateRoaSyncLogFileModels"`
+	DelRoaSyncLogFileModels    []model.SyncLogFileModel `json:"delRoaSyncLogFileModels"`
 
-	UpdateAsaSyncLogFileModels []SyncLogFileModel `json:"updateAsaSyncLogFileModels"`
-	DelAsaSyncLogFileModels    []SyncLogFileModel `json:"delAsaSyncLogFileModels"`
+	UpdateAsaSyncLogFileModels []model.SyncLogFileModel `json:"updateAsaSyncLogFileModels"`
+	DelAsaSyncLogFileModels    []model.SyncLogFileModel `json:"delAsaSyncLogFileModels"`
 }
 
-func NewSyncLogFileModels(syncLogId uint64, dbSyncLogFileModels []SyncLogFileModel) *SyncLogFileModels {
+func NewSyncLogFileModels(syncLogId uint64, dbSyncLogFileModels []model.SyncLogFileModel) *SyncLogFileModels {
 	syncLogFileModels := &SyncLogFileModels{}
 	syncLogFileModels.SyncLogId = syncLogId
 
-	syncLogFileModels.UpdateCerSyncLogFileModels = make([]SyncLogFileModel, 0)
-	syncLogFileModels.DelCerSyncLogFileModels = make([]SyncLogFileModel, 0)
+	syncLogFileModels.UpdateCerSyncLogFileModels = make([]model.SyncLogFileModel, 0)
+	syncLogFileModels.DelCerSyncLogFileModels = make([]model.SyncLogFileModel, 0)
 
-	syncLogFileModels.UpdateMftSyncLogFileModels = make([]SyncLogFileModel, 0)
-	syncLogFileModels.DelMftSyncLogFileModels = make([]SyncLogFileModel, 0)
+	syncLogFileModels.UpdateMftSyncLogFileModels = make([]model.SyncLogFileModel, 0)
+	syncLogFileModels.DelMftSyncLogFileModels = make([]model.SyncLogFileModel, 0)
 
-	syncLogFileModels.UpdateCrlSyncLogFileModels = make([]SyncLogFileModel, 0)
-	syncLogFileModels.DelCrlSyncLogFileModels = make([]SyncLogFileModel, 0)
+	syncLogFileModels.UpdateCrlSyncLogFileModels = make([]model.SyncLogFileModel, 0)
+	syncLogFileModels.DelCrlSyncLogFileModels = make([]model.SyncLogFileModel, 0)
 
-	syncLogFileModels.UpdateRoaSyncLogFileModels = make([]SyncLogFileModel, 0)
-	syncLogFileModels.DelRoaSyncLogFileModels = make([]SyncLogFileModel, 0)
+	syncLogFileModels.UpdateRoaSyncLogFileModels = make([]model.SyncLogFileModel, 0)
+	syncLogFileModels.DelRoaSyncLogFileModels = make([]model.SyncLogFileModel, 0)
 
-	syncLogFileModels.UpdateAsaSyncLogFileModels = make([]SyncLogFileModel, 0)
-	syncLogFileModels.DelAsaSyncLogFileModels = make([]SyncLogFileModel, 0)
+	syncLogFileModels.UpdateAsaSyncLogFileModels = make([]model.SyncLogFileModel, 0)
+	syncLogFileModels.DelAsaSyncLogFileModels = make([]model.SyncLogFileModel, 0)
 
 	for i := range dbSyncLogFileModels {
 		if dbSyncLogFileModels[i].FileType == "cer" {

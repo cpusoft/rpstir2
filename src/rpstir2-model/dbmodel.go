@@ -3,6 +3,7 @@ package model
 import (
 	"time"
 
+	"github.com/cpusoft/goutil/jsonutil"
 	"github.com/guregu/null"
 )
 
@@ -186,33 +187,57 @@ type LabRpkiSyncLog struct {
 }
 
 // lab_rpki_sync_log_file
-type SyncLogFile struct {
-	Id        uint64 `json:"id" xorm:"pk autoincr"`
-	SyncLogId uint64 `json:"syncLogId" xorm:"syncLogId int"`
-	//cer/roa/mft/crl/asa, not dot
-	FileType string `json:"fileType" xorm:"fileType varchar(16)"`
-	//sync time for every file
-	SyncTime  time.Time `json:"syncTime" xorm:"syncTime datetime"`
+type LabRpkiSyncLogFile struct {
+	Id        uint64    `json:"id" xorm:"pk autoincr"`
+	SyncLogId uint64    `json:"syncLogId" xorm:"syncLogId int"`
 	FilePath  string    `json:"filePath" xorm:"filePath varchar(512)"`
 	FileName  string    `json:"fileName" xorm:"fileName varchar(128)"`
+	FileType  string    `json:"fileType" xorm:"fileType varchar(16)"` //cer/roa/mft/crl/asa, not dot
+	SyncType  string    `json:"syncType" xorm:"syncType varchar(16)"` //add/update/del
+	SyncTime  time.Time `json:"syncTime" xorm:"syncTime datetime"`    //sync time for every file
 	SourceUrl string    `json:"sourceUrl" xorm:"sourceUrl varchar(512)"`
 	JsonAll   string    `json:"jsonAll" xorm:"jsonAll json"`
 	FileHash  string    `json:"fileHash" xorm:"fileHash varchar(512)"`
-	//add/update/del
-	SyncType string `json:"syncType" xorm:"syncType varchar(16)"`
-	//rrdp/rsync
-	SyncStyle string `json:"syncStyle" xorm:"syncStyle varchar(16)"`
-	//LabRpkiSyncLogFileState:
-	State string `json:"state" xorm:"state json"`
+	SyncStyle string    `json:"syncStyle" xorm:"syncStyle varchar(16)"` //rrdp/rsync
+	State     string    `json:"state" xorm:"state json"`                //LabRpkiSyncLogFileState:
 }
 
-type SyncLogFileState struct {
+type LabRpkiSyncLogFileState struct {
 	//finished
 	Sync string `json:"sync"`
 	//notYet/finished
 	UpdateCertTable string `json:"updateCertTable"`
 	//notYet/finished
 	Rtr string `json:"rtr"`
+}
+
+// include CertModel/StateModel/OriginModel
+type SyncLogFileModel struct {
+	Id        uint64 `json:"id" xorm:"pk autoincr"`
+	SyncLogId uint64 `json:"syncLogId" xorm:"syncLogId int"`
+	FilePath  string `json:"filePath" xorm:"filePath varchar(512)"`
+	FileName  string `json:"fileName" xorm:"fileName varchar(128)"`
+	FileType  string `json:"fileType" xorm:"fileType varchar(16)"`
+	SyncType  string `json:"syncType" xorm:"syncType varchar(16)"` //add/update/del
+
+	CertModel   interface{} `json:"certModel"`
+	StateModel  StateModel  `json:"stateModel"`
+	OriginModel OriginModel `json:"originModel"`
+	CertId      uint64      `json:"certId" xorm:"certId int"` //cerId / mftId / roaId / crlId / asaId
+	Index       uint64      `json:"index"`                    // db.rows index
+}
+
+func (c SyncLogFileModel) String() string {
+	m := make(map[string]interface{})
+	m["id"] = c.Id
+	m["syncLogId"] = c.SyncLogId
+	m["filePath"] = c.FilePath
+	m["fileName"] = c.FileName
+	m["fileType"] = c.FileType
+	m["syncType"] = c.SyncType
+	m["certId"] = c.CertId
+	m["index"] = c.Index
+	return jsonutil.MarshalJson(m)
 }
 
 // ////////////////

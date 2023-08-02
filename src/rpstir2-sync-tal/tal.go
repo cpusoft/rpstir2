@@ -190,7 +190,7 @@ func syncToLocalAndParseValidateCer(tmpDir, talUrl, subjectPublicKeyInfo string,
 	defer wg.Done()
 
 	start := time.Now()
-	belogs.Debug("syncToLocalAndParseValidateCer(): tmpDir,  talUrl:", tmpDir, talUrl)
+	belogs.Debug("syncToLocalAndParseValidateCer(): tmpDir:", tmpDir, "  talUrl:", talUrl)
 	talSyncUrl.Error = ""
 	// get file name
 	_, _, file, err := urlutil.HostAndPathAndFile(talUrl)
@@ -255,7 +255,7 @@ func syncToLocalAndParseValidateCer(tmpDir, talUrl, subjectPublicKeyInfo string,
 		return
 	}
 
-	belogs.Debug("syncToLocalAndParseValidateCer(): syncUrl:", jsonutil.MarshalJson(talSyncUrl), "  time(s):", time.Since(start))
+	belogs.Info("syncToLocalAndParseValidateCer(): ok, talUrl:", talUrl, "  talSyncUrl:", jsonutil.MarshalJson(talSyncUrl), "  time(s):", time.Since(start))
 	return
 
 }

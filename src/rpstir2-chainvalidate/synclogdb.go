@@ -15,6 +15,10 @@ func updateRsyncLogChainValidateStateStartDb(state string) (labRpkiSyncLogId uin
 	belogs.Debug("updateRsyncLogChainValidateStateStartDb():  state:", state)
 
 	session, err := xormdb.NewSession()
+	if err != nil {
+		belogs.Error("updateRsyncLogChainValidateStateStartDb(): NewSession fail:", err)
+		return 0, err
+	}
 	defer session.Close()
 
 	var id int64
@@ -46,6 +50,10 @@ func updateRsyncLogChainValidateStateStartDb(state string) (labRpkiSyncLogId uin
 func updateRsyncLogChainValidateStateEndDb(labRpkiSyncLogId uint64, state string) (err error) {
 	// get current chainValidateState, the set new value
 	session, err := xormdb.NewSession()
+	if err != nil {
+		belogs.Error("updateRsyncLogChainValidateStateEndDb(): NewSession fail:", err)
+		return err
+	}
 	defer session.Close()
 
 	var chainValidateState string

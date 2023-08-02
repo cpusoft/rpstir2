@@ -37,8 +37,7 @@ func getAllAsasDb() ([]model.AsaToRtrFullLog, error) {
 				asaToRtrFullLog := model.AsaToRtrFullLog{
 					AsaId:         asaStrToRtrFullLogs[i].AsaId,
 					CustomerAsn:   customerAsns[j].CustomerAsn,
-					ProviderAsn:   customerAsns[j].ProviderAsns[k].ProviderAsn,
-					AddressFamily: customerAsns[j].ProviderAsns[k].AddressFamily,
+					ProviderAsn:   customerAsns[j].ProviderAsns[k],
 					SyncLogId:     asaStrToRtrFullLogs[i].SyncLogId,
 					SyncLogFileId: asaStrToRtrFullLogs[i].SyncLogFileId,
 				}
@@ -87,6 +86,10 @@ func getRtrAsaFullFromRtrFullLogDb(serialNumber uint64) (rtrAsaFulls map[string]
 func insertRtrAsaFullLogFromAsaDb(newSerialNumber uint64, asaToRtrFullLogs []model.AsaToRtrFullLog) (err error) {
 	start := time.Now()
 	session, err := xormdb.NewSession()
+	if err != nil {
+		belogs.Error("insertRtrAsaFullLogFromAsaDb(): NewSession fail :", err)
+		return err
+	}
 	defer session.Close()
 
 	// insert asa into rtr_asa_full_log
@@ -149,6 +152,10 @@ func updateSerialNumberAndRtrAsaFullAndRtrAsaIncrementalDb(newSerialNumberModel 
 		"   len(rtrAsaIncrementals):", len(rtrAsaIncrementals))
 
 	session, err := xormdb.NewSession()
+	if err != nil {
+		belogs.Error("updateSerialNumberAndRtrAsaFullAndRtrAsaIncrementalDb(): NewSession fail :", err)
+		return err
+	}
 	defer session.Close()
 
 	// serialnumber/rtrasafull/rtrasaincr should in one session

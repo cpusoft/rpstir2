@@ -207,7 +207,7 @@ func convertRtrAsaFullsToRtrPduModels(rtrAsaFulls []model.LabRpkiRtrAsaFull,
 	belogs.Debug("convertRtrAsaFullsToRtrPduModels(): len(rtrAsaFulls): ", len(rtrAsaFulls), "  protocolVersion:", protocolVersion)
 
 	start := time.Now()
-	sameCustomerAsnAfi := make(map[string]*RtrAsaModel, 0)
+	sameCustomerAsnAfi := make(map[string]*RtrAsaModel)
 	rtrAsaPduModels = make([]RtrPduModel, 0)
 	for i := range rtrAsaFulls {
 		rtrPduModel := NewRtrAsaModelFromDb(protocolVersion, PDU_FLAG_ANNOUNCE,

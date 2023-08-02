@@ -4,7 +4,6 @@ import (
 	"os"
 	"runtime"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -294,7 +293,7 @@ func tryAgainFailRrdpUrls() bool {
 			return true
 		})
 		// clear fail rrdp urls
-		rrQueue.RrdpResult.FailUrls = sync.Map{}
+		rrQueue.RrdpResult.FailUrls = jsonutil.JsonSyncMap{}
 
 		belogs.Debug("TryAgainFailRrdpUrls(): failRysncUrl:", len(failRrdpUrls), failRrdpUrls,
 			"   rrQueue.RrdpResult.FailUrlsTryCount: ", rrQueue.RrdpResult.FailUrlsTryCount)

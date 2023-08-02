@@ -7,6 +7,7 @@ import (
 	"github.com/cpusoft/goutil/conf"
 	"github.com/cpusoft/goutil/ginserver"
 	"github.com/cpusoft/goutil/httpclient"
+	"github.com/cpusoft/goutil/jsonutil"
 	"github.com/gin-gonic/gin"
 	model "rpstir2-model"
 )
@@ -28,7 +29,7 @@ func SyncStart(c *gin.Context) {
 		ginserver.ResponseFail(c, errors.New("SyncStyle should be sync or rrdp or rsync"), "")
 		return
 	}
-	belogs.Debug("SyncStart(): syncStyle:", syncStyle)
+	belogs.Info("SyncStart(): syncStyle:", jsonutil.MarshalJson(syncStyle))
 
 	//check serviceState
 	ssr := model.ServiceState{}

@@ -53,7 +53,12 @@ func UpdateRtrFullOrFullLogFromSlurmDb(tableName string, newSerialNumber uint64,
 	slurmToRtrFullLogs []model.SlurmToRtrFullLog, getEffectSlurm bool) (effectSlurmToRtrFullLogs []model.SlurmToRtrFullLog, err error) {
 	start := time.Now()
 	session, err := xormdb.NewSession()
+	if err != nil {
+		belogs.Error("UpdateRtrFullOrFullLogFromSlurmDb(): NewSession fail :", err)
+		return nil, err
+	}
 	defer session.Close()
+
 	effectSlurmToRtrFullLogs = make([]model.SlurmToRtrFullLog, 0)
 	// insert into rtr_full_log/lab_rpki_rtr_full
 	sqlInsertSlurm := `insert  ignore into ` + tableName + `
@@ -164,6 +169,10 @@ func UpdateRtrAsaFullOrFullLogFromSlurmDb(tableName string, newSerialNumber uint
 	slurmToRtrFullLogs []model.SlurmToRtrFullLog, getEffectSlurm bool) (effectSlurmToRtrFullLogs []model.SlurmToRtrFullLog, err error) {
 	start := time.Now()
 	session, err := xormdb.NewSession()
+	if err != nil {
+		belogs.Error("UpdateRtrAsaFullOrFullLogFromSlurmDb(): NewSession fail :", err)
+		return nil, err
+	}
 	defer session.Close()
 	effectSlurmToRtrFullLogs = make([]model.SlurmToRtrFullLog, 0)
 
@@ -332,6 +341,10 @@ func UpdateRtrAsaFullOrFullLogFromSlurmDb(tableName string, newSerialNumber uint
 	slurmToRtrFullLogs []model.SlurmToRtrFullLog, getEffectSlurm bool) (effectSlurmToRtrFullLogs []model.SlurmToRtrFullLog, err error) {
 	start := time.Now()
 	session, err := xormdb.NewSession()
+	if err != nil {
+		belogs.Error("UpdateRtrAsaFullOrFullLogFromSlurmDb(): NewSession fail :", err)
+		return nil, err
+	}
 	defer session.Close()
 	effectSlurmToRtrFullLogs = make([]model.SlurmToRtrFullLog, 0)
 

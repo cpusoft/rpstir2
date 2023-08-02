@@ -14,7 +14,7 @@ import (
 // connectRrdpUrlCh: whether connect to notifyurl, will tell others to remove rsync path, or just ignore. will defer close(connectRrdpUrlCh)
 // rrdpFiles: rrdp results files, if len() is 0, just rrdp is no update
 func RrdpByUrlImpl(rrdpByUrlModel RrdpByUrlModel, connectRrdpUrlCh chan bool,
-	syncLogFilesCh chan []model.SyncLogFile) (rrdpFiles []rrdputil.RrdpFile, err error) {
+	syncLogFilesCh chan []model.LabRpkiSyncLogFile) (rrdpFiles []rrdputil.RrdpFile, err error) {
 	start := time.Now()
 	//defer RrdpByUrlDefer(rrdpUrl, rrdpUrlCh)
 	belogs.Debug("RrdpByUrlImpl():start, rrdpByUrlModel:", jsonutil.MarshalJson(rrdpByUrlModel))
@@ -96,7 +96,7 @@ func RrdpByUrlImpl(rrdpByUrlModel RrdpByUrlModel, connectRrdpUrlCh chan bool,
 // syncStyle: rrdp/rsync
 func ConvertToSyncLogFile(
 	syncLogId uint64, rrdpTime time.Time,
-	rrdpFile *rrdputil.RrdpFile) (syncLogFile model.SyncLogFile, err error) {
+	rrdpFile *rrdputil.RrdpFile) (syncLogFile model.LabRpkiSyncLogFile, err error) {
 	belogs.Debug("ConvertToSyncLogFile():rrdp, syncLogId, rrdpTime, rrdpFile:",
 		syncLogId, rrdpTime, jsonutil.MarshalJson(rrdpFile))
 
@@ -118,7 +118,7 @@ func ConvertToSyncLogFile(
 		rtr = "notYet"
 	}
 
-	syncLogFileState := model.SyncLogFileState{
+	syncLogFileState := model.LabRpkiSyncLogFileState{
 		Sync:            "finished",
 		UpdateCertTable: "notYet",
 		Rtr:             rtr,
@@ -126,7 +126,7 @@ func ConvertToSyncLogFile(
 	state := jsonutil.MarshalJson(syncLogFileState)
 
 	// syncLogFile
-	syncLogFile = model.SyncLogFile{
+	syncLogFile = model.LabRpkiSyncLogFile{
 		SyncLogId: syncLogId,
 		FileType:  fileType,
 		SyncTime:  rrdpTime,

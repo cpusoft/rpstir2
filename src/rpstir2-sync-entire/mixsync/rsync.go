@@ -69,7 +69,7 @@ func parseRsyncCerFiles(spQueue *SyncParseQueue, parseChan ParseChan) {
 
 	// if have erorr, should set SyncingAndParsingCount -1
 	// get all cer files, include subcer
-	m := make(map[string]string, 0)
+	m := make(map[string]string)
 	m[".cer"] = ".cer"
 	cerFiles, err := osutil.GetAllFilesBySuffixs(parseChan.FilePathNames[0], m)
 	if err != nil {

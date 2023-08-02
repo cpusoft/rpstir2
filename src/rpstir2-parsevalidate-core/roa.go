@@ -1,14 +1,11 @@
-package parsevalidate
+package parsevalidatecore
 
 import (
 	"errors"
 	"fmt"
-	"strings"
-	"time"
 
 	"github.com/cpusoft/goutil/asn1util"
 	"github.com/cpusoft/goutil/belogs"
-	"github.com/cpusoft/goutil/conf"
 	"github.com/cpusoft/goutil/convert"
 	"github.com/cpusoft/goutil/fileutil"
 	"github.com/cpusoft/goutil/hashutil"
@@ -38,7 +35,7 @@ func ParseValidateRoa(certFile string) (roaModel model.RoaModel, stateModel mode
 	if len(stateModel.Errors) > 0 || len(stateModel.Warnings) > 0 {
 		belogs.Info("ParseValidateRoa():stateModel have errors or warnings", certFile, "     stateModel:", jsonutil.MarshalJson(stateModel))
 	}
-
+	stateModel.JudgeState()
 	belogs.Debug("ParseValidateRoa():  roaModel.FilePath, roaModel.FileName, roaModel.Ski, roaModel.Aki:",
 		roaModel.FilePath, roaModel.FileName, roaModel.Ski, roaModel.Aki)
 	return roaModel, stateModel, nil
@@ -92,7 +89,7 @@ func parseRoaModel(certFile string, roaModel *model.RoaModel, stateModel *model.
 
 	err = openssl.ParseRoaModelByOpensslResults(results, roaModel)
 	if err != nil {
-		belogs.Error("parseRoaModel(): ParseRoaModelByOpensslResults:  certFile:", certFile, "  err:", err, " will try parseMftModelByPacket")
+		belogs.Error("parseRoaModel(): ParseRoaModelByOpensslResults:  certFile:", certFile, "  err:", err, " will try parseRoaModelByPacket")
 		stateMsg := model.StateMsg{Stage: "parsevalidate",
 			Fail:   "Fail to parse file",
 			Detail: err.Error()}
@@ -397,53 +394,4 @@ func validateRoaModel(roaModel *model.RoaModel, stateModel *model.StateModel) (e
 		roaModel.FilePath, roaModel.FileName, jsonutil.MarshalJson(stateModel))
 
 	return nil
-}
-
-func updateRoaByCheckAll(now time.Time) error {
-	// check expire
-	curCertIdStateModels, err := getExpireRoaDb(now)
-	if err != nil {
-		belogs.Error("updateRoaByCheckAll(): getExpireRoaDb:  err: ", err)
-		return err
-	}
-	belogs.Info("updateRoaByCheckAll(): len(curCertIdStateModels):", len(curCertIdStateModels))
-
-	newCertIdStateModels := make([]CertIdStateModel, 0)
-	for i := range curCertIdStateModels {
-		// if have this error, ignore
-		belogs.Debug("updateRoaByCheckAll(): old curCertIdStateModels[i]:", jsonutil.MarshalJson(curCertIdStateModels[i]))
-		if strings.Contains(curCertIdStateModels[i].StateStr, "NotAfter of EE is earlier than the current time") {
-			continue
-		}
-
-		// will add error
-		stateModel := model.StateModel{}
-		jsonutil.UnmarshalJson(curCertIdStateModels[i].StateStr, &stateModel)
-
-		stateMsg := model.StateMsg{Stage: "parsevalidate",
-			Fail:   "NotAfter of EE is earlier than the current time",
-			Detail: "The current time is " + convert.Time2StringZone(now) + ", notAfter is " + convert.Time2StringZone(curCertIdStateModels[i].EndTime)}
-		if conf.Bool("policy::allowStaleEe") {
-			stateModel.AddWarning(&stateMsg)
-		} else {
-			stateModel.AddError(&stateMsg)
-		}
-
-		certIdStateModel := CertIdStateModel{
-			Id:       curCertIdStateModels[i].Id,
-			StateStr: jsonutil.MarshalJson(stateModel),
-		}
-		newCertIdStateModels = append(newCertIdStateModels, certIdStateModel)
-		belogs.Debug("updateRoaByCheckAll(): new certIdStateModel:", jsonutil.MarshalJson(certIdStateModel))
-	}
-
-	// update db
-	err = updateRoaStateDb(newCertIdStateModels)
-	if err != nil {
-		belogs.Error("updateRoaByCheckAll(): updateRoaStateDb:  err: ", len(newCertIdStateModels), err)
-		return err
-	}
-	belogs.Info("updateRoaByCheckAll(): ok len(newCertIdStateModels):", len(newCertIdStateModels))
-	return nil
-
 }

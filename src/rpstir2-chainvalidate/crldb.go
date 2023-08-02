@@ -42,6 +42,7 @@ func updateCrlsDb(chains *Chains, wg *sync.WaitGroup) {
 	start := time.Now()
 	session, err := xormdb.NewSession()
 	if err != nil {
+		belogs.Error("updateCrlsDb(): NewSession fail:", err)
 		return
 	}
 	defer session.Close()
@@ -75,7 +76,7 @@ func updateCrlDb(session *xorm.Session, chains *Chains, crlId uint64) (err error
 	}
 
 	chainDbCrlModel := NewChainDbCrlModel(&chainCrl)
-	originModel := model.JudgeOrigin(chainCrl.FilePath)
+	originModel := model.JudgeOriginByFilePath(chainCrl.FilePath)
 
 	chainCerts := jsonutil.MarshalJson(*chainDbCrlModel)
 	state := jsonutil.MarshalJson(chainCrl.StateModel)

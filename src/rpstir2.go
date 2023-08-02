@@ -8,7 +8,7 @@ import (
 
 	chainvalidate "rpstir2-chainvalidate"
 	clear "rpstir2-clear"
-	parsevalidate "rpstir2-parsevalidate"
+	parsevalidatecentralized "rpstir2-parsevalidate-centralized"
 	rtrclient "rpstir2-rtrclient"
 	rtrproducer "rpstir2-rtrproducer"
 	rtrserver "rpstir2-rtrserver"
@@ -73,10 +73,10 @@ func startRpServer() {
 	engine.POST("/entiresync/rsyncresult", entiresync.RsyncResult)
 	engine.POST("/entiresync/rrdprequest", entirerrdp.RrdpRequest)
 	engine.POST("/entiresync/rsyncrequest", entirersync.RsyncRequest)
-	engine.POST("/parsevalidate/start", parsevalidate.ParseValidateStart)
-	engine.POST("/parsevalidate/file", parsevalidate.ParseValidateFile)
-	engine.POST("/parsevalidate/parsefile", parsevalidate.ParseFile)
-	engine.POST("/parsevalidate/parsefilesimple", parsevalidate.ParseFileSimple)
+	engine.POST("/parsevalidate/start", parsevalidatecentralized.ParseValidateStart)
+	engine.POST("/parsevalidate/file", parsevalidatecentralized.ParseValidateFile)
+	engine.POST("/parsevalidate/parsefile", parsevalidatecentralized.ParseFile)
+	engine.POST("/parsevalidate/parsefilesimple", parsevalidatecentralized.ParseFileSimple)
 	engine.POST("/chainvalidate/start", chainvalidate.ChainValidateStart)
 	engine.POST("/clear/start", clear.ClearStart)
 	engine.POST("/sys/initreset", sys.InitReset)

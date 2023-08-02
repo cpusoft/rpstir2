@@ -19,11 +19,18 @@ const (
 
 // from rir(tal)->repo
 type OriginModel struct {
-	Rir  string `json:"rir"`
-	Repo string `json:"repo"`
+	Rir       string `json:"rir"`
+	Repo      string `json:"repo"`
+	NotifyUrl string `json:"notifyUrl"`
 }
 
-func JudgeOrigin(filePath string) (originModel OriginModel) {
+func JudgeOrigin(filePath, notifyUrl string) (originModel *OriginModel) {
+	originModel = JudgeOriginByFilePath(filePath)
+	originModel.NotifyUrl = notifyUrl
+	return originModel
+}
+
+func JudgeOriginByFilePath(filePath string) (originModel *OriginModel) {
 	/*
 				ca.rg.net
 				rpki-repository.nic.ad.jp
@@ -129,6 +136,9 @@ func JudgeOrigin(filePath string) (originModel OriginModel) {
 	} else if strings.Index(filePath, "rpki.afrinic.net") > 0 {
 		rir = "AFRINIC"
 		repo = "rpki.afrinic.net"
+	} else if strings.Index(filePath, "rrdp.afrinic.net") > 0 {
+		rir = "AFRINIC"
+		repo = "rrdp.afrinic.net"
 	} else if strings.Index(filePath, "rpki.tools.westconnect.ca") > 0 {
 		rir = ORIGIN_RIR_ARIN
 		repo = "rpki.tools.westconnect.ca"
@@ -409,9 +419,9 @@ func JudgeOrigin(filePath string) (originModel OriginModel) {
 		} else {
 			repo = split[0]
 		}
-		belogs.Info("JudgeOrigin():rir is unknown, filePath:", filePath, "   rir:", rir, "  repo:", repo)
+		belogs.Info("JudgeOriginByFilePath():rir is unknown, filePath:", filePath, "   rir:", rir, "  repo:", repo)
 	}
-	originModel = OriginModel{Rir: rir, Repo: repo}
-	belogs.Debug("JudgeOrigin(): filePath:", filePath, "   originModel:", jsonutil.MarshalJson(originModel))
+	originModel = &OriginModel{Rir: rir, Repo: repo}
+	belogs.Debug("JudgeOriginByFilePath(): filePath:", filePath, "   originModel:", jsonutil.MarshalJson(originModel))
 	return originModel
 }

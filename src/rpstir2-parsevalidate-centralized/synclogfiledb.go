@@ -1,4 +1,4 @@
-package parsevalidate
+package parsevalidatecentralized
 
 import (
 	"time"
@@ -6,6 +6,7 @@ import (
 	"github.com/cpusoft/goutil/belogs"
 	"github.com/cpusoft/goutil/jsonutil"
 	"github.com/cpusoft/goutil/xormdb"
+	model "rpstir2-model"
 	"xorm.io/xorm"
 )
 
@@ -13,7 +14,7 @@ func getSyncLogFileModelsBySyncLogIdDb(labRpkiSyncLogId uint64) (syncLogFileMode
 	start := time.Now()
 
 	belogs.Debug("getSyncLogFileModelsBySyncLogIdDb():start")
-	dbSyncLogFileModels := make([]SyncLogFileModel, 0)
+	dbSyncLogFileModels := make([]model.SyncLogFileModel, 0)
 	sql := `select s.id,s.syncLogId,s.filePath,s.fileName, s.fileType, s.syncType, 
 				cast(CONCAT(IFNULL(c.id,''),IFNULL(m.id,''),IFNULL(l.id,''),IFNULL(r.id,''),IFNULL(a.id,'')) as unsigned int) as certId from lab_rpki_sync_log_file s 
 			left join lab_rpki_cer c on c.filePath = s.filePath and c.fileName = s.fileName  
@@ -33,7 +34,7 @@ func getSyncLogFileModelsBySyncLogIdDb(labRpkiSyncLogId uint64) (syncLogFileMode
 	return syncLogFileModels, nil
 }
 
-func updateSyncLogFilesJsonAllAndStateDb(session *xorm.Session, syncLogFileModels []SyncLogFileModel) error {
+func updateSyncLogFilesJsonAllAndStateDb(session *xorm.Session, syncLogFileModels []model.SyncLogFileModel) error {
 	belogs.Debug("updateSyncLogFilesJsonAllAndStateDb(): len(syncLogFileModels):", len(syncLogFileModels))
 	sqlStr := `update lab_rpki_sync_log_file f set 	
 	  f.state=json_replace(f.state,'$.updateCertTable','finished','$.rtr',?) ,
@@ -83,44 +84,5 @@ func updateSyncLogFilesJsonAllAndStateDb(session *xorm.Session, syncLogFileModel
 			return err
 		}
 	}
-	return nil
-}
-
-func updateSyncLogFileJsonAllAndStateDb(session *xorm.Session, syncLogFileModel *SyncLogFileModel) error {
-	belogs.Debug("updateSyncLogFileJsonAllAndStateDb(): id:", syncLogFileModel.Id,
-		"  file:", syncLogFileModel.FilePath, syncLogFileModel.FileName,
-		"  syncLogFileModel:", jsonutil.MarshalJson(syncLogFileModel))
-	sqlStr := `update lab_rpki_sync_log_file f set 	
-	  f.state=json_replace(f.state,'$.updateCertTable','finished','$.rtr',?) ,
-	  f.jsonAll=?  where f.id=?`
-	rtrState := "notNeed"
-	jsonAll := ""
-	if (syncLogFileModel.FileType == "roa" || syncLogFileModel.FileType == "asa") &&
-		syncLogFileModel.SyncType != "del" {
-		rtrState = "notYet"
-	}
-
-	//when del or update(before del), syncLogFileModel.CertModel is nil
-	if syncLogFileModel.CertModel == nil {
-		belogs.Debug("updateSyncLogFileJsonAllAndStateDb(): del or update, CertModel is nil, syncLogFileModel:",
-			jsonutil.MarshalJson(syncLogFileModel))
-	} else {
-		// when add or update(after del), syncLogFileModel.CertModel is not nil
-		jsonAll = jsonutil.MarshalJson(syncLogFileModel.CertModel)
-	}
-	belogs.Debug("updateSyncLogFileJsonAllAndStateDb(): id:", syncLogFileModel.Id,
-		"  file:", syncLogFileModel.FilePath, syncLogFileModel.FileName,
-		"  jsonAll:", jsonAll)
-
-	_, err := session.Exec(sqlStr, rtrState, xormdb.SqlNullString(jsonAll), syncLogFileModel.Id)
-	if err != nil {
-		belogs.Error("updateSyncLogFileJsonAllAndStateDb(): updateSyncLogFileJsonAllAndState fail:",
-			"   id:", syncLogFileModel.Id,
-			"   file:", syncLogFileModel.FilePath, syncLogFileModel.FileName,
-			"   rtrState:", rtrState, "  jsonAll:", jsonAll, err)
-		return err
-	}
-	belogs.Debug("updateSyncLogFileJsonAllAndStateDb(): update lab_rpki_sync_log_file, id:", syncLogFileModel.Id,
-		"   file:", syncLogFileModel.FilePath, syncLogFileModel.FileName)
 	return nil
 }

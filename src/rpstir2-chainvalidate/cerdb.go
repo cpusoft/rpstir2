@@ -34,6 +34,7 @@ func updateCersDb(chains *Chains, wg *sync.WaitGroup) {
 	start := time.Now()
 	session, err := xormdb.NewSession()
 	if err != nil {
+		belogs.Error("updateCersDb(): NewSession fail:", err)
 		return
 	}
 	defer session.Close()
@@ -67,7 +68,7 @@ func updateCerDb(session *xorm.Session, chains *Chains, cerId uint64) (err error
 	}
 
 	chainDbCerModel := NewChainDbCerModel(&chainCer)
-	originModel := model.JudgeOrigin(chainCer.FilePath)
+	originModel := model.JudgeOriginByFilePath(chainCer.FilePath)
 	belogs.Debug("updateCerDb():chainDbCerModel, id, len(chainDbCerModel.ChildChainCers):", chainDbCerModel.Id,
 		len(chainDbCerModel.ChildChainCers), originModel)
 

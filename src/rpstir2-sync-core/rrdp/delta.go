@@ -11,7 +11,7 @@ import (
 
 // lastSerial is last syncRrdpLog's curSerial
 func processRrdpDelta(syncLogId uint64, notificationModel *rrdputil.NotificationModel,
-	snapshotDeltaResult *SnapshotDeltaResult, syncLogFilesCh chan []model.SyncLogFile) (err error) {
+	snapshotDeltaResult *SnapshotDeltaResult, syncLogFilesCh chan []model.LabRpkiSyncLogFile) (err error) {
 
 	start := time.Now()
 	deltaModels, err := rrdputil.GetRrdpDeltas(notificationModel, snapshotDeltaResult.LastSerial)

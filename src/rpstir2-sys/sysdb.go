@@ -44,6 +44,7 @@ var initSqls []string = []string{
 	`drop table if exists lab_rpki_rtr_asa_incremental`,
 	`drop table if exists lab_rpki_rtr_serial_number`,
 	`drop table if exists lab_rpki_rtr_session`,
+	`drop table if exists lab_rpki_rush_node`,
 	`drop table if exists lab_rpki_slurm`,
 	`drop table if exists lab_rpki_sync_log_file`,
 	`drop table if exists lab_rpki_sync_log`,
@@ -419,7 +420,7 @@ CREATE TABLE lab_rpki_sync_log (
 	parseValidateState MEDIUMTEXT,
 	chainValidateState MEDIUMTEXT,
 	rtrState MEDIUMTEXT,
-	state varchar(16) not null comment 'rsyncing/rsynced ddrping/ddrped  diffing/diffed   parsevalidating/parsevalidated   rtring/rtred idle',
+	state text not null comment 'rsyncing/rsynced ddrping/ddrped  diffing/diffed   parsevalidating/parsevalidated   rtring/rtred idle',
 	syncStyle varchar(16) not null comment 'rsync/rrdp' 
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='recored every sync log'
 `,
@@ -441,8 +442,7 @@ CREATE TABLE lab_rpki_sync_log_file (
 	key fileType (fileType),
 	key syncType (syncType),
 	key filePath (filePath(256)),
-	key fileName (fileName),
-	unique synclogfileFilePathFileName (filePath(256),fileName,syncLogId),
+	key fileName (fileName),	
 	foreign key (syncLogId) references lab_rpki_sync_log(id)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='recored sync log for cer/roa/mft/crl'
 `,
@@ -486,7 +486,8 @@ CREATE TABLE lab_rpki_sync_rrdp_notify (
 	minSerial int(10) unsigned comment 'min serial',
 	curSerial int(10) unsigned comment 'current serial',
 	state json comment '{state:valid}',
-	updateTime datetime not null comment 'update time',
+	preceptTime datetime not null comment 'precept time',
+	downloadTime datetime comment 'download from notify time',
 	unique notifyUrl (notifyUrl) 
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='rrdp url'
 `,
@@ -503,7 +504,6 @@ CREATE TABLE lab_rpki_sync_rrdp_delta (
 	index serial (serial)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='rrdp url'
 `,
-
 	`
 ##################
 ## RTR
@@ -664,6 +664,29 @@ CREATE TABLE lab_rpki_slurm (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='valid slurms'
 `,
 
+	`
+#####################
+#### rush
+#####################
+### one rush_node --> one rush_node_log --> many rush_node_audit
+### create, insert rush_node_log/rush_node_audit, 
+### when pass, insert rush_node,update rush_node_log/rush_node_audit
+### when unpass, update rush_node_log/rush_node_audit
+### when del, del rush_node, update rush_node_log, insert rush_node_audit( set del)
+	
+CREATE TABLE lab_rpki_rush_node (
+	id int(10) unsigned NOT NULL primary key auto_increment,
+	nodeName varchar(256) not null comment 'node name',
+	parentNodeId int(10) unsigned comment 'if it is root, will be null',
+	url varchar(256) not null comment 'interface url: https://1.1.1.1:8080',
+	isSelfUrl varchar(8) comment 'true/null: vc to identify itself. rp do not need this',
+	note varchar(256) comment 'comments, copy from lab_rpki_rush_node_log.note, auditUser can change',
+	updateTime datetime not null comment 'update time',
+	unique nodeName(nodeName),
+	unique url(url),
+	key parentNodeId(parentNodeId) 
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='rush node conf'
+`,
 	` 
 #####################
 #### conf
@@ -775,6 +798,7 @@ var fullSyncSqls []string = []string{
 	`truncate  table  lab_rpki_sync_rrdp_notify`,
 	`truncate  table  lab_rpki_sync_rrdp_delta`,
 }
+
 var resetAllOtherSqls []string = []string{
 	`truncate  table  lab_rpki_conf`,
 	`truncate  table  lab_rpki_rtr_session`,
@@ -786,6 +810,7 @@ var resetAllOtherSqls []string = []string{
 	`truncate  table  lab_rpki_rtr_asa_full_log`,
 	`truncate  table  lab_rpki_rtr_asa_incremental`,
 	`truncate  table  lab_rpki_slurm`,
+	`truncate  table  lab_rpki_rush_node`,
 }
 
 var optimizeSqls []string = []string{
@@ -826,12 +851,14 @@ var optimizeSqls []string = []string{
 	`optimize  table  lab_rpki_rtr_asa_full_log`,
 	`optimize  table  lab_rpki_rtr_asa_incremental`,
 	`optimize  table  lab_rpki_slurm`,
+	`optimize  table  lab_rpki_rush_node`,
 }
 
 // when isInit is true, then init all db. otherwise will reset all db
 func initResetDb(sysStyle SysStyle) error {
 	session, err := xormdb.NewSession()
 	if err != nil {
+		belogs.Error("initResetDb(): NewSession fail :", err)
 		return err
 	}
 	defer session.Close()
@@ -878,7 +905,7 @@ func initResetImplDb(session *xorm.Session, sysStyle SysStyle) error {
 		}
 		sqls = append(sqls, optimizeSqls...)
 	}
-	belogs.Debug("initResetImplDb():will Exec sqls:", jsonutil.MarshalJson(sqls))
+	//belogs.Debug("initResetImplDb():will Exec sqls:", jsonutil.MarshalJson(sqls))
 	belogs.Info("initResetImplDb():will Exec len(sqls):", len(sqls))
 	for _, sq := range sqls {
 		if _, err := session.Exec(sq); err != nil {

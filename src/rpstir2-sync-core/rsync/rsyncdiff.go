@@ -9,7 +9,7 @@ import (
 )
 
 // destPath: when it is "", will diff all. if not, just diff destPath
-func FoundDiffFiles(syncLogId uint64, destPath string, syncLogFilesCh chan []model.SyncLogFile) (addFilesLen, delFilesLen, updateFilesLen, noChangeFilesLen uint64, err error) {
+func FoundDiffFiles(syncLogId uint64, destPath string, syncLogFilesCh chan []model.LabRpkiSyncLogFile) (addFilesLen, delFilesLen, updateFilesLen, noChangeFilesLen uint64, err error) {
 	start := time.Now()
 	belogs.Info("FoundDiffFiles():start,  syncLogId:", syncLogId, " destPath:", destPath)
 

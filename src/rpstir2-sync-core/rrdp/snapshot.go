@@ -33,7 +33,7 @@ func getRrdpSnapshot(notificationModel *rrdputil.NotificationModel) (snapshotMod
 }
 
 func processRrdpSnapshot(syncLogId uint64, notificationModel *rrdputil.NotificationModel,
-	snapshotDeltaResult *SnapshotDeltaResult, syncLogFilesCh chan []model.SyncLogFile) (err error) {
+	snapshotDeltaResult *SnapshotDeltaResult, syncLogFilesCh chan []model.LabRpkiSyncLogFile) (err error) {
 
 	belogs.Debug("processRrdpSnapshot():syncLogId:", syncLogId, "notificationModel.Snapshot.Uri, snapshotModel:",
 		notificationModel.Snapshot.Uri)

@@ -35,6 +35,7 @@ func updateAsasDb(chains *Chains, wg *sync.WaitGroup) {
 	start := time.Now()
 	session, err := xormdb.NewSession()
 	if err != nil {
+		belogs.Error("updateAsasDb(): NewSession fail:", err)
 		return
 	}
 	defer session.Close()
@@ -68,7 +69,7 @@ func updateAsaDb(session *xorm.Session, chains *Chains, asaId uint64) (err error
 	}
 
 	chainDbAsaModel := NewChainDbAsaModel(&chainAsa)
-	originModel := model.JudgeOrigin(chainAsa.FilePath)
+	originModel := model.JudgeOriginByFilePath(chainAsa.FilePath)
 
 	chainCerts := jsonutil.MarshalJson(*chainDbAsaModel)
 	state := jsonutil.MarshalJson(chainAsa.StateModel)

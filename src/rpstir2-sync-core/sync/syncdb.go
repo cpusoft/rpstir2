@@ -17,6 +17,10 @@ func DelByFilePathDb(filePath string) (err error) {
 	}
 
 	session, err := xormdb.NewSession()
+	if err != nil {
+		belogs.Error("DelByFilePathDb(): NewSession fail :", err)
+		return err
+	}
 	defer session.Close()
 
 	err = delCerDb(session, filePath)
@@ -72,12 +76,12 @@ func getIdsByParamIdsDb(tableName string, param string, paramIdsStr string) (ids
 	// get ids from tableName
 	err = xormdb.XormEngine.SQL("select id from " + tableName + " where " + param + " in " + paramIdsStr).Find(&ids)
 	if err != nil {
-		belogs.Error("getIdsByParamIdsDb(): get id fail, tableName: ", tableName, "   param:", param,
+		belogs.Error("getIdsByParamIdsDb(): get ids fail, tableName: ", tableName, "   param:", param,
 			"  paramIdsStr:", paramIdsStr, err)
 		return nil, err
 	}
 
-	belogs.Debug("getIdsByParamIdsDb():get id fail, tableName: ", tableName, "   param:", param,
+	belogs.Debug("getIdsByParamIdsDb():get ids from tableName: ", tableName, "   param:", param,
 		"   paramIdsStr:", paramIdsStr, "  ids:", ids)
 	return ids, nil
 }

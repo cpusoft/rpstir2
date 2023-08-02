@@ -38,21 +38,7 @@ func InitReset(c *gin.Context) {
 			url := "https://" + conf.String("rpstir2-rp::serverHost") + ":" +
 				conf.String("rpstir2-rp::serverHttpsPort")
 			var path string
-			if sysStyle.SyncPolicy == "direct" {
-				path = url + "/directsync/urlstart"
-				belogs.Info("initReset(): will call direct url first:", path)
-				err = httpclient.PostAndUnmarshalResponseModel(path, ``, false, nil)
-				if err != nil {
-					belogs.Error("InitReset(): call direct url fail,err: ", err)
-					ginserver.ResponseFail(c, errors.New("direct url fail"), "")
-					return
-				}
-
-				path = url + "/directsync/syncstart"
-				belogs.Info("initReset(): will call direct sync second:", path)
-				go httpclient.Post(path, ``, false)
-
-			} else if sysStyle.SyncPolicy == "entire" {
+			if sysStyle.SyncPolicy == "entire" {
 				path = url + "/entiresync/syncstart"
 				belogs.Info("initReset(): will call entire sync:", path)
 				go httpclient.Post(path, `{"syncStyle": "sync"}`, false)

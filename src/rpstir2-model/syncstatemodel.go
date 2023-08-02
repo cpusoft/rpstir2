@@ -7,6 +7,7 @@ import (
 
 	"github.com/cpusoft/goutil/belogs"
 	"github.com/cpusoft/goutil/convert"
+	"github.com/cpusoft/goutil/jsonutil"
 )
 
 // sync(urls) will send to rrdp/rsync
@@ -26,12 +27,12 @@ type SyncResult struct {
 
 	//rsync failed
 	//FailUrls         map[string]string `json:"failUrls"`
-	FailUrls         sync.Map `json:"failUrls"`
-	FailUrlsTryCount uint64   `json:"failUrlsTryCount"`
+	FailUrls         jsonutil.JsonSyncMap `json:"failUrls"`
+	FailUrlsTryCount uint64               `json:"failUrlsTryCount"`
 
 	//parse failed
 	//FailParseValidateCerts map[string]string `json:"failParseValidateCerts"`
-	FailParseValidateCerts sync.Map `json:"failParseValidateCerts"`
+	FailParseValidateCerts jsonutil.JsonSyncMap `json:"failParseValidateCerts"`
 
 	// diff result
 	AddFilesLen      uint64 `json:"addFilesLen"`

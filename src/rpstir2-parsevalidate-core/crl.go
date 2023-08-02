@@ -1,9 +1,8 @@
-package parsevalidate
+package parsevalidatecore
 
 import (
 	"errors"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/cpusoft/goutil/asn1util"
@@ -37,7 +36,7 @@ func ParseValidateCrl(certFile string) (crlModel model.CrlModel, stateModel mode
 	if len(stateModel.Errors) > 0 || len(stateModel.Warnings) > 0 {
 		belogs.Info("ParseValidateCrl():stateModel have errors or warnings", certFile, "     stateModel:", jsonutil.MarshalJson(stateModel))
 	}
-
+	stateModel.JudgeState()
 	belogs.Debug("ParseValidateCrl():  crlModel.FilePath, crlModel.FileName, crlModel.Aki:",
 		crlModel.FilePath, crlModel.FileName, crlModel.Aki)
 	return crlModel, stateModel, nil
@@ -249,53 +248,4 @@ func validateCrlModel(crlModel *model.CrlModel, stateModel *model.StateModel) (e
 	belogs.Debug("validateCrlModel():filePath, fileName,stateModel:",
 		crlModel.FilePath, crlModel.FileName, jsonutil.MarshalJson(stateModel))
 	return nil
-}
-
-func updateCrlByCheckAll(now time.Time) error {
-	// check expire
-	curCertIdStateModels, err := getExpireCrlDb(now)
-	if err != nil {
-		belogs.Error("updateCrlByCheckAll(): getExpireCrlDb:  err: ", err)
-		return err
-	}
-	belogs.Info("updateCrlByCheckAll(): len(curCertIdStateModels):", len(curCertIdStateModels))
-
-	newCertIdStateModels := make([]CertIdStateModel, 0)
-	for i := range curCertIdStateModels {
-		// if have this error, ignore
-		belogs.Debug("updateCrlByCheckAll(): old curCertIdStateModels[i]:", jsonutil.MarshalJson(curCertIdStateModels[i]))
-		if strings.Contains(curCertIdStateModels[i].StateStr, "NextUpdate is earlier than the current time") {
-			continue
-		}
-
-		// will add error
-		stateModel := model.StateModel{}
-		jsonutil.UnmarshalJson(curCertIdStateModels[i].StateStr, &stateModel)
-
-		stateMsg := model.StateMsg{Stage: "parsevalidate",
-			Fail:   "NextUpdate is earlier than the current time",
-			Detail: "The current time is " + convert.Time2StringZone(now) + ", nextUpdate is " + convert.Time2StringZone(curCertIdStateModels[i].EndTime)}
-		if conf.Bool("policy::allowStaleCrl") {
-			stateModel.AddWarning(&stateMsg)
-		} else {
-			stateModel.AddError(&stateMsg)
-		}
-
-		certIdStateModel := CertIdStateModel{
-			Id:       curCertIdStateModels[i].Id,
-			StateStr: jsonutil.MarshalJson(stateModel),
-		}
-		newCertIdStateModels = append(newCertIdStateModels, certIdStateModel)
-		belogs.Debug("updateCrlByCheckAll(): new certIdStateModel:", jsonutil.MarshalJson(certIdStateModel))
-	}
-
-	// update db
-	err = updateCrlStateDb(newCertIdStateModels)
-	if err != nil {
-		belogs.Error("updateCrlByCheckAll(): updateCrlStateDb:  err: ", len(newCertIdStateModels), err)
-		return err
-	}
-	belogs.Info("updateCrlByCheckAll(): ok len(newCertIdStateModels):", len(newCertIdStateModels))
-	return nil
-
 }

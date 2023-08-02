@@ -46,6 +46,10 @@ func updateSerialNumberAndRtrFullAndRtrIncrementalDb(newSerialNumberModel *rtrco
 		"   len(rtrIncrementals):", len(rtrIncrementals))
 
 	session, err := xormdb.NewSession()
+	if err != nil {
+		belogs.Error("updateSerialNumberAndRtrFullAndRtrIncrementalDb(): NewSession fail :", err)
+		return err
+	}
 	defer session.Close()
 
 	// serialnumber/rtrfull/rtrincr should in one session
@@ -147,6 +151,10 @@ func getRtrFullFromRtrFullLogDb(serialNumber uint64) (rtrFulls map[string]model.
 func insertRtrFullLogFromRoaDb(newSerialNumber uint64, roaToRtrFullLogs []model.RoaToRtrFullLog) (err error) {
 	start := time.Now()
 	session, err := xormdb.NewSession()
+	if err != nil {
+		belogs.Error("insertRtrFullLogFromRoaDb(): NewSession fail :", err)
+		return err
+	}
 	defer session.Close()
 
 	// insert roa into rtr_full_log

@@ -142,7 +142,7 @@ func SendResponses(conn *net.TCPConn, rtrPduModelResponses []RtrPduModel) (err e
 
 		// avoid tcp sticky packets
 		if sendIntervalMs > 0 {
-			time.Sleep(time.Duration(sendIntervalMs) * time.Microsecond)
+			time.Sleep(time.Duration(sendIntervalMs) * time.Millisecond)
 		}
 	}
 	belogs.Debug("SendResponses(): send len(packets):", len(rtrPduModelResponses), ",   time(s):", time.Since(start))

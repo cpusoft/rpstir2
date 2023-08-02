@@ -8,19 +8,19 @@ import (
 	"github.com/cpusoft/goutil/rrdputil"
 	"github.com/cpusoft/goutil/xormdb"
 	model "rpstir2-model"
-	"rpstir2-sync-core/sync"
+	coresync "rpstir2-sync-core/sync"
 )
 
 // repoHostPath, is nic dest path, eg: /root/rpki/data/reporrdp/rpki.apnic.cn/
 func updateRrdpSnapshotDb(syncLogId uint64, notificationModel *rrdputil.NotificationModel,
 	snapshotModel *rrdputil.SnapshotModel, snapshotDeltaResult *SnapshotDeltaResult,
-	syncLogFilesCh chan []model.SyncLogFile) (err error) {
+	syncLogFilesCh chan []model.LabRpkiSyncLogFile) (err error) {
 
 	belogs.Debug("updateRrdpSnapshotDb():syncLogId:", syncLogId,
 		"    snapshotDeltaResult:", jsonutil.MarshalJson(snapshotDeltaResult))
 
 	// del cer/crl/mft/roa
-	err = sync.DelByFilePathDb(snapshotDeltaResult.RepoHostPath)
+	err = coresync.DelByFilePathDb(snapshotDeltaResult.RepoHostPath)
 	if err != nil {
 		belogs.Error("updateRrdpSnapshotDb():delLastRrdpSnapshot fail, repoHostPath:", snapshotDeltaResult.RepoHostPath, err)
 		return err
@@ -28,7 +28,7 @@ func updateRrdpSnapshotDb(syncLogId uint64, notificationModel *rrdputil.Notifica
 
 	// insert synclog
 	rrdpTime := time.Now()
-	syncLogFiles := make([]model.SyncLogFile, 0, 2*len(snapshotDeltaResult.RrdpFiles))
+	syncLogFiles := make([]model.LabRpkiSyncLogFile, 0, 2*len(snapshotDeltaResult.RrdpFiles))
 	for _, rrdpFile := range snapshotDeltaResult.RrdpFiles {
 		syncLogFile, err := ConvertToSyncLogFile(
 			syncLogId, rrdpTime, &rrdpFile)
@@ -46,11 +46,16 @@ func updateRrdpSnapshotDb(syncLogId uint64, notificationModel *rrdputil.Notifica
 		syncLogFilesCh <- syncLogFiles
 	} else {
 		belogs.Debug("updateRrdpSnapshotDb():rrdp InsertSyncLogFilesDb():", len(syncLogFiles))
-		sync.InsertSyncLogFilesDb(syncLogFiles)
+		coresync.InsertSyncLogFilesDb(syncLogFiles)
 	}
 	// delete in cer/crl/mft/roa table
 	session, err := xormdb.NewSession()
+	if err != nil {
+		belogs.Error("updateRrdpSnapshotDb(): NewSession fail :", err)
+		return err
+	}
 	defer session.Close()
+
 	snapshotDeltaResult.SessionId = notificationModel.SessionId
 	snapshotDeltaResult.Serial = notificationModel.Serial
 	snapshotDeltaResult.LastSerial = 0
@@ -73,12 +78,12 @@ func updateRrdpSnapshotDb(syncLogId uint64, notificationModel *rrdputil.Notifica
 
 //
 func updateRrdpDeltaDb(syncLogId uint64, deltaModels []rrdputil.DeltaModel,
-	snapshotDeltaResult *SnapshotDeltaResult, syncLogFilesCh chan []model.SyncLogFile) (err error) {
+	snapshotDeltaResult *SnapshotDeltaResult, syncLogFilesCh chan []model.LabRpkiSyncLogFile) (err error) {
 	belogs.Debug("updateRrdpDeltaDb():syncLogId :", syncLogId, "    snapshotDeltaResult:", jsonutil.MarshalJson(snapshotDeltaResult))
 
 	// insert synclog
 	rrdpTime := time.Now()
-	syncLogFiles := make([]model.SyncLogFile, 0, 2*len(snapshotDeltaResult.RrdpFiles))
+	syncLogFiles := make([]model.LabRpkiSyncLogFile, 0, 2*len(snapshotDeltaResult.RrdpFiles))
 	for _, rrdpFile := range snapshotDeltaResult.RrdpFiles {
 		syncLogFile, err := ConvertToSyncLogFile(
 			syncLogId, rrdpTime, &rrdpFile)
@@ -95,12 +100,17 @@ func updateRrdpDeltaDb(syncLogId uint64, deltaModels []rrdputil.DeltaModel,
 		syncLogFilesCh <- syncLogFiles
 	} else {
 		belogs.Debug("updateRrdpDeltaDb():rrdp InsertSyncLogFilesDb():", len(syncLogFiles))
-		sync.InsertSyncLogFilesDb(syncLogFiles)
+		coresync.InsertSyncLogFilesDb(syncLogFiles)
 	}
 
-	// insert lab_rpki_sync_rrdp_log table
+	// convert to snapshotDeltaResult table
 	session, err := xormdb.NewSession()
+	if err != nil {
+		belogs.Error("updateRrdpDeltaDb(): NewSession fail :", err)
+		return err
+	}
 	defer session.Close()
+
 	for i := range deltaModels {
 		snapshotDeltaResult.SessionId = deltaModels[i].SessionId
 		snapshotDeltaResult.Serial = deltaModels[i].Serial

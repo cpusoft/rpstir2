@@ -35,6 +35,7 @@ func updateRoasDb(chains *Chains, wg *sync.WaitGroup) {
 	start := time.Now()
 	session, err := xormdb.NewSession()
 	if err != nil {
+		belogs.Error("updateRoasDb(): NewSession fail:", err)
 		return
 	}
 	defer session.Close()
@@ -68,7 +69,7 @@ func updateRoaDb(session *xorm.Session, chains *Chains, roaId uint64) (err error
 	}
 
 	chainDbRoaModel := NewChainDbRoaModel(&chainRoa)
-	originModel := model.JudgeOrigin(chainRoa.FilePath)
+	originModel := model.JudgeOriginByFilePath(chainRoa.FilePath)
 
 	chainCerts := jsonutil.MarshalJson(*chainDbRoaModel)
 	state := jsonutil.MarshalJson(chainRoa.StateModel)

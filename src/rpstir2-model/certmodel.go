@@ -3,8 +3,6 @@ package model
 import (
 	"crypto/x509/pkix"
 	"time"
-
-	"github.com/guregu/null"
 )
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -447,11 +445,7 @@ type AsaModel struct {
 
 //  1.2.840.113549.1.9.16.1.49
 type CustomerAsn struct {
-	CustomerAsn  uint64        `json:"customerAsn"`
-	ProviderAsns []ProviderAsn `json:"ProviderAsns"`
-}
-
-type ProviderAsn struct {
-	AddressFamily null.Int `json:"addressFamily"`
-	ProviderAsn   uint64   `json:"providerAsn"`
+	Version      uint64   `json:"version"`
+	CustomerAsn  uint64   `json:"customerAsn"`
+	ProviderAsns []uint64 `json:"ProviderAsns"`
 }

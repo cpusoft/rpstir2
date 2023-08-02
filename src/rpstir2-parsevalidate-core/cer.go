@@ -1,4 +1,4 @@
-package parsevalidate
+package parsevalidatecore
 
 import (
 	"crypto/x509"
@@ -40,7 +40,7 @@ func ParseValidateCer(certFile string) (cerModel model.CerModel, stateModel mode
 	if len(stateModel.Errors) > 0 || len(stateModel.Warnings) > 0 {
 		belogs.Info("ParseValidateCer():stateModel have errors or warnings", certFile, "     stateModel:", jsonutil.MarshalJson(stateModel))
 	}
-
+	stateModel.JudgeState()
 	belogs.Debug("ParseValidateCer():cerModel.FilePath, cerModel.FileName, cerModel.Ski, cerModel.Aki:",
 		cerModel.FilePath, cerModel.FileName, cerModel.Ski, cerModel.Aki)
 	return cerModel, stateModel, nil
@@ -855,51 +855,4 @@ func ParseCerSimpleModel(certFile string) (parseCerSimple model.ParseCerSimple, 
 	}
 	parseCerSimple.SubjectPublicKeyInfo = cer.RawSubjectPublicKeyInfo
 	return parseCerSimple, nil
-}
-
-func updateCerByCheckAll(now time.Time) error {
-	// check expire
-	curCertIdStateModels, err := getExpireCerDb(now)
-	if err != nil {
-		belogs.Error("updateCerByCheckAll(): getExpireCerDb:  err: ", err)
-		return err
-	}
-	belogs.Info("updateCerByCheckAll(): len(curCertIdStateModels):", len(curCertIdStateModels))
-
-	newCertIdStateModels := make([]CertIdStateModel, 0)
-	for i := range curCertIdStateModels {
-		// if have this error, ignore
-		belogs.Debug("updateCerByCheckAll(): old curCertIdStateModels[i]:", jsonutil.MarshalJson(curCertIdStateModels[i]))
-		if strings.Contains(curCertIdStateModels[i].StateStr, "NotAfter is earlier than the current time") {
-			continue
-		}
-
-		// will add error
-		stateModel := model.StateModel{}
-		jsonutil.UnmarshalJson(curCertIdStateModels[i].StateStr, &stateModel)
-		stateMsg := model.StateMsg{Stage: "parsevalidate",
-			Fail:   "NotAfter is earlier than the current time",
-			Detail: "The current time is " + convert.Time2StringZone(now) + ", notAfter is " + convert.Time2StringZone(curCertIdStateModels[i].EndTime)}
-		if conf.Bool("policy::allowStaleCer") {
-			stateModel.AddWarning(&stateMsg)
-		} else {
-			stateModel.AddError(&stateMsg)
-		}
-
-		certIdStateModel := CertIdStateModel{
-			Id:       curCertIdStateModels[i].Id,
-			StateStr: jsonutil.MarshalJson(stateModel),
-		}
-		newCertIdStateModels = append(newCertIdStateModels, certIdStateModel)
-		belogs.Debug("updateCerByCheckAll(): new certIdStateModel:", jsonutil.MarshalJson(certIdStateModel))
-	}
-
-	// update db
-	err = updateCerStateDb(newCertIdStateModels)
-	if err != nil {
-		belogs.Error("updateCerByCheckAll(): updateCerStateDb:  err: ", len(newCertIdStateModels), err)
-		return err
-	}
-	belogs.Info("updateCerByCheckAll(): ok len(newCertIdStateModels):", len(newCertIdStateModels))
-	return nil
 }

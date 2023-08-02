@@ -24,7 +24,7 @@ func ChainValidateStart(c *gin.Context) {
 		// leave serviceState
 		if err != nil {
 			// will end this whole sync
-			belogs.Error("ParseValidateStart():  chainValidateStart fail", err)
+			belogs.Error("ChainValidateStart():  chainValidateStart fail", err)
 			httpclient.Post(rpstir2Url+"/sys/servicestate", `{"operate":"leave","state":"end"}`, false)
 		} else {
 			// leave serviceState
@@ -41,7 +41,7 @@ func ChainValidateStart(c *gin.Context) {
 
 			// call roahistory
 			//go httpclient.Post(rpstir2Url+"/roahistory/start", "", false)
-			belogs.Info("ParseValidateStart(): end,  nextStep is :", nextStep)
+			belogs.Info("ChainValidateStart(): end,  nextStep is :", nextStep)
 		}
 	}()
 

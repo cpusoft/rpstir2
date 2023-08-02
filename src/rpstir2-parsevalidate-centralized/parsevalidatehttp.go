@@ -1,4 +1,4 @@
-package parsevalidate
+package parsevalidatecentralized
 
 import (
 	"io/ioutil"
@@ -12,6 +12,7 @@ import (
 	"github.com/cpusoft/goutil/jsonutil"
 	"github.com/gin-gonic/gin"
 	model "rpstir2-model"
+	parsevalidatecore "rpstir2-parsevalidate-core"
 )
 
 func ParseValidateStart(c *gin.Context) {
@@ -66,23 +67,19 @@ func ParseValidateFile(c *gin.Context) {
 	}
 	belogs.Debug("ParseValidateFile(): ReceiveFile, receiveFile:", receiveFile)
 
-	certType, certModel, stateModel, err := parseValidateFile(receiveFile)
-	stateModel.JudgeState()
+	certType, certModel, stateModel, fileHash, err := parsevalidatecore.ParseValidateFile(receiveFile)
 	if err != nil {
-		belogs.Error("ParseValidateFile(): parseValidateFile: err:", receiveFile, err)
+		belogs.Error("ParseValidateFile(): ParseValidateFile fail: receiveFile:", receiveFile, err, "  time(s):", time.Since(start))
 		ginserver.ResponseFail(c, err, "")
 		return
 	}
-	belogs.Info("ParseValidateFile():parseValidateFile certType: ", certType,
-		"     certModel:", certModel,
-		"     stateModel:", stateModel,
-		"     time(s):", time.Since(start))
-
 	parseCertResponse := model.ParseCertResponse{
 		CertType:   certType,
+		FileHash:   fileHash,
 		CertModel:  certModel,
 		StateModel: stateModel,
 	}
+	belogs.Debug("ParseValidateFile(): parseCertResponse:", jsonutil.MarshalJson(parseCertResponse), "  time(s):", time.Since(start))
 	ginserver.ResponseOk(c, parseCertResponse)
 }
 
@@ -107,9 +104,9 @@ func ParseFile(c *gin.Context) {
 	}
 	belogs.Debug("ParseFile(): ReceiveFile, receiveFile:", receiveFile)
 
-	certModel, err := parseFile(receiveFile)
+	certModel, err := parsevalidatecore.ParseFile(receiveFile)
 	if err != nil {
-		belogs.Error("ParseFile(): parseFile: err:", receiveFile, err)
+		belogs.Error("ParseFile(): ParseFile: err:", receiveFile, err)
 		ginserver.ResponseFail(c, err, "")
 		return
 	}
@@ -138,9 +135,9 @@ func ParseFileSimple(c *gin.Context) {
 	}
 	belogs.Debug("ParseFileSimple(): ReceiveFile, receiveFile:", receiveFile)
 
-	parseCerSimple, err := parseFileSimple(receiveFile)
+	parseCerSimple, err := parsevalidatecore.ParseFileSimple(receiveFile)
 	if err != nil {
-		belogs.Error("ParseFileSimple(): parseFileSimple: err:", err)
+		belogs.Error("ParseFileSimple(): ParseFileSimple: err:", err)
 		ginserver.ResponseFail(c, err, "")
 		return
 	}

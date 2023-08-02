@@ -15,6 +15,10 @@ import (
 func delRtrPrefixOrAsaFullFromSlurmDb(tableName string) (err error) {
 	start := time.Now()
 	session, err := xormdb.NewSession()
+	if err != nil {
+		belogs.Error("delRtrPrefixOrAsaFullFromSlurmDb(): NewSession fail :", err)
+		return err
+	}
 	defer session.Close()
 
 	//  should delete last slurm, then insert new slurm
@@ -43,6 +47,10 @@ func insertRtrIncrementalByEffectSlurmDb(newSerialNumberModel *rtrcommon.SerialN
 		"   len(slurmToRtrFullLogs):", len(slurmToRtrFullLogs))
 
 	session, err := xormdb.NewSession()
+	if err != nil {
+		belogs.Error("insertRtrIncrementalByEffectSlurmDb(): NewSession fail :", err)
+		return err
+	}
 	defer session.Close()
 	// lab_rpki_rtr_incremental
 	var style string
@@ -84,6 +92,10 @@ func updateRtrPrefixOrAsaFullByNewSerialNumberDb(tableName string, newSerialNumb
 	belogs.Debug("updateRtrPrefixOrAsaFullByNewSerialNumberDb(): tableName:", tableName, "  newSerialNumberModel:", jsonutil.MarshalJson(newSerialNumberModel))
 
 	session, err := xormdb.NewSession()
+	if err != nil {
+		belogs.Error("updateRtrPrefixOrAsaFullByNewSerialNumberDb(): NewSession fail :", err)
+		return err
+	}
 	defer session.Close()
 
 	sql := `update ` + tableName + ` set serialNumber= ? `
@@ -110,6 +122,10 @@ func insertRtrFullLogFromCurSerialNumberDb(curSerialNumberModel *rtrcommon.Seria
 		"   newSerialNumberModel:", jsonutil.MarshalJson(newSerialNumberModel))
 
 	session, err := xormdb.NewSession()
+	if err != nil {
+		belogs.Error("insertRtrFullLogFromCurSerialNumberDb(): NewSession fail :", err)
+		return err
+	}
 	defer session.Close()
 
 	// lab_rpki_rtr_full_log
@@ -143,6 +159,10 @@ func insertRtrAsaFullLogFromCurSerialNumberDb(curSerialNumberModel *rtrcommon.Se
 		"   newSerialNumberModel:", jsonutil.MarshalJson(newSerialNumberModel))
 
 	session, err := xormdb.NewSession()
+	if err != nil {
+		belogs.Error("insertRtrAsaFullLogFromCurSerialNumberDb(): NewSession fail :", err)
+		return err
+	}
 	defer session.Close()
 	// lab_rpki_rtr_asa_full_log
 	// should ignore last slurm, not insert to new rtr_full_log
@@ -173,7 +193,12 @@ func insertRtrAsaFullLogFromCurSerialNumberDb(curSerialNumberModel *rtrcommon.Se
 func insertNewSerialNumberDb(newSerialNumberModel *rtrcommon.SerialNumberModel) (err error) {
 	//save to lab_rpki_rtr_serial_number, get serialNumber
 	session, err := xormdb.NewSession()
+	if err != nil {
+		belogs.Error("insertNewSerialNumberDb(): NewSession fail :", err)
+		return err
+	}
 	defer session.Close()
+
 	start := time.Now()
 	err = rtrcommon.InsertSerialNumberDb(session, newSerialNumberModel, start)
 	if err != nil {
@@ -210,7 +235,12 @@ func insertRtrAsaIncrementalByEffectSlurmDb(newSerialNumberModel *rtrcommon.Seri
 		"   len(slurmToRtrFullLogs):", len(slurmToRtrFullLogs))
 
 	session, err := xormdb.NewSession()
+	if err != nil {
+		belogs.Error("insertRtrAsaIncrementalByEffectSlurmDb(): NewSession fail :", err)
+		return err
+	}
 	defer session.Close()
+
 	// lab_rpki_rtr_incremental
 	var style string
 	sql := `insert ignore into lab_rpki_rtr_asa_incremental

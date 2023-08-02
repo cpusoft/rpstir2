@@ -11,6 +11,10 @@ import (
 func clearSyncLogFileDb() (err error) {
 	start := time.Now()
 	session, err := xormdb.NewSession()
+	if err != nil {
+		belogs.Error("clearSyncLogFileDb(): NewSession fail:", err)
+		return err
+	}
 	defer session.Close()
 
 	// get max labRpkiSyncLogId
@@ -97,6 +101,10 @@ func clearRtrFullLogRtrIncremet(tableName string, serialNumber int) (err error) 
 
 	start := time.Now()
 	session, err := xormdb.NewSession()
+	if err != nil {
+		belogs.Error("clearRtrFullLogRtrIncremet(): NewSession fail:", err)
+		return err
+	}
 	defer session.Close()
 
 	// delete too old

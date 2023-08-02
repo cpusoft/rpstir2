@@ -21,7 +21,6 @@ var rsyncResultCh chan model.SyncResult
 func init() {
 	rrdpResultCh = make(chan model.SyncResult)
 	rsyncResultCh = make(chan model.SyncResult)
-	belogs.Debug("init(): chan rrdpResultCh:", rrdpResultCh, "   chan rsyncResultCh:", rsyncResultCh)
 }
 
 func syncStart(syncStyle model.SyncStyle) (nextStep string, err error) {

@@ -1,13 +1,9 @@
-package parsevalidate
+package parsevalidatecore
 
 import (
 	"errors"
-	"strings"
-	"time"
 
 	"github.com/cpusoft/goutil/belogs"
-	"github.com/cpusoft/goutil/conf"
-	"github.com/cpusoft/goutil/convert"
 	"github.com/cpusoft/goutil/fileutil"
 	"github.com/cpusoft/goutil/hashutil"
 	"github.com/cpusoft/goutil/jsonutil"
@@ -36,7 +32,7 @@ func ParseValidateAsa(certFile string) (asaModel model.AsaModel, stateModel mode
 	if len(stateModel.Errors) > 0 || len(stateModel.Warnings) > 0 {
 		belogs.Info("ParseValidateAsa():stateModel have errors or warnings", certFile, "     stateModel:", jsonutil.MarshalJson(stateModel))
 	}
-
+	stateModel.JudgeState()
 	belogs.Debug("ParseValidateAsa(): asaModel.FilePath, asaModel.FileName, asaModel.Ski, asaModel.Aki:",
 		asaModel.FilePath, asaModel.FileName, asaModel.Ski, asaModel.Aki)
 	return asaModel, stateModel, nil
@@ -103,7 +99,7 @@ func parseAsaModel(certFile string, asaModel *model.AsaModel, stateModel *model.
 
 	err = openssl.ParseAsaModelByOpensslResults(results, asaModel)
 	if err != nil {
-		belogs.Error("parseAsaModel():ParseSigModelByOpensslResults  certFile:", certFile, "  err:", err, " will try parseMftModelByPacket")
+		belogs.Error("parseAsaModel():ParseSigModelByOpensslResults  certFile:", certFile, "  err:", err, " will try parseAsaModelByPacket")
 		stateMsg := model.StateMsg{Stage: "parsevalidate",
 			Fail:   "Fail to parse file",
 			Detail: err.Error()}
@@ -185,53 +181,4 @@ func parseAsaModel(certFile string, asaModel *model.AsaModel, stateModel *model.
 
 func validateAsaModel(asaModel *model.AsaModel, stateModel *model.StateModel) (err error) {
 	return
-}
-
-func updateAsaByCheckAll(now time.Time) error {
-	// check expire
-	curCertIdStateModels, err := getExpireAsaDb(now)
-	if err != nil {
-		belogs.Error("updateAsaByCheckAll(): getExpireAsaDb:  err: ", err)
-		return err
-	}
-	belogs.Info("updateAsaByCheckAll(): len(curCertIdStateModels):", len(curCertIdStateModels))
-
-	newCertIdStateModels := make([]CertIdStateModel, 0)
-	for i := range curCertIdStateModels {
-		// if have this error, ignore
-		belogs.Debug("updateAsaByCheckAll(): old curCertIdStateModels[i]:", jsonutil.MarshalJson(curCertIdStateModels[i]))
-		if strings.Contains(curCertIdStateModels[i].StateStr, "NotAfter of EE is earlier than the current time") {
-			continue
-		}
-
-		// will add error
-		stateModel := model.StateModel{}
-		jsonutil.UnmarshalJson(curCertIdStateModels[i].StateStr, &stateModel)
-
-		stateMsg := model.StateMsg{Stage: "parsevalidate",
-			Fail:   "NotAfter of EE is earlier than the current time",
-			Detail: "The current time is " + convert.Time2StringZone(now) + ", notAfter is " + convert.Time2StringZone(curCertIdStateModels[i].EndTime)}
-		if conf.Bool("policy::allowStaleEe") {
-			stateModel.AddWarning(&stateMsg)
-		} else {
-			stateModel.AddError(&stateMsg)
-		}
-
-		certIdStateModel := CertIdStateModel{
-			Id:       curCertIdStateModels[i].Id,
-			StateStr: jsonutil.MarshalJson(stateModel),
-		}
-		newCertIdStateModels = append(newCertIdStateModels, certIdStateModel)
-		belogs.Debug("updateAsaByCheckAll(): new certIdStateModel:", jsonutil.MarshalJson(certIdStateModel))
-	}
-
-	// update db
-	err = updateAsaStateDb(newCertIdStateModels)
-	if err != nil {
-		belogs.Error("updateAsaByCheckAll(): updateAsaStateDb:  err: ", len(newCertIdStateModels), err)
-		return err
-	}
-	belogs.Info("updateAsaByCheckAll(): ok len(newCertIdStateModels):", len(newCertIdStateModels))
-	return nil
-
 }

@@ -1,4 +1,4 @@
-package parsevalidate
+package parsevalidatecore
 
 import (
 	"errors"
@@ -32,7 +32,7 @@ func ParseValidateSig(certFile string) (sigModel model.SigModel, stateModel mode
 	if len(stateModel.Errors) > 0 || len(stateModel.Warnings) > 0 {
 		belogs.Info("ParseValidateSig():stateModel have errors or warnings", certFile, "     stateModel:", jsonutil.MarshalJson(stateModel))
 	}
-
+	stateModel.JudgeState()
 	belogs.Debug("ParseValidateSig(): sigModel.FilePath, sigModel.FileName, sigModel.Ski, sigModel.Aki:",
 		sigModel.FilePath, sigModel.FileName, sigModel.Ski, sigModel.Aki)
 	return sigModel, stateModel, nil
@@ -98,7 +98,7 @@ func parseSigModel(certFile string, sigModel *model.SigModel, stateModel *model.
 
 	err = openssl.ParseSigModelByOpensslResults(results, sigModel)
 	if err != nil {
-		belogs.Error("parseSigModel():ParseSigModelByOpensslResults  certFile:", certFile, "  err:", err, " will try parseMftModelByPacket")
+		belogs.Error("parseSigModel():ParseSigModelByOpensslResults  certFile:", certFile, "  err:", err, " will try parseSigModelByPacket")
 		stateMsg := model.StateMsg{Stage: "parsevalidate",
 			Fail:   "Fail to parse file",
 			Detail: err.Error()}

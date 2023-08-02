@@ -45,7 +45,7 @@ func RemoveAndDelDbByFilePaths(filePaths []string) (err error) {
 	return nil
 }
 
-func CallInsertSyncLogFiles(syncLogFilesCh chan []model.SyncLogFile, endCh chan bool) {
+func CallInsertSyncLogFiles(syncLogFilesCh chan []model.LabRpkiSyncLogFile, endCh chan bool) {
 	for {
 		select {
 		case syncLogFiles, ok := <-syncLogFilesCh:

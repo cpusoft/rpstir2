@@ -5,18 +5,8 @@ type SysStyle struct {
 	// "fullsync": will remove current data to forece full sync data, and retain rtr/slurm/transfer data.
 	// "resetall" will remove all data including rtr/slurm/transfer;
 	SysStyle string `json:"sysStyle"`
-	// direct/entire
+	// distributed/entire
 	SyncPolicy string `json:"syncPolicy"`
-}
-
-type SysModel struct {
-	// "init" :  will create all table;
-	// "fullsync": will remove current data to forece full sync data, and retain rtr/slurm/transfer data.
-	// "resetall" will remove all data including rtr/slurm/transfer;
-	//SysStyle string `json:"sysStyle"`
-	SysData string `json:"sysData"`
-	// direct/entire
-	//SyncPolicy string `json:"syncPolicy"`
 }
 
 type CertResults struct {
@@ -41,7 +31,7 @@ type ExportRoa struct {
 	Repo          string `json:"repo" xorm:"repo varchar(64)"`
 }
 
-//  {"prefix": "192.0.2.0/24", "asn": 0, "max_length": 24},
+// {"prefix": "192.0.2.0/24", "asn": 0, "max_length": 24},
 type RtrForManrs struct {
 	Asn       int    `json:"asn" xorm:"asn int"`
 	Prefix    string `json:"prefix"`
