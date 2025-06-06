@@ -169,7 +169,7 @@ func addSubCaRepositoryUrlsToRpQueue(subCaRepositoryUrls []string) {
 			waitForRsyncUrl(i+curRsyncingCount, subCaRepositoryUrl)
 		}
 		belogs.Debug("AddSubCaRepositoryUrlsToRpQueue():will AddRsyncUrl subCaRepositoryUrl: ", subCaRepositoryUrl)
-		go rpQueue.AddRsyncUrl(subCaRepositoryUrl, conf.VariableString("rsync::destPath")+"/")
+		go rpQueue.AddRsyncUrl(subCaRepositoryUrl, conf.String("rsync::destPath")+"/")
 	}
 }
 
@@ -216,7 +216,7 @@ func tryAgainFailRsyncUrls() bool {
 					" , will wait  curRsyncingCount+1:", curRsyncingCount+1)
 				waitForRsyncUrl(1+curRsyncingCount/2, failRsyncUrl)
 			}
-			go rpQueue.AddRsyncUrl(failRsyncUrl, conf.VariableString("rsync::destPath")+"/")
+			go rpQueue.AddRsyncUrl(failRsyncUrl, conf.String("rsync::destPath")+"/")
 		}
 		return true
 	}

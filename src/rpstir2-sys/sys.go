@@ -31,10 +31,10 @@ func initReset(sysStyle SysStyle) (err error) {
 
 func initResetPath() {
 	//delete repo dir
-	os.RemoveAll(conf.VariableString("rsync::destPath"))
-	os.MkdirAll(conf.VariableString("rsync::destPath"), os.ModePerm)
+	os.RemoveAll(conf.String("rsync::destPath"))
+	os.MkdirAll(conf.String("rsync::destPath"), os.ModePerm)
 
 	//delete repo rrdpdir
-	os.RemoveAll(conf.VariableString("rrdp::destPath"))
-	os.MkdirAll(conf.VariableString("rrdp::destPath"), os.ModePerm)
+	os.RemoveAll(conf.String("rrdp::destPath"))
+	os.MkdirAll(conf.String("rrdp::destPath"), os.ModePerm)
 }

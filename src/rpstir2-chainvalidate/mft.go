@@ -540,8 +540,8 @@ func updateChainByMft(chains *Chains, invalidMftEffect string) (err error) {
 	start := time.Now()
 	mftIds := chains.MftIds
 	belogs.Info("updateChainByMft(): start: len(mftIds):", len(mftIds))
-	rsyncDestPath := conf.VariableString("rsync::destPath") + "/"
-	rrdpDestPath := conf.VariableString("rrdp::destPath") + "/"
+	rsyncDestPath := conf.String("rsync::destPath") + "/"
+	rrdpDestPath := conf.String("rrdp::destPath") + "/"
 	// found invalid mft
 	for _, mftId := range mftIds {
 		chainMft, err := chains.GetMftById(mftId)

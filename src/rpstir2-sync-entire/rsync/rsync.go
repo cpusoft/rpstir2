@@ -30,12 +30,12 @@ func rsyncRequest(syncUrls *model.SyncUrls) {
 	// start to rsync by sync url in tal, to get root cer
 	// first: remove all root cer, so can will rsync download and will trigger parse all cer files.
 	// otherwise, will have to load all root file manually
-	os.RemoveAll(conf.VariableString("rsync::destPath") + "/root/")
-	os.MkdirAll(conf.VariableString("rsync::destPath")+"/root/", os.ModePerm)
+	os.RemoveAll(conf.String("rsync::destPath") + "/root/")
+	os.MkdirAll(conf.String("rsync::destPath")+"/root/", os.ModePerm)
 	atomic.AddInt64(&rpQueue.RsyncingParsingCount, int64(len(syncUrls.RsyncUrls)))
 	belogs.Debug("rsyncRequest():after RsyncingParsingCount:", atomic.LoadInt64(&rpQueue.RsyncingParsingCount))
 	for _, url := range syncUrls.RsyncUrls {
-		go rpQueue.AddRsyncUrl(url, conf.VariableString("rsync::destPath")+"/root/")
+		go rpQueue.AddRsyncUrl(url, conf.String("rsync::destPath")+"/root/")
 	}
 
 }
@@ -71,7 +71,7 @@ func startRsyncServer() {
 			var err error
 			rpQueue.RsyncResult.AddFilesLen, rpQueue.RsyncResult.DelFilesLen,
 				rpQueue.RsyncResult.UpdateFilesLen, rpQueue.RsyncResult.NoChangeFilesLen, err =
-				rsync.FoundDiffFiles(rpQueue.LabRpkiSyncLogId, conf.VariableString("rsync::destPath")+"/", nil)
+				rsync.FoundDiffFiles(rpQueue.LabRpkiSyncLogId, conf.String("rsync::destPath")+"/", nil)
 			if err != nil {
 				belogs.Error("startRsyncServer(): FoundDiffFiles fail:", err)
 				// no return
@@ -103,7 +103,7 @@ func localRsyncRequest(syncUrls *model.SyncUrls) (rsyncResult model.SyncResult, 
 	belogs.Info("localRsyncRequest(): rsync: syncUrls:", jsonutil.MarshalJson(syncUrls))
 
 	rsyncResult.AddFilesLen, rsyncResult.DelFilesLen,
-		rsyncResult.UpdateFilesLen, rsyncResult.NoChangeFilesLen, err = rsync.FoundDiffFiles(syncUrls.SyncLogId, conf.VariableString("rsync::destPath")+"/", nil)
+		rsyncResult.UpdateFilesLen, rsyncResult.NoChangeFilesLen, err = rsync.FoundDiffFiles(syncUrls.SyncLogId, conf.String("rsync::destPath")+"/", nil)
 	if err != nil {
 		belogs.Error("localRsyncRequest(): FoundDiffFiles fail:", err)
 		// no return

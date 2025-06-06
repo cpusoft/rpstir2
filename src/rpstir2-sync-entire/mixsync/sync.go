@@ -111,8 +111,8 @@ func callSync(syncLogId uint64, talModels []model.TalModel, syncState *coremodel
 	// start to rrdp by sync url in tal, to get root cer
 	// first: remove all root cer, so can will rrdp download and will trigger parse all cer files.
 	// otherwise, will have to load all root file manually
-	os.RemoveAll(conf.VariableString("rrdp::destPath") + "/root/")
-	os.MkdirAll(conf.VariableString("rrdp::destPath")+"/root/", os.ModePerm)
+	os.RemoveAll(conf.String("rrdp::destPath") + "/root/")
+	os.MkdirAll(conf.String("rrdp::destPath")+"/root/", os.ModePerm)
 	for _, talModel := range talModels {
 		for _, talSyncUrl := range talModel.TalSyncUrls {
 			url := ""
@@ -126,7 +126,7 @@ func callSync(syncLogId uint64, talModels []model.TalModel, syncState *coremodel
 			if len(url) > 0 {
 				atomic.AddInt64(&spQueue.SyncingAndParsingCount, int64(1))
 				belogs.Info("callSync(): will add url:", url, "   current SyncingAndParsingCount:", atomic.LoadInt64(&spQueue.SyncingAndParsingCount))
-				go spQueue.AddSyncUrl(url, conf.VariableString("rrdp::destPath")+"/")
+				go spQueue.AddSyncUrl(url, conf.String("rrdp::destPath")+"/")
 			}
 		}
 	}
@@ -207,8 +207,8 @@ func parseCerAndGetSubRepoUrl(spQueue *SyncParseQueue, cerFile string) (subRepoU
 }
 
 func addSubRepoUrlsToSpQueue(spQueue *SyncParseQueue, subRepoUrls []string) {
-	rsyncDestPath := conf.VariableString("rsync::destPath") + "/"
-	rrdpDestPath := conf.VariableString("rrdp::destPath") + "/"
+	rsyncDestPath := conf.String("rsync::destPath") + "/"
+	rrdpDestPath := conf.String("rrdp::destPath") + "/"
 
 	belogs.Debug("addSubRepoUrlsToSpQueue(): spQueue.SyncingAndParsingCount+len(subRepoUrls):",
 		spQueue.SyncingAndParsingCount, " + ", len(subRepoUrls),

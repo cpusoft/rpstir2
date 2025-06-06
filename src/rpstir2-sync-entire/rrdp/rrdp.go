@@ -41,12 +41,12 @@ func rrdpRequest(syncUrls *model.SyncUrls) {
 	// start to rrdp by sync url in tal, to get root cer
 	// first: remove all root cer, so can will rrdp download and will trigger parse all cer files.
 	// otherwise, will have to load all root file manually
-	os.RemoveAll(conf.VariableString("rrdp::destPath") + "/root/")
-	os.MkdirAll(conf.VariableString("rrdp::destPath")+"/root/", os.ModePerm)
+	os.RemoveAll(conf.String("rrdp::destPath") + "/root/")
+	os.MkdirAll(conf.String("rrdp::destPath")+"/root/", os.ModePerm)
 	atomic.AddInt64(&rrQueue.RrdpingParsingCount, int64(len(syncUrls.RrdpUrls)))
 	belogs.Debug("rrdpRequest():after RrdpingParsingCount:", atomic.LoadInt64(&rrQueue.RrdpingParsingCount))
 	for _, url := range syncUrls.RrdpUrls {
-		go rrQueue.AddRrdpUrl(url, conf.VariableString("rrdp::destPath")+"/")
+		go rrQueue.AddRrdpUrl(url, conf.String("rrdp::destPath")+"/")
 	}
 }
 
@@ -271,7 +271,7 @@ func addRpkiNotifiesToRpQueue(rpkiNotifies []string) {
 			continue
 		}
 		belogs.Debug("addRpkiNotifiesToRpQueue():will AddRrdpUrl rpkiNotify: ", rpkiNotify)
-		go rrQueue.AddRrdpUrl(rpkiNotify, conf.VariableString("rrdp::destPath")+"/")
+		go rrQueue.AddRrdpUrl(rpkiNotify, conf.String("rrdp::destPath")+"/")
 	}
 }
 
@@ -319,7 +319,7 @@ func tryAgainFailRrdpUrls() bool {
 					" , will wait  curRrdpingCount+1:", curRrdpingCount+1)
 				waitForRrdpUrl(1+curRrdpingCount/2, failRrdpUrl)
 			}
-			go rrQueue.AddRrdpUrl(failRrdpUrl, conf.VariableString("rrdp::destPath")+"/")
+			go rrQueue.AddRrdpUrl(failRrdpUrl, conf.String("rrdp::destPath")+"/")
 		}
 		return true
 	}

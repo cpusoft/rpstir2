@@ -209,7 +209,7 @@ func NewDistributedPublishWithdrawResultFromSnapshot(distributedSnapshotModel *D
 		Base64:               snapshotPublish.Base64,
 		OriginModel:          *JudgeOrigin(snapshotPublish.Uri, distributedSnapshotModel.NotifyUrl),
 	}
-	destPath := conf.VariableString("rrdp::destPath") + "/"
+	destPath := conf.String("rrdp::destPath") + "/"
 	c.FilePathName, _ = urlutil.JoinPrefixPathAndUrlFileName(destPath, snapshotPublish.Uri)
 	belogs.Debug("NewDistributedPublishWithdrawResultFromSnapshot(): c:", c.String())
 	return c
@@ -240,7 +240,7 @@ func NewDistributedPublishWithdrawResultFromDelta(distributedDeltaModel *Distrib
 		c.FileHash = deltaWithdraw.Hash
 		c.OriginModel = *JudgeOrigin(deltaWithdraw.Uri, distributedDeltaModel.NotifyUrl)
 	}
-	destPath := conf.VariableString("rrdp::destPath") + "/"
+	destPath := conf.String("rrdp::destPath") + "/"
 	c.FilePathName, _ = urlutil.JoinPrefixPathAndUrlFileName(destPath, c.PublishOrWithdrawUrl)
 
 	belogs.Debug("NewDistributedPublishWithdrawResultFromDelta(): c:", c.String())

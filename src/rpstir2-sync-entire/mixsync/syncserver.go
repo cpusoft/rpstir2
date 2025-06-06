@@ -44,7 +44,7 @@ func startSyncServer(spQueue *SyncParseQueue, syncState *coremodel.SyncState, sy
 			// get rsync diff files
 			var err error
 			addFilesLen, delFilesLen, updateFilesLen, noChangeFilesLen, err :=
-				rsync.FoundDiffFiles(spQueue.LabRpkiSyncLogId, conf.VariableString("rsync::destPath")+"/", nil)
+				rsync.FoundDiffFiles(spQueue.LabRpkiSyncLogId, conf.String("rsync::destPath")+"/", nil)
 			if err != nil {
 				belogs.Error("startSyncServer(): FoundDiffFiles fail:", err)
 				// no return
@@ -110,8 +110,8 @@ func parseCerFiles(spQueue *SyncParseQueue, parseChan ParseChan) {
 }
 
 func checkAndDeleteLastSync(isRrdp bool, url string) (err error) {
-	rrdpDestPath := conf.VariableString("rrdp::destPath") + osutil.GetPathSeparator()
-	rsyncDestPath := conf.VariableString("rsync::destPath") + osutil.GetPathSeparator()
+	rrdpDestPath := conf.String("rrdp::destPath") + osutil.GetPathSeparator()
+	rsyncDestPath := conf.String("rsync::destPath") + osutil.GetPathSeparator()
 	belogs.Debug("checkAndDeleteLastSync(): rrdpDestPath:", rrdpDestPath, "   rsyncDestPath:", rsyncDestPath,
 		"  isRrdp:", isRrdp, "     url:", url)
 	// last sync, may be another sync type

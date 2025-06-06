@@ -411,8 +411,8 @@ func JudgeOriginByFilePath(filePath string) (originModel *OriginModel) {
 			rir = ORIGIN_RIR_RIPE_NCC
 		}
 
-		tmp := strings.Replace(filePath, conf.VariableString("rsync::destPath")+osutil.GetPathSeparator(), "", -1)
-		tmp = strings.Replace(tmp, conf.VariableString("rrdp::destPath")+osutil.GetPathSeparator(), "", -1)
+		tmp := strings.Replace(filePath, conf.String("rsync::destPath")+osutil.GetPathSeparator(), "", -1)
+		tmp = strings.Replace(tmp, conf.String("rrdp::destPath")+osutil.GetPathSeparator(), "", -1)
 		split := strings.Split(tmp, osutil.GetPathSeparator())
 		if len(split) == 0 {
 			repo = filePath

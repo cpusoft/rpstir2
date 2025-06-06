@@ -141,8 +141,8 @@ func getUrlsBySyncStyle(syncStyle model.SyncStyle, talModels []model.TalModel) (
 
 func checkNeedFullSync(thisRrdpUrls, thisRsyncUrls []string) (needFullSync bool, err error) {
 	needFullSync = false
-	rrdpDestPath := conf.VariableString("rrdp::destPath") + osutil.GetPathSeparator()
-	rsyncDestPath := conf.VariableString("rsync::destPath") + osutil.GetPathSeparator()
+	rrdpDestPath := conf.String("rrdp::destPath") + osutil.GetPathSeparator()
+	rsyncDestPath := conf.String("rsync::destPath") + osutil.GetPathSeparator()
 	belogs.Debug("checkNeedFullSync(): rrdpDestPath:", rrdpDestPath, "   rsyncDestPath:", rsyncDestPath,
 		"  thisRrdpUrls:", thisRrdpUrls, "     thisRsyncUrls:", thisRsyncUrls)
 

@@ -28,7 +28,7 @@ func getTals() (passTalModels []model.TalModel, err error) {
 	belogs.Debug("getTals():")
 
 	// get all tal files
-	talPath := conf.VariableString("sync::talPath")
+	talPath := conf.String("sync::talPath")
 	files, err := getAllTalFiles(talPath)
 	if err != nil {
 		belogs.Error("getTals(): GetAllTalFile failed:", err)
