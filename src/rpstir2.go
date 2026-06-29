@@ -6,19 +6,18 @@ import (
 	_ "net/http/pprof"
 	"time"
 
-	chainvalidate "rpstir2-chainvalidate"
-	clear "rpstir2-clear"
-	parsevalidatecentralized "rpstir2-parsevalidate-centralized"
-	rtrclient "rpstir2-rtrclient"
-	rtrproducer "rpstir2-rtrproducer"
-	rtrserver "rpstir2-rtrserver"
-	entiremixsync "rpstir2-sync-entire/mixsync"
-	entirerrdp "rpstir2-sync-entire/rrdp"
-	entirersync "rpstir2-sync-entire/rsync"
-	entiresync "rpstir2-sync-entire/sync"
-	tal "rpstir2-sync-tal"
-	sys "rpstir2-sys"
-
+	chainvalidate "github.com/bgpsecurity/rpstir2/chainvalidate"
+	clear "github.com/bgpsecurity/rpstir2/clear"
+	parsevalidate "github.com/bgpsecurity/rpstir2/parsevalidate"
+	rtrclient "github.com/bgpsecurity/rpstir2/rtr-client"
+	rtrproducer "github.com/bgpsecurity/rpstir2/rtr-producer"
+	rtrserver "github.com/bgpsecurity/rpstir2/rtr-server"
+	entiremixsync "github.com/bgpsecurity/rpstir2/sync-entire/mixsync"
+	entirerrdp "github.com/bgpsecurity/rpstir2/sync-entire/rrdp"
+	entirersync "github.com/bgpsecurity/rpstir2/sync-entire/rsync"
+	entiresync "github.com/bgpsecurity/rpstir2/sync-entire/sync"
+	tal "github.com/bgpsecurity/rpstir2/sync-tal"
+	sys "github.com/bgpsecurity/rpstir2/sys"
 	"github.com/cpusoft/goutil/belogs"
 	"github.com/cpusoft/goutil/conf"
 	_ "github.com/cpusoft/goutil/logs"
@@ -73,10 +72,10 @@ func startRpServer() {
 	engine.POST("/entiresync/rsyncresult", entiresync.RsyncResult)
 	engine.POST("/entiresync/rrdprequest", entirerrdp.RrdpRequest)
 	engine.POST("/entiresync/rsyncrequest", entirersync.RsyncRequest)
-	engine.POST("/parsevalidate/start", parsevalidatecentralized.ParseValidateStart)
-	engine.POST("/parsevalidate/file", parsevalidatecentralized.ParseValidateFile)
-	engine.POST("/parsevalidate/parsefile", parsevalidatecentralized.ParseFile)
-	engine.POST("/parsevalidate/parsefilesimple", parsevalidatecentralized.ParseFileSimple)
+	engine.POST("/parsevalidate/start", parsevalidate.ParseValidateStart)
+	engine.POST("/parsevalidate/file", parsevalidate.ParseValidateFile)
+	engine.POST("/parsevalidate/parsefile", parsevalidate.ParseFile)
+	engine.POST("/parsevalidate/parsefilesimple", parsevalidate.ParseFileSimple)
 	engine.POST("/chainvalidate/start", chainvalidate.ChainValidateStart)
 	engine.POST("/clear/start", clear.ClearStart)
 	engine.POST("/sys/initreset", sys.InitReset)
@@ -99,9 +98,10 @@ func startRpServer() {
 	}
 
 	if serverHttpsPort != "" {
+		parentPath, _ := osutil.GetParentPath()
 		belogs.Info("startRpServer(): https on :", serverHttpsPort)
 		g.Go(func() error {
-			certsPath := osutil.GetParentPath() + "/conf/cert/"
+			certsPath := parentPath + "/conf/cert/"
 			belogs.Info("startRpServer(): server run https on :", serverHttpsPort, certsPath+serverCrt, certsPath+serverKey)
 			err := engine.RunTLS(":"+serverHttpsPort, certsPath+serverCrt, certsPath+serverKey)
 			if err != nil {
@@ -163,9 +163,10 @@ func startVcServer() {
 	}
 
 	if serverHttpsPort != "" {
+		parentPath, _ := osutil.GetParentPath()
 		belogs.Info("startVcServer(): https on :", serverHttpsPort)
 		g.Go(func() error {
-			certsPath := osutil.GetParentPath() + "/conf/cert/"
+			certsPath := parentPath + "/conf/cert/"
 			belogs.Info("startVcServer(): server run https on :", serverHttpsPort, certsPath+serverCrt, certsPath+serverKey)
 			err := engine.RunTLS(":"+serverHttpsPort, certsPath+serverCrt, certsPath+serverKey)
 			if err != nil {
