@@ -1,0 +1,44 @@
+package sys
+
+import (
+	"os"
+	"time"
+
+	"github.com/cpusoft/goutil/belogs"
+	"github.com/cpusoft/goutil/conf"
+	"github.com/cpusoft/goutil/jsonutil"
+)
+
+// initReset 初始化数据
+//
+//	@param sysStyle 初始化类型
+//	@return err 返回错误
+func initReset(sysStyle SysStyle) (err error) {
+	start := time.Now()
+	belogs.Debug("initReset():will InitReset, sysStyle:", jsonutil.MarshalJson(sysStyle))
+
+	// reset db
+	err = initResetDb(sysStyle)
+	if err != nil {
+		belogs.Error("initReset(): initResetDb  fail:", err)
+		return err
+	}
+	belogs.Debug("initReset(): initResetDb ok, will reset local file cache", sysStyle)
+
+	initResetPath()
+	belogs.Debug("initReset(): initResetPath ok, reset local file cache", sysStyle)
+
+	belogs.Info("initReset():ok", sysStyle, "  time(s):", time.Since(start))
+	return nil
+}
+
+// initResetPath 初始化本地缓存目录
+func initResetPath() {
+	//delete repo dir
+	os.RemoveAll(conf.String("rsync::destPath"))
+	os.MkdirAll(conf.String("rsync::destPath"), os.ModePerm)
+
+	//delete repo rrdpdir
+	os.RemoveAll(conf.String("rrdp::destPath"))
+	os.MkdirAll(conf.String("rrdp::destPath"), os.ModePerm)
+}
