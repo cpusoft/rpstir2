@@ -14,7 +14,7 @@ import (
 	"github.com/cpusoft/goutil/osutil"
 )
 
-func getChainCrls(chains *Chains, chainWg *sync.WaitGroup, syncLogId uint64, dataSource DataSource) {
+func getChainCrls(chains *Chains, chainWg *sync.WaitGroup, syncLogId uint64) {
 
 	defer chainWg.Done()
 	start := time.Now()
@@ -22,7 +22,7 @@ func getChainCrls(chains *Chains, chainWg *sync.WaitGroup, syncLogId uint64, dat
 	var crlWg sync.WaitGroup
 	chainCrlDatasCh := make(chan []*ChainCertData, conf.Int("chain::getDbConcurrentCount"))
 	go callAddCrlToChain(chains, syncLogId, chainCrlDatasCh, &crlWg)
-	err := dataSource.GetChainCrlData(chainCrlDatasCh, &crlWg)
+	err := GetChainCrlData(chainCrlDatasCh, &crlWg)
 	if err != nil {
 		belogs.Error("getChainCrls(): GetChainCrlData fail: ", err)
 		close(chainCrlDatasCh)
@@ -70,24 +70,7 @@ func addCrlToChain(chains *Chains, chainCrlDatas []*ChainCertData, syncLogId uin
 			belogs.Error("addCrlToChain(): ToChainCrl fail, chainCrlData.Id:", chainCrlDatas[i].Id, err)
 			return
 		}
-		// if syncLogId == 0 , is global chainvalidate, should need validate
-		// if syncLogId > 0, only chainSqls[i].SynclogId == syncLogId, should need validate
-		if syncLogId == 0 {
-			chainCrl.NeedValidate = true
-			belogs.Info("addCrlToChain(): Due to the adopt global chainvalidate,",
-				"so this CRL file (id is", chainCrlDatas[i].Id, ") needs to be validated",
-				"regardless of whether it has been updated or not")
-		}
-		if syncLogId > 0 && chainCrlDatas[i].SyncLogId == syncLogId {
-			chainCrl.NeedValidate = true
-			belogs.Info("addCrlToChain(): Due to the adopt partial chainvalidate,",
-				"so this CRL file (id is", chainCrlDatas[i].Id, ") has been updated",
-				"and therefore needs to be validated")
-		}
-
-		if chainCrl.NeedValidate {
-			chains.AddIdentifierNeedValidate(chainCrl.Aki)
-		}
+		
 
 		chains.AddCrlId(chainCrlDatas[i].Id)
 		chains.AddCrl(&chainCrl)
@@ -99,39 +82,6 @@ func addCrlToChain(chains *Chains, chainCrlDatas []*ChainCertData, syncLogId uin
 	return
 }
 
-/*
-	func getChainCrls(chains *Chains, chainWg *sync.WaitGroup, syncLogId uint64) {
-		defer chainWg.Done()
-		start := time.Now()
-		belogs.Debug("getChainCrls(): syncLogId:", syncLogId)
-
-		chainCrlSqls, err := getChainCrlSqlsDb()
-		if err != nil {
-			belogs.Error("getChainCrls(): getChainCrlSqlsDb:", err)
-			return
-		}
-		belogs.Debug("getChainCrls(): getChainCrlSqlsDb, len(chainCrlSqls):", len(chainCrlSqls))
-
-		for i := range chainCrlSqls {
-			chainCrl := chainCrlSqls[i].ToChainCrl()
-			// if syncLogId == 0 , is global chainvalidate, should need validate
-			// if syncLogId > 0, only chainSqls[i].SynclogId == syncLogId, should need validate
-			if syncLogId == 0 {
-				chainCrl.NeedValidate = true
-			}
-			if syncLogId > 0 && chainCrlSqls[i].SyncLogId == syncLogId {
-				chainCrl.NeedValidate = true
-			}
-			belogs.Debug("getChainCrls(): chainCrl:", jsonutil.MarshalJson(chainCrl),
-				"  syncLogId:", syncLogId, "    chainCrlSqls[i].SyncLogId:", chainCrlSqls[i].SyncLogId)
-			chains.CrlIds = append(chains.CrlIds, chainCrlSqls[i].Id)
-			chains.AddCrl(&chainCrl)
-		}
-
-		belogs.Debug("getChainCrls(): end, len(chainCrlSqls):", len(chainCrlSqls), ",   len(chains.CrlIds):", len(chains.CrlIds), "  time(s):", time.Since(start))
-		return
-	}
-*/
 func validateCrls(chains *Chains, wg *sync.WaitGroup) {
 	defer wg.Done()
 
@@ -177,16 +127,7 @@ func validateCrl(chains *Chains, crlId uint64, wg *sync.WaitGroup, chainCrlCh ch
 	belogs.Debug("validateCrl():getCrlParentChainCers, crlId:", crlId, "  len(chainCrl.ParentChainCerAlones):", len(chainCrl.ParentChainCerAlones),
 		"  time(s):", time.Since(start))
 
-	if !chainCrl.NeedValidate {
-		chainCrl.StateModel.JudgeState()
-		chains.UpdateFileTypeIdToCrl(&chainCrl)
-		belogs.Info("validateCrl(): when adopt partial chainvalidate, this file(", chainCrl.FilePath, chainCrl.FileName, ") has not been changed in this update,",
-			"so the chainvalidate is not required for this file")
-		return
-	}
-	belogs.Info("validateCrl(): when adopt partial chainvalidate, this file(", chainCrl.FilePath, chainCrl.FileName, ") has been changed or be affected in this update,",
-		"so the chainvalidate is required for this file, it will verify the revocation list files and the expiration information")
-
+	
 	// exist parent cer
 	if len(chainCrl.ParentChainCerAlones) > 0 {
 		// get one parent
@@ -418,11 +359,11 @@ func getSameAkiChainCrls(chains *Chains, crlId uint64) (sameAkiChainCrls []Chain
 	return
 }
 
-func updateCrls(chains *Chains, wg *sync.WaitGroup, dataSource DataSource) {
+func updateCrls(chains *Chains, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	start := time.Now()
-	err := dataSource.UpdateCrls(chains)
+	err := UpdateCrls(chains)
 	if err != nil {
 		belogs.Error("updateCrls(): UpdateCrls fail:", err)
 		return

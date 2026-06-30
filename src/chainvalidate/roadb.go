@@ -13,7 +13,7 @@ import (
 )
 
 // GetChainRoaData 实现 SQLDataSource 的方法
-func (s *SQLDataSource) GetChainRoaData(chainRoaDataCh chan []*ChainCertData, roaWg *sync.WaitGroup) error {
+func   GetChainRoaData(chainRoaDataCh chan []*ChainCertData, roaWg *sync.WaitGroup) error {
 	start := time.Now()
 	belogs.Debug("getChainRoaSqlDb(): will select rpki_roa")
 	var myCount int64
@@ -190,7 +190,7 @@ func updateRoaDb(session *xorm.Session, chains *Chains, roaId uint64,
 	return nil
 }
 
-func (s *SQLDataSource) UpdateRoas(chains *Chains) error {
+func   UpdateRoas(chains *Chains) error {
 	start := time.Now()
 	session, err := xormdb.NewSession()
 	if err != nil {

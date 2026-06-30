@@ -2,9 +2,10 @@ package chainvalidate
 
 import (
 	"errors"
+	"sync"
+
 	"github.com/cpusoft/goutil/belogs"
 	"github.com/cpusoft/goutil/convert"
-	"sync"
 )
 
 type FileTypeIds struct {
@@ -29,6 +30,7 @@ type Chains struct {
 	mftLock sync.RWMutex
 	roaLock sync.RWMutex
 	asaLock sync.RWMutex
+	moaLock sync.RWMutex
 
 	IdentifierLock sync.RWMutex
 	RootCerSkiLock sync.RWMutex
@@ -39,6 +41,7 @@ type Chains struct {
 	FileTypeIdToMft map[string]ChainMft
 	FileTypeIdToRoa map[string]ChainRoa
 	FileTypeIdToAsa map[string]ChainAsa
+	FileTypeIdToMoa map[string]ChainMoa
 
 	// key: Aki, value: fileTypeId, may be more than one FileTypeId
 	AkiToFileTypeIds map[string]*FileTypeIds
@@ -51,8 +54,7 @@ type Chains struct {
 	MftIds []uint64
 	RoaIds []uint64
 	AsaIds []uint64
-	// ggraph
-	IdentifierNeedValidate map[string]bool
+	MoaIds []uint64
 
 	RootCerSki map[string]bool
 
@@ -67,26 +69,20 @@ func NewChains(count uint64) *Chains {
 	chains.MftIds = make([]uint64, 0)
 	chains.RoaIds = make([]uint64, 0)
 	chains.AsaIds = make([]uint64, 0)
+	chains.MoaIds = make([]uint64, 0)
 
 	chains.FileTypeIdToCer = make(map[string]ChainCer, count)
 	chains.FileTypeIdToCrl = make(map[string]ChainCrl, count)
 	chains.FileTypeIdToMft = make(map[string]ChainMft, count)
 	chains.FileTypeIdToRoa = make(map[string]ChainRoa, count)
 	chains.FileTypeIdToAsa = make(map[string]ChainAsa, count)
+	chains.FileTypeIdToMoa = make(map[string]ChainMoa, count)
 
 	chains.AkiToFileTypeIds = make(map[string]*FileTypeIds, count)
 	chains.SkiToFileTypeId = make(map[string]string, count)
 
-	chains.IdentifierNeedValidate = make(map[string]bool, 0)
-
 	chains.RootCerSki = make(map[string]bool, 0)
 	return chains
-}
-
-func (c *Chains) AddIdentifierNeedValidate(identifierNeedValidate string) {
-	c.IdentifierLock.Lock()
-	defer c.IdentifierLock.Unlock()
-	c.IdentifierNeedValidate[identifierNeedValidate] = true
 }
 
 func (c *Chains) AddCer(chainCer *ChainCer) {
@@ -114,48 +110,6 @@ func (c *Chains) AddCer(chainCer *ChainCer) {
 	// ski to fileTypeId
 	c.SkiToFileTypeId[chainCer.Ski] = fileTypeId
 	belogs.Debug("AddCer():add SkiToFileTypeId, chainCer.Ski", chainCer.Ski, "  fileTypeId:", fileTypeId)
-
-	//if UseGraph() {
-	//	belogs.Debug("AddCer AddQuad start, fileTypeId:", fileTypeId)
-	//
-	//	// SKI-AKI
-	//	err := CayleyStore.AddQuad(chainCer.Aki, AUTHORITIED, chainCer.Ski, "")
-	//	if err != nil {
-	//		belogs.Error("AddCer AddQuad failed, type:", AUTHORITIED, " err:", err)
-	//		return
-	//	}
-	//
-	//	err = CayleyStore.AddQuad(chainCer.Ski, BE_AUTHORITIED, chainCer.Aki, "")
-	//	if err != nil {
-	//		belogs.Error("AddCer AddQuad failed, type:", BE_AUTHORITIED, " err:", err)
-	//		return
-	//	}
-	//
-	//	// fileid->ski
-	//	err = CayleyStore.AddQuad(fileTypeId, FILETYPEID_TO_IDENTIFIER, chainCer.Ski, "")
-	//	if err != nil {
-	//		belogs.Error("AddCer AddQuad failed, type:", FILETYPEID_TO_IDENTIFIER, " err:", err)
-	//		return
-	//	}
-	//	// ski->fileid
-	//	err = CayleyStore.AddQuad(chainCer.Ski, IDENTIFIER_TO_FILETYPEID, fileTypeId, "")
-	//	if err != nil {
-	//		belogs.Error("AddCer AddQuad failed, type:", IDENTIFIER_TO_FILETYPEID, " err:", err)
-	//		return
-	//	}
-	//
-	//	err = CayleyStore.AddQuad(chainCer.Aki, AUTHORITY_TO_FILETYPEID, fileTypeId, "")
-	//	if err != nil {
-	//		belogs.Error("AddCer AddQuad failed, type:", AUTHORITY_TO_FILETYPEID, " err:", err)
-	//		return
-	//	}
-	//	err = CayleyStore.AddQuad(fileTypeId, FILETYPEID_TO_AUTHORITY, chainCer.Aki, "")
-	//	if err != nil {
-	//		belogs.Error("AddCer AddQuad failed, type:", FILETYPEID_TO_AUTHORITY, " err:", err)
-	//		return
-	//	}
-	//	belogs.Debug("AddCer AddQuad success, fileTypeId:", fileTypeId)
-	//}
 
 }
 
@@ -212,36 +166,6 @@ func (c *Chains) AddCrl(chainCrl *ChainCrl) {
 	}
 	c.AkiToFileTypeIds[chainCrl.Aki] = fileTypeIds
 
-	//if UseGraph() {
-	//	belogs.Error("AddCrl AddQuad start, type:", AUTHORITY_TO_FILETYPEID, " fileTypeId:", fileTypeId)
-	//	// SKI-AKI
-	//	//err := CayleyStore.AddQuad(chainCrl.Aki, AUTHORITIED, chainCrl.Ski, "")
-	//	//if err != nil {
-	//	//	belogs.Error("AddCer AddQuad failed, type:", AUTHORITIED, " err:", err)
-	//	//	return
-	//	//}
-	//	//
-	//	//err = CayleyStore.AddQuad(chainCer.Ski, BE_AUTHORITIED, chainCer.Aki, "")
-	//	//if err != nil {
-	//	//	belogs.Error("AddCer AddQuad failed, type:", AUTHORITIED, " err:", err)
-	//	//	return
-	//	//}
-	//
-	//	// aki
-	//	err := CayleyStore.AddQuad(chainCrl.Aki, AUTHORITY_TO_FILETYPEID, fileTypeId, "")
-	//	if err != nil {
-	//		belogs.Error("AddCrl AddQuad failed, type:", AUTHORITY_TO_FILETYPEID, " fileTypeId:", fileTypeId, " err:", err)
-	//		return
-	//	}
-	//	err = CayleyStore.AddQuad(fileTypeId, FILETYPEID_TO_AUTHORITY, chainCrl.Aki, "")
-	//	if err != nil {
-	//		belogs.Error("AddCrl AddQuad failed, type:", FILETYPEID_TO_AUTHORITY, " fileTypeId:", fileTypeId, " err:", err)
-	//		return
-	//	}
-	//	belogs.Error("AddCrl AddQuad success, type:", AUTHORITY_TO_FILETYPEID, " fileTypeId:", fileTypeId)
-	//	// 同时需要获取指向的文件
-	//
-	//}
 	belogs.Debug("AddCrl():add AkiToFileTypeIds, chainCrl.Aki, len(fileTypeIds):", chainCrl.Aki, len(fileTypeIds.FileTypeIds))
 
 	// no ski in crl
@@ -307,47 +231,6 @@ func (c *Chains) AddMft(chainMft *ChainMft) {
 	// ski to fileTypeId
 	c.SkiToFileTypeId[chainMft.Ski] = fileTypeId
 
-	//if UseGraph() {
-	//	belogs.Error("AddMft AddQuad start, type:", FILETYPEID_TO_IDENTIFIER, " fileTypeId:", fileTypeId)
-	//
-	//	// SKI-AKI
-	//	err := CayleyStore.AddQuad(chainMft.Aki, AUTHORITIED, chainMft.Ski, "")
-	//	if err != nil {
-	//		belogs.Error("AddCer AddQuad failed, type:", AUTHORITIED, " err:", err)
-	//		return
-	//	}
-	//
-	//	err = CayleyStore.AddQuad(chainMft.Ski, BE_AUTHORITIED, chainMft.Aki, "")
-	//	if err != nil {
-	//		belogs.Error("AddCer AddQuad failed, type:", BE_AUTHORITIED, " err:", err)
-	//		return
-	//	}
-	//
-	//	// fileid->ski
-	//	err = CayleyStore.AddQuad(fileTypeId, FILETYPEID_TO_IDENTIFIER, chainMft.Ski, "")
-	//	if err != nil {
-	//		belogs.Error("AddMft AddQuad failed, type:", FILETYPEID_TO_IDENTIFIER, " fileTypeId:", fileTypeId, " err:", err)
-	//		return
-	//	}
-	//	// ski->fileid
-	//	err = CayleyStore.AddQuad(chainMft.Ski, IDENTIFIER_TO_FILETYPEID, fileTypeId, "")
-	//	if err != nil {
-	//		belogs.Error("AddMft AddQuad failed, type:", IDENTIFIER_TO_FILETYPEID, " fileTypeId:", fileTypeId, " err:", err)
-	//		return
-	//	}
-	//	err = CayleyStore.AddQuad(chainMft.Aki, AUTHORITY_TO_FILETYPEID, fileTypeId, "")
-	//	if err != nil {
-	//		belogs.Error("AddMft AddQuad failed, type:", AUTHORITY_TO_FILETYPEID, " fileTypeId:", fileTypeId, " err:", err)
-	//		return
-	//	}
-	//	err = CayleyStore.AddQuad(fileTypeId, FILETYPEID_TO_AUTHORITY, chainMft.Aki, "")
-	//	if err != nil {
-	//		belogs.Error("AddMft AddQuad failed, type:", FILETYPEID_TO_AUTHORITY, " fileTypeId:", fileTypeId, " err:", err)
-	//		return
-	//	}
-	//	belogs.Error("AddMft AddQuad success, type:", FILETYPEID_TO_IDENTIFIER, " fileTypeId:", fileTypeId)
-	//}
-
 	belogs.Debug("AddMft():add SkiToFileTypeId, chainMft.Ski:fileTypeIds", chainMft.Ski, fileTypeIds)
 }
 func (c *Chains) UpdateFileTypeIdToMft(chainMft *ChainMft) {
@@ -405,48 +288,6 @@ func (c *Chains) AddRoa(chainRoa *ChainRoa) {
 	belogs.Debug("AddRoa():add AkiToFileTypeIds, chainRoa.Aki, len(fileTypeIds):", chainRoa.Aki, len(fileTypeIds.FileTypeIds))
 	// ski to fileTypeId
 	c.SkiToFileTypeId[chainRoa.Ski] = fileTypeId
-
-	//if UseGraph() {
-	//	belogs.Error("AddRoa, AddQuad start, type:", FILETYPEID_TO_IDENTIFIER, " fileTypeId:", fileTypeId)
-	//
-	//	// SKI-AKI
-	//	err := CayleyStore.AddQuad(chainRoa.Aki, AUTHORITIED, chainRoa.Ski, "")
-	//	if err != nil {
-	//		belogs.Error("AddCer AddQuad failed, type:", AUTHORITIED, " err:", err)
-	//		return
-	//	}
-	//
-	//	err = CayleyStore.AddQuad(chainRoa.Ski, BE_AUTHORITIED, chainRoa.Aki, "")
-	//	if err != nil {
-	//		belogs.Error("AddCer AddQuad failed, type:", BE_AUTHORITIED, " err:", err)
-	//		return
-	//	}
-	//
-	//	// fileid->ski
-	//	err = CayleyStore.AddQuad(fileTypeId, FILETYPEID_TO_IDENTIFIER, chainRoa.Ski, "")
-	//	if err != nil {
-	//		belogs.Error("AddRoa, AddQuad failed, type:", FILETYPEID_TO_IDENTIFIER, " fileTypeId:", fileTypeId, " err:", err)
-	//		return
-	//	}
-	//	// ski->fileid
-	//	err = CayleyStore.AddQuad(chainRoa.Ski, IDENTIFIER_TO_FILETYPEID, fileTypeId, "")
-	//	if err != nil {
-	//		belogs.Error("AddRoa, AddQuad failed, type:", IDENTIFIER_TO_FILETYPEID, " fileTypeId:", fileTypeId, " err:", err)
-	//		return
-	//	}
-	//
-	//	err = CayleyStore.AddQuad(chainRoa.Aki, AUTHORITY_TO_FILETYPEID, fileTypeId, "")
-	//	if err != nil {
-	//		belogs.Error("AddRoa, AddQuad failed, type:", AUTHORITY_TO_FILETYPEID, " fileTypeId:", fileTypeId, " err:", err)
-	//		return
-	//	}
-	//	err = CayleyStore.AddQuad(fileTypeId, FILETYPEID_TO_AUTHORITY, chainRoa.Aki, "")
-	//	if err != nil {
-	//		belogs.Error("AddRoa, AddQuad failed, type:", FILETYPEID_TO_AUTHORITY, " fileTypeId:", fileTypeId, " err:", err)
-	//		return
-	//	}
-	//	belogs.Debug("AddRoa, AddQuad success, type:", FILETYPEID_TO_IDENTIFIER, " fileTypeId:", fileTypeId)
-	//}
 
 	belogs.Debug("AddRoa():add SkiToFileTypeId, chainRoa.Ski:fileTypeIds:", chainRoa.Ski, fileTypeIds)
 
@@ -507,48 +348,6 @@ func (c *Chains) AddAsa(chainAsa *ChainAsa) {
 	belogs.Debug("AddAsa():add AkiToFileTypeIds, chainAsa.Aki, len(fileTypeIds):", chainAsa.Aki, len(fileTypeIds.FileTypeIds))
 	// ski to fileTypeId
 	c.SkiToFileTypeId[chainAsa.Ski] = fileTypeId
-
-	//if UseGraph() {
-	//	belogs.Debug("AddAsa , AddQuad start, type:", FILETYPEID_TO_IDENTIFIER, ", fileTypeId:", fileTypeId)
-	//	// SKI-AKI
-	//	err := CayleyStore.AddQuad(chainAsa.Aki, AUTHORITIED, chainAsa.Ski, "")
-	//	if err != nil {
-	//		belogs.Error("AddCer AddQuad failed, type:", AUTHORITIED, " err:", err)
-	//		return
-	//	}
-	//
-	//	err = CayleyStore.AddQuad(chainAsa.Ski, BE_AUTHORITIED, chainAsa.Aki, "")
-	//	if err != nil {
-	//		belogs.Error("AddCer AddQuad failed, type:", BE_AUTHORITIED, " err:", err)
-	//		return
-	//	}
-	//
-	//	// fileid->ski
-	//	err = CayleyStore.AddQuad(fileTypeId, FILETYPEID_TO_IDENTIFIER, chainAsa.Ski, "")
-	//	if err != nil {
-	//		belogs.Error("AddAsa , AddQuad failed, type:", FILETYPEID_TO_IDENTIFIER, ", err:", err)
-	//		return
-	//	}
-	//	// ski->fileid
-	//	err = CayleyStore.AddQuad(chainAsa.Ski, IDENTIFIER_TO_FILETYPEID, fileTypeId, "")
-	//	if err != nil {
-	//		belogs.Error("AddAsa , AddQuad failed,type:", IDENTIFIER_TO_FILETYPEID, " err:", err)
-	//		return
-	//	}
-	//
-	//	err = CayleyStore.AddQuad(chainAsa.Aki, AUTHORITY_TO_FILETYPEID, fileTypeId, "")
-	//	if err != nil {
-	//		belogs.Error("AddAsa , AddQuad failed,type:", AUTHORITY_TO_FILETYPEID, " err:", err)
-	//		return
-	//	}
-	//	err = CayleyStore.AddQuad(fileTypeId, FILETYPEID_TO_AUTHORITY, chainAsa.Aki, "")
-	//	if err != nil {
-	//		belogs.Error("AddAsa , AddQuad failed,type:", FILETYPEID_TO_AUTHORITY, " err:", err)
-	//		return
-	//	}
-	//	belogs.Debug("AddAsa , AddQuad success, type:", FILETYPEID_TO_IDENTIFIER, ", fileTypeId:", fileTypeId)
-	//}
-
 	belogs.Debug("AddAsa():add SkiToFileTypeId, chainAsa.Ski:fileTypeIds:", chainAsa.Ski, fileTypeIds)
 }
 func (c *Chains) UpdateFileTypeIdToAsa(chainAsa *ChainAsa) {
@@ -584,44 +383,62 @@ func (c *Chains) AddAsaId(asaId uint64) {
 	c.AsaIds = append(c.AsaIds, asaId)
 }
 
-func (c *Chains) PropagateMarking(ski string) {
+// /////////////////////////////////////////////////
+// / MOA
+func (c *Chains) AddMoa(chainMoa *ChainMoa) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	fileTypeId := c.SkiToFileTypeId[ski]
+	fileTypeId := "moa" + convert.ToString(chainMoa.Id)
+	belogs.Debug("AddMoa(): fileTypeId:", fileTypeId)
 
-	if fileCer, exist := c.FileTypeIdToCer[fileTypeId]; exist {
-		c.cerLock.Lock()
-		fileCer.NeedValidate = true
-		c.FileTypeIdToCer[fileTypeId] = fileCer
-		c.cerLock.Unlock()
+	// fileTypeId To Cer
+	c.FileTypeIdToMoa[fileTypeId] = *chainMoa
+	belogs.Debug("AddMoa():add FileTypeIdToMoa fileTypeId, chainMoa.Id:", fileTypeId, chainMoa.Id)
+	// Aki to fileTypeId
+	fileTypeIds, ok := c.AkiToFileTypeIds[chainMoa.Aki]
+	belogs.Debug("AddMoa():found AkiToFileTypeIds, chainMoa.Aki, fileTypeId, ok", chainMoa.Aki, fileTypeId, ok)
+	if ok {
+		fileTypeIds.Add(fileTypeId)
+	} else {
+		fileTypeIds = NewFileTypeIds(fileTypeId)
 	}
+	c.AkiToFileTypeIds[chainMoa.Aki] = fileTypeIds
+	belogs.Debug("AddMoa():add AkiToFileTypeIds, chainMoa.Aki, len(fileTypeIds):", chainMoa.Aki, len(fileTypeIds.FileTypeIds))
+	// ski to fileTypeId
+	c.SkiToFileTypeId[chainMoa.Ski] = fileTypeId
 
-	if fileCrl, exist := c.FileTypeIdToCrl[fileTypeId]; exist {
-		c.crlLock.Lock()
-		fileCrl.NeedValidate = true
-		c.FileTypeIdToCrl[fileTypeId] = fileCrl
-		c.crlLock.Unlock()
-	}
+	belogs.Debug("AddMoa():add SkiToFileTypeId, chainMoa.Ski:fileTypeIds:", chainMoa.Ski, fileTypeIds)
+}
+func (c *Chains) UpdateFileTypeIdToMoa(chainMoa *ChainMoa) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	fileTypeId := "moa" + convert.ToString(chainMoa.Id)
+	c.FileTypeIdToMoa[fileTypeId] = *chainMoa
+	belogs.Debug("UpdateFileTypeIdToMoa():update FileTypeIdToMoa, fileTypeId:", fileTypeId,
+		"   chainMoa.Id:", chainMoa.Id, "   chainMoa.StateModel:", chainMoa.StateModel)
+}
 
-	if fileMft, exist := c.FileTypeIdToMft[fileTypeId]; exist {
-		c.mftLock.Lock()
-		fileMft.NeedValidate = true
-		c.FileTypeIdToMft[fileTypeId] = fileMft
-		c.mftLock.Unlock()
-	}
+func (c *Chains) GetMoaByFileTypeId(fileTypeId string) (chainMoa ChainMoa, err error) {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
 
-	if fileRoa, exist := c.FileTypeIdToRoa[fileTypeId]; exist {
-		c.roaLock.Lock()
-		fileRoa.NeedValidate = true
-		c.FileTypeIdToRoa[fileTypeId] = fileRoa
-		c.roaLock.Unlock()
+	chainMoa, ok := c.FileTypeIdToMoa[fileTypeId]
+	if ok {
+		belogs.Debug("GetMoaByFileTypeId(): fileTypeId:", fileTypeId, "  chainMoa.Id, ok:", chainMoa.Id, ok)
+		return chainMoa, nil
 	}
+	return chainMoa, errors.New("not found chainMoa by " + fileTypeId)
 
-	if fileAsa, exist := c.FileTypeIdToAsa[fileTypeId]; exist {
-		c.asaLock.Lock()
-		fileAsa.NeedValidate = true
-		c.FileTypeIdToAsa[fileTypeId] = fileAsa
-		c.asaLock.Unlock()
-	}
+}
+
+func (c *Chains) GetMoaById(moaId uint64) (chainMoa ChainMoa, err error) {
+	fileTypeId := "moa" + convert.ToString(moaId)
+	return c.GetMoaByFileTypeId(fileTypeId)
+}
+
+func (c *Chains) AddMoaId(moaId uint64) {
+	c.moaLock.Lock()
+	defer c.moaLock.Unlock()
+	c.MoaIds = append(c.MoaIds, moaId)
 }

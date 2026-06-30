@@ -2,7 +2,6 @@ package common
 
 import (
 	"errors"
-	"math/big"
 	"sync/atomic"
 	"time"
 
@@ -10,7 +9,6 @@ import (
 	"github.com/cpusoft/goutil/belogs"
 	"github.com/cpusoft/goutil/jsonutil"
 	"github.com/cpusoft/goutil/xormdb"
-	"github.com/guregu/null"
 	"xorm.io/xorm"
 )
 
@@ -497,177 +495,7 @@ func UpdateRtrAsaFullOrFullLogFromSlurmDb(tableName string, newSerialNumber uint
 }
 */
 
-// tableName:lab_rpki_rtr_hroa_full_log / lab_rpki_rtr_hroa_full
-func UpdateRtrHroaFullOrFullLogFromSlurmDb(tableName string, newSerialNumber uint64,
-	slurmToRtrFullLogs []model.SlurmToRtrFullLog, getEffectSlurm bool) (effectSlurmToRtrFullLogs []model.SlurmToRtrFullLog, err error) {
-	start := time.Now()
-	session, err := xormdb.NewSession()
-	if err != nil {
-		belogs.Error("UpdateRtrHroaFullOrFullLogFromSlurmDb(): NewSession fail :", err)
-		return nil, err
-	}
-	defer session.Close()
-	effectSlurmToRtrFullLogs = make([]model.SlurmToRtrFullLog, 0)
-
-	// insert ignore into rtr_hroa_full_log
-	sqlInsertSlurm := `insert   into ` + tableName + `
-				(serialNumber,
-				 hroaAsn,subtreeIdentifier,encodedSubtree,afiFlags,
-				 sourceFrom) values
-				(?,
-				 ?,?,?,?,
-				 ?)`
-
-	belogs.Debug("UpdateRtrHroaFullOrFullLogFromSlurmDb(): will insert/del lab_rpki_rtr_hroa_full_log/lab_rpki_rtr_hroa_full from slurmToRtrFullLogs,sqlInsertSlurm:", sqlInsertSlurm,
-		"   tableName:", tableName, " newSerialNumber:", newSerialNumber,
-		"   len(slurmToRtrFullLogs):", len(slurmToRtrFullLogs))
-	for i := range slurmToRtrFullLogs {
-		sourceFrom := model.LabRpkiRtrSourceFrom{
-			Source:         "slurm",
-			SlurmId:        slurmToRtrFullLogs[i].SlurmId,
-			SlurmLogId:     slurmToRtrFullLogs[i].SlurmLogId,
-			SlurmLogFileId: slurmToRtrFullLogs[i].SlurmLogFileId,
-		}
-		sourceFormJson := jsonutil.MarshalJson(sourceFrom)
-		slurmToRtrFullLogs[i].SourceFromJson = sourceFormJson
-		belogs.Debug("UpdateRtrHroaFullOrFullLogFromSlurmDb(): slurmToRtrFullLogs[i]:", jsonutil.MarshalJson(slurmToRtrFullLogs[i]),
-			" sourceFrom:", sourceFrom, "  i:", i)
-		hroaAsn := slurmToRtrFullLogs[i].HroaAsn
-		subtreeIdentifier := slurmToRtrFullLogs[i].SubtreeIdentifier
-		subtreeIdentifierBytes := slurmToRtrFullLogs[i].SubtreeIdentifierBytes
-		encodedSubtree := slurmToRtrFullLogs[i].EncodedSubtree
-		afiFlags := slurmToRtrFullLogs[i].AfiFlags
-		if slurmToRtrFullLogs[i].Style == "hroaAssertions" {
-
-			belogs.Debug("UpdateRtrHroaFullOrFullLogFromSlurmDb(): hroaAssertions from slurm, i:", i, "  slurmToRtrFullLogs:",
-				"  newSerialNumber:", newSerialNumber, "  hroaAsn: ", hroaAsn, "  subtreeIdentifier:", subtreeIdentifier,
-				"  subtreeIdentifierBytes:", subtreeIdentifierBytes, "  encodedSubtree:", encodedSubtree,
-				"  afiFlags:", afiFlags, "  sourceFormJson:", sourceFormJson)
-
-			affected, err := session.Exec(sqlInsertSlurm,
-				newSerialNumber,
-				hroaAsn, subtreeIdentifierBytes, encodedSubtree, afiFlags,
-				sourceFormJson)
-
-			if err != nil {
-				belogs.Error("UpdateRtrHroaFullOrFullLogFromSlurmDb(): hroaAssertions from slurm fail:",
-					"  newSerialNumber:", newSerialNumber, "  hroaAsn: ", hroaAsn, "  subtreeIdentifier:", subtreeIdentifier,
-					"  encodedSubtree:", encodedSubtree, "  afiFlags:", afiFlags, "  sourceFormJson:", sourceFormJson,
-					"  affected:", affected, err)
-				return nil, xormdb.RollbackAndLogError(session, "UpdateRtrHroaFullOrFullLogFromSlurmDb(): hroaAssertions insert into rtr_hroa_full_log/rtr_hroa_full from slurm fail:", err)
-			}
-			addRows, _ := affected.RowsAffected()
-			belogs.Debug("UpdateRtrHroaFullOrFullLogFromSlurmDb(): hroaAssertions from slurm, slurmToRtrFullLogs:",
-				"  newSerialNumber:", newSerialNumber, "  hroaAsn: ", hroaAsn, "  subtreeIdentifier:", subtreeIdentifier,
-				"  subtreeIdentifierBytes:", subtreeIdentifierBytes, "  encodedSubtree:", encodedSubtree,
-				"  afiFlags:", afiFlags, "  sourceFormJson:", sourceFormJson,
-				"  insert  affected:", addRows)
-			if getEffectSlurm {
-				effectSlurmToRtrFullLogs = append(effectSlurmToRtrFullLogs, slurmToRtrFullLogs[i])
-				belogs.Debug("UpdateRtrHroaFullOrFullLogFromSlurmDb(): hroaAssertions getEffectSlurm, slurmToRtrFullLogs:", jsonutil.MarshalJson(slurmToRtrFullLogs[i]))
-			}
-		} else if slurmToRtrFullLogs[i].Style == "hroaFilters" {
-			belogs.Debug("UpdateRtrHroaFullOrFullLogFromSlurmDb(): hroaFilters from slurm, i:", i, "  slurmToRtrFullLogs:",
-				"  newSerialNumber:", newSerialNumber, "  hroaAsn: ", hroaAsn, "  subtreeIdentifier:", subtreeIdentifier,
-				"  encodedSubtree:", encodedSubtree, "  afiFlags:", afiFlags, "  sourceFormJson:", sourceFormJson)
-
-			// no actual hroa from repo, so just ignore
-		}
-	}
-	// commit
-	err = xormdb.CommitSession(session)
-	if err != nil {
-		belogs.Error("UpdateRtrHroaFullOrFullLogFromSlurmDb(): CommitSession fail :", err)
-		return nil, xormdb.RollbackAndLogError(session, "UpdateRtrHroaFullOrFullLogFromSlurmDb(): CommitSession fail: ", err)
-	}
-
-	belogs.Info("UpdateRtrHroaFullOrFullLogFromSlurmDb():CommitSession ok,  len(slurmToRtrFullLogs):", len(slurmToRtrFullLogs),
-		" time(s):", time.Since(start))
-	return effectSlurmToRtrFullLogs, nil
-}
-
-// tableName:lab_rpki_rtr_asra_full_log / lab_rpki_rtr_asra_full
-func UpdateRtrAsraFullOrFullLogFromSlurmDb(tableName string, newSerialNumber uint64,
-	slurmToRtrFullLogs []model.SlurmToRtrFullLog, getEffectSlurm bool) (effectSlurmToRtrFullLogs []model.SlurmToRtrFullLog, err error) {
-	start := time.Now()
-	session, err := xormdb.NewSession()
-	if err != nil {
-		belogs.Error("UpdateRtrAsraFullOrFullLogFromSlurmDb(): NewSession fail :", err)
-		return nil, err
-	}
-	defer session.Close()
-	effectSlurmToRtrFullLogs = make([]model.SlurmToRtrFullLog, 0)
-
-	// insert ignore into rtr_asra_full_log
-	sqlInsertSlurm := `insert   into ` + tableName + `
-				(serialNumber,
-				 customerAsnAsra,addressFamilyAsra,providerAsnAsras,
-				 otherNeighborAsnAsras,customerAsnAsras,lateralPeerAsnAsras,
-				 hybridAsras,valleyPathAsnAsras,sourceFrom) values
-				(?,
-				 ?,?,?,
-				 ?,?,?,
-				 ?,?,?)`
-
-	belogs.Debug("UpdateRtrAsraFullOrFullLogFromSlurmDb(): will insert/del lab_rpki_rtr_asra_full_log/lab_rpki_rtr_asra_full from slurmToRtrFullLogs,sqlInsertSlurm:", sqlInsertSlurm,
-		"   tableName:", tableName, " newSerialNumber:", newSerialNumber,
-		"   len(slurmToRtrFullLogs):", len(slurmToRtrFullLogs))
-	for i := range slurmToRtrFullLogs {
-		sourceFrom := model.LabRpkiRtrSourceFrom{
-			Source:         "slurm",
-			SlurmId:        slurmToRtrFullLogs[i].SlurmId,
-			SlurmLogId:     slurmToRtrFullLogs[i].SlurmLogId,
-			SlurmLogFileId: slurmToRtrFullLogs[i].SlurmLogFileId,
-		}
-		sourceFormJson := jsonutil.MarshalJson(sourceFrom)
-		slurmToRtrFullLogs[i].SourceFromJson = sourceFormJson
-		belogs.Debug("UpdateRtrAsraFullOrFullLogFromSlurmDb(): slurmToRtrFullLogs[i]:", jsonutil.MarshalJson(slurmToRtrFullLogs[i]),
-			" sourceFrom:", sourceFrom, "  i:", i)
-		if slurmToRtrFullLogs[i].Style == "asraAssertions" {
-
-			belogs.Debug("UpdateRtrAsraFullOrFullLogFromSlurmDb(): asraAssertions from slurm, i:", i, "  slurmToRtrFullLogs:",
-				"  newSerialNumber:", newSerialNumber, "  sourceFormJson:", sourceFormJson)
-
-			affected, err := session.Exec(sqlInsertSlurm,
-				newSerialNumber,
-				slurmToRtrFullLogs[i].CustomerAsnAsra, slurmToRtrFullLogs[i].AddressFamilyAsra, xormdb.SqlNullString(slurmToRtrFullLogs[i].ProviderAsnAsrasStr),
-				xormdb.SqlNullString(slurmToRtrFullLogs[i].OtherNeighborAsnAsrasStr), xormdb.SqlNullString(slurmToRtrFullLogs[i].CustomerAsnAsrasStr), xormdb.SqlNullString(slurmToRtrFullLogs[i].LateralPeerAsnAsrasStr),
-				xormdb.SqlNullString(slurmToRtrFullLogs[i].HybridAsrasStr), xormdb.SqlNullString(slurmToRtrFullLogs[i].ValleyPathAsnAsrasStr), slurmToRtrFullLogs[i].SourceFromJson)
-
-			if err != nil {
-				belogs.Error("UpdateRtrAsraFullOrFullLogFromSlurmDb(): asraAssertions from slurm fail:",
-					"  newSerialNumber:", newSerialNumber, "  sourceFormJson:", sourceFormJson,
-					"  affected:", affected, err)
-				return nil, xormdb.RollbackAndLogError(session, "UpdateRtrAsraFullOrFullLogFromSlurmDb(): asraAssertions insert into rtr_asra_full_log/rtr_asra_full from slurm fail:", err)
-			}
-			addRows, _ := affected.RowsAffected()
-			belogs.Debug("UpdateRtrAsraFullOrFullLogFromSlurmDb(): asraAssertions from slurm, slurmToRtrFullLogs:",
-				"  newSerialNumber:", newSerialNumber, "  sourceFormJson:", sourceFormJson,
-				"  insert  affected:", addRows)
-			if getEffectSlurm {
-				effectSlurmToRtrFullLogs = append(effectSlurmToRtrFullLogs, slurmToRtrFullLogs[i])
-				belogs.Debug("UpdateRtrAsraFullOrFullLogFromSlurmDb(): asraAssertions getEffectSlurm, slurmToRtrFullLogs:", jsonutil.MarshalJson(slurmToRtrFullLogs[i]))
-			}
-		} else if slurmToRtrFullLogs[i].Style == "asraFilters" {
-			belogs.Debug("UpdateRtrAsraFullOrFullLogFromSlurmDb(): asraFilters from slurm, i:", i, "  slurmToRtrFullLogs:",
-				"  newSerialNumber:", newSerialNumber, "  sourceFormJson:", sourceFormJson)
-
-			// no actual asra from repo, so just ignore
-		}
-	}
-	// commit
-	err = xormdb.CommitSession(session)
-	if err != nil {
-		belogs.Error("UpdateRtrAsraFullOrFullLogFromSlurmDb(): CommitSession fail :", err)
-		return nil, xormdb.RollbackAndLogError(session, "UpdateRtrAsraFullOrFullLogFromSlurmDb(): CommitSession fail: ", err)
-	}
-
-	belogs.Info("UpdateRtrAsraFullOrFullLogFromSlurmDb():CommitSession ok,  len(slurmToRtrFullLogs):", len(slurmToRtrFullLogs),
-		" time(s):", time.Since(start))
-	return effectSlurmToRtrFullLogs, nil
-}
-
-// style=prefix/asa/hroa
+// style=prefix/asa/
 func GetAllSlurmsDb(style string) (slurmToRtrFullLogs []model.SlurmToRtrFullLog, err error) {
 	// get all slurm, not care state->"$.rtr"='notYet' or 'finished'
 	var sql string
@@ -690,30 +518,6 @@ func GetAllSlurmsDb(style string) (slurmToRtrFullLogs []model.SlurmToRtrFullLog,
 		    slurmLogFileId 
 	    from lab_rpki_slurm  where style in ('aspaFilters','aspaAssertions') 
 		order by id `
-	} else if style == "hroa" {
-		sql = `select id as slurmId, style,  
-			hroaAsn, 
-			subtreeIdentifier,
-			encodedSubtree, 
-			afiFlags,
-			slurmLogId,
-		    slurmLogFileId 
-	    from lab_rpki_slurm  where style in ('hroaFilters','hroaAssertions') 
-		order by id `
-	} else if style == "asra" {
-		sql = `select id as slurmId, style,  
-			customerAsnAsra,
-			addressFamilyAsra,
-			providerAsnAsras as providerAsnAsrasStr,
-			otherNeighborAsnAsras as otherNeighborAsnAsrasStr, 
-			customerAsnAsras as customerAsnAsrasStr,
-			lateralPeerAsnAsras as lateralPeerAsnAsrasStr,
-			hybridAsras as hybridAsrasStr,
-			valleyPathAsnAsras as valleyPathAsnAsrasStr,	
-			slurmLogId,
-		    slurmLogFileId 
-	    from lab_rpki_slurm  where style in ('asraFilters','asraAssertions') 
-		order by id `
 	}
 	belogs.Debug("GetAllSlurmsDb(): sql:", sql)
 	err = xormdb.XormEngine.SQL(sql).Find(&slurmToRtrFullLogs)
@@ -722,23 +526,7 @@ func GetAllSlurmsDb(style string) (slurmToRtrFullLogs []model.SlurmToRtrFullLog,
 		return slurmToRtrFullLogs, err
 	}
 	belogs.Debug("GetAllSlurmsDb(): len(slurmToRtrFullLogs):", len(slurmToRtrFullLogs))
-	if style == "hroa" {
-		for i := range slurmToRtrFullLogs {
-			tmp := big.NewInt(0)
-			tmp.SetBytes(slurmToRtrFullLogs[i].SubtreeIdentifierBytes)
-			slurmToRtrFullLogs[i].SubtreeIdentifier = tmp
-		}
-	} else if style == "asra" {
-		for i := range slurmToRtrFullLogs {
-			providerAsnAsras := make([]null.Int, 0)
-			err = jsonutil.UnmarshalJson(slurmToRtrFullLogs[i].ProviderAsnAsrasStr, &providerAsnAsras)
-			if err != nil {
-				belogs.Error("GetAllSlurmsDb(): find fail:", err)
-				return slurmToRtrFullLogs, err
-			}
-			slurmToRtrFullLogs[i].ProviderAsnAsras = providerAsnAsras
-		}
-	}
+
 	return slurmToRtrFullLogs, nil
 }
 

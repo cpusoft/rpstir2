@@ -40,7 +40,7 @@ type SyncParseQueue struct {
 
 	// cannot use map, will cause panic:"fatal error: concurrent map iteration and map write"
 	// jsonutil.MarshalJson(rrQueue.SyncResult)
-	SyncResult model.SyncResult
+	SyncResult *model.SyncResult
 
 	// last saved syncRrdpLogs
 	LastSyncRrdpLogs map[string]model.LabRpkiSyncRrdpLog
@@ -58,6 +58,7 @@ func NewSyncParseQueue() *SyncParseQueue {
 	spq.syncUrlsMutex = new(sync.RWMutex)
 	spq.syncUrls = list.New()
 
+	spq.SyncResult = new(model.SyncResult)
 	spq.SyncResult.StartTime = time.Now()
 	spq.SyncResult.OkUrls = make([]string, 0, 100000)
 	spq.SyncResult.FailUrls = jsonutil.JsonSyncMap{}

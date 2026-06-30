@@ -2,13 +2,10 @@ package parsevalidatedb
 
 import (
 	"errors"
-	"strings"
 	"time"
 
 	"github.com/bgpsecurity/rpstir2/model"
 	"github.com/cpusoft/goutil/belogs"
-	"github.com/cpusoft/goutil/conf"
-	"github.com/cpusoft/goutil/convert"
 	"github.com/cpusoft/goutil/jsonutil"
 	"github.com/cpusoft/goutil/xormdb"
 	"xorm.io/xorm"
@@ -204,11 +201,12 @@ func DelCrlByIdDbWithSession(session *xorm.Session, crlId uint64) (err error) {
 
 }
 
+/*
 func getExpireCrlDb(now time.Time) (certIdStateModels []model.CertIdStateModel, err error) {
 
 	certIdStateModels = make([]model.CertIdStateModel, 0)
 	t := convert.Time2String(now)
-	sql := `select id, state as stateStr, c.nextUpdate  as endTime  from  lab_rpki_crl c 
+	sql := `select id, state as stateStr, c.nextUpdate  as endTime  from  lab_rpki_crl c
 			where timestamp(c.nextUpdate) < ? order by id `
 
 	err = xormdb.XormEngine.SQL(sql, t).Find(&certIdStateModels)
@@ -298,3 +296,4 @@ func UpdateCrlByCheckAll(now time.Time) error {
 	return nil
 
 }
+*/

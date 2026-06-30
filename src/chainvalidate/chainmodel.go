@@ -395,6 +395,31 @@ func (c *ChainCertData) ToChainAsa() (chainAsa ChainAsa, err error) {
 	return chainAsa, nil
 }
 
+func (c *ChainCertData) ToChainMoa() (chainMoa ChainMoa, err error) {
+	chainMoa.Id = c.Id
+
+	moaModel := model.MoaModel{}
+	err = jsonutil.UnmarshalJson(c.JsonAll, &moaModel)
+	if err != nil {
+		belogs.Error("ToChainCrl(): UnmarshalJson fail, jsonAll:", c.JsonAll)
+		return chainMoa, err
+	}
+	belogs.Debug("ToChainMoa(): moaModel:", moaModel.String())
+
+	chainMoa.FilePath = moaModel.FilePath
+	chainMoa.FileName = moaModel.FileName
+	chainMoa.Ski = moaModel.Ski
+	chainMoa.Aki = moaModel.Aki
+	chainMoa.EeCertStart = moaModel.EeModel.EeCertStart
+	chainMoa.EeCertEnd = moaModel.EeModel.EeCertEnd
+
+	chainMoa.StateModel = model.GetStateModelAndResetStage(c.State, "chainvalidate")
+	chainMoa.ChainSnInCrlRevoked = ChainSnInCrlRevoked{
+		CrlFileName: c.CrlFileName, RevocationTime: c.RevocationTime}
+	belogs.Debug("ToChainMoa(): chainMoa:", chainMoa)
+	return chainMoa, nil
+}
+
 // =================================================
 
 type ChainCer struct {
@@ -426,11 +451,9 @@ type ChainCer struct {
 	ChildChainMfts      []ChainMft      `json:"childChainMfts"`
 	ChildChainRoas      []ChainRoa      `json:"childChainRoas"`
 	ChildChainAsas      []ChainAsa      `json:"childChainAsas"`
+	ChildChainMoas      []ChainMoa      `json:"childChainMoas"`
 
 	StateModel model.StateModel `json:"-"`
-
-	// for global chainvalidate, default is false
-	NeedValidate bool `json:"needValidate"`
 }
 
 // just like ChainCer, but no parents ,no children
@@ -522,9 +545,6 @@ type ChainCrl struct {
 	ParentChainCerAlones []ChainCerAlone `json:"parentChainCers"`
 
 	StateModel model.StateModel `json:"-"`
-
-	// for global chainvalidate, default is false
-	NeedValidate bool `json:"needValidate"`
 }
 type ChainRevokedCert struct {
 	Sn string `json:"-" xorm:"sn varchar(512)"`
@@ -580,9 +600,6 @@ type ChainMft struct {
 	PreviousMft PreviousMft `json:"-"`
 
 	StateModel model.StateModel `json:"-"`
-
-	// for global chainvalidate, default is false
-	NeedValidate bool `json:"needValidate"`
 }
 type ChainFileHash struct {
 	File string `json:"-" xorm:"file varchar(1024)"`
@@ -662,9 +679,6 @@ type ChainRoa struct {
 	ChainEeIpAddresses []ChainIpAddress `json:"-"`
 
 	StateModel model.StateModel `json:"-"`
-
-	// for global chainvalidate, default is false
-	NeedValidate bool `json:"needValidate"`
 }
 
 type ChainValidateFileRequest struct {
@@ -690,7 +704,23 @@ type ChainAsa struct {
 	ChainSnInCrlRevoked ChainSnInCrlRevoked `json:"-"`
 
 	StateModel model.StateModel `json:"-"`
+}
+type ChainMoa struct {
+	Id          uint64 `json:"id" xorm:"id int"`
+	Asn         uint64 `json:"-" xorm:"asn int"`
+	FilePath    string `json:"-" xorm:"filePath varchar(512)"`
+	FileName    string `json:"-" xorm:"fileName varchar(128)"`
+	Ski         string `json:"-" xorm:"ski varchar(128)"`
+	Aki         string `json:"-" xorm:"aki varchar(128)"`
+	State       string `json:"-" xorm:"state json"`
+	EeCertStart uint64 `json:"-" xorm:"eeCertStart int"`
+	EeCertEnd   uint64 `json:"-" xorm:"eeCertEnd int"`
 
-	// for global chainvalidate, default is false
-	NeedValidate bool `json:"needValidate"`
+	// parent cer
+	ParentChainCerAlones []ChainCerAlone `json:"parentChainCers"`
+
+	//should be revoked
+	ChainSnInCrlRevoked ChainSnInCrlRevoked `json:"-"`
+
+	StateModel model.StateModel `json:"-"`
 }

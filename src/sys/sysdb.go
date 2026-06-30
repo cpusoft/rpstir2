@@ -165,6 +165,16 @@ func getResultsDb() (results CertResults, err error) {
 		belogs.Error("getResultsDb():select lab_rpki_roa, fail:", err)
 		return results, err
 	}
+	results.AsaResult, err = getResultDb("lab_rpki_asa", "asa")
+	if err != nil {
+		belogs.Error("getResultsDb():select lab_rpki_asa, fail:", err)
+		return results, err
+	}
+	results.MoaResult, err = getResultDb("lab_rpki_moa", "moa")
+	if err != nil {
+		belogs.Error("getResultsDb():select lab_rpki_moa, fail:", err)
+		return results, err
+	}
 	return results, nil
 }
 

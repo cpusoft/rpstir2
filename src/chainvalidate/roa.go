@@ -15,7 +15,7 @@ import (
 	"github.com/cpusoft/goutil/osutil"
 )
 
-func getChainRoas(chains *Chains, chainWg *sync.WaitGroup, syncLogId uint64, dataSource DataSource) {
+func getChainRoas(chains *Chains, chainWg *sync.WaitGroup, syncLogId uint64) {
 
 	defer chainWg.Done()
 	start := time.Now()
@@ -23,7 +23,7 @@ func getChainRoas(chains *Chains, chainWg *sync.WaitGroup, syncLogId uint64, dat
 	var roaWg sync.WaitGroup
 	chainRoaDatasCh := make(chan []*ChainCertData, conf.Int("chain::getDbConcurrentCount"))
 	go callAddRoaToChain(chains, syncLogId, chainRoaDatasCh, &roaWg)
-	err := dataSource.GetChainRoaData(chainRoaDatasCh, &roaWg)
+	err := GetChainRoaData(chainRoaDatasCh, &roaWg)
 	if err != nil {
 		belogs.Error("getChainRoas(): getChainRoaSqlDb fail: ", err)
 		close(chainRoaDatasCh)
@@ -72,24 +72,6 @@ func addRoaToChain(chains *Chains, chainRoaDatas []*ChainCertData, syncLogId uin
 			belogs.Error("addRoaToChain(): ToChainRoa fail, chainRoaSql.Id:", chainRoaDatas[i].Id, err)
 			return
 		}
-		// if syncLogId == 0 , is global chainvalidate, should need validate
-		// if syncLogId > 0, only chainSqls[i].SynclogId == syncLogId, should need validate
-		if syncLogId == 0 {
-			chainRoa.NeedValidate = true
-			belogs.Info("addRoaToChain(): Due to the adopt global chainvalidate,",
-				"so this ROA file (id is", chainRoaDatas[i].Id, ") needs to be validated",
-				"regardless of whether it has been updated or not")
-		}
-		if syncLogId > 0 && chainRoaDatas[i].SyncLogId == syncLogId {
-			chainRoa.NeedValidate = true
-			belogs.Info("addRoaToChain(): Due to the adopt partial chainvalidate,",
-				"so this ROA file (id is", chainRoaDatas[i].Id, ") has been updated",
-				"and therefore needs to be validated")
-		}
-
-		if chainRoa.NeedValidate {
-			chains.AddIdentifierNeedValidate(chainRoa.Aki)
-		}
 
 		chains.AddRoaId(chainRoaDatas[i].Id)
 		chains.AddRoa(&chainRoa)
@@ -101,39 +83,7 @@ func addRoaToChain(chains *Chains, chainRoaDatas []*ChainCertData, syncLogId uin
 	return
 }
 
-/*
-	func getChainRoas(chains *Chains, chainWg *sync.WaitGroup, syncLogId uint64) {
-		defer chainWg.Done()
-		start := time.Now()
-		belogs.Debug("getChainRoas(): syncLogId:", syncLogId)
 
-		chainRoaSqls, err := getChainRoaSqlsDb()
-		if err != nil {
-			belogs.Error("getChainRoas(): getChainRoaSqlsDb:", err)
-			return
-		}
-		belogs.Debug("getChainRoas(): getChainRoaSqlsDb, len(chainRoaSqls):", len(chainRoaSqls))
-
-		for i := range chainRoaSqls {
-			chainRoa := chainRoaSqls[i].ToChainRoa()
-			// if syncLogId == 0 , is global chainvalidate, should need validate
-			// if syncLogId > 0, only chainSqls[i].SynclogId == syncLogId, should need validate
-			if syncLogId == 0 {
-				chainRoa.NeedValidate = true
-			}
-			if syncLogId > 0 && chainRoaSqls[i].SyncLogId == syncLogId {
-				chainRoa.NeedValidate = true
-			}
-			belogs.Debug("getChainRoas(): chainRoa:", jsonutil.MarshalJson(chainRoa),
-				"  syncLogId:", syncLogId, "    chainRoaSqls[i].SyncLogId:", chainRoaSqls[i].SyncLogId)
-			chains.RoaIds = append(chains.RoaIds, chainRoaSqls[i].Id)
-			chains.AddRoa(&chainRoa)
-		}
-
-		belogs.Debug("getChainRoas(): end, len(chainRoaSqls):", len(chainRoaSqls), ",   len(chains.RoaIds):", len(chains.RoaIds), "  time(s):", time.Since(start))
-		return
-	}
-*/
 func validateRoas(chains *Chains, wg *sync.WaitGroup) {
 	defer wg.Done()
 
@@ -178,16 +128,6 @@ func validateRoa(chains *Chains, roaId uint64, wg *sync.WaitGroup, chainRoaCh ch
 	}
 	belogs.Debug("validateRoa():getRoaParentChainCers, roaId:", roaId, "  len(chainRoa.ParentChainCers):", len(chainRoa.ParentChainCerAlones),
 		"  time(s):", time.Since(start))
-
-	if !chainRoa.NeedValidate {
-		chainRoa.StateModel.JudgeState()
-		chains.UpdateFileTypeIdToRoa(&chainRoa)
-		belogs.Info("validateRoa(): when adopt partial chainvalidate, this file(", chainRoa.FilePath, chainRoa.FileName, ") has not been changed in this update,",
-			"so the chainvalidate is not required for this file")
-		return
-	}
-	belogs.Info("validateRoa(): when adopt partial chainvalidate, this file(", chainRoa.FilePath, chainRoa.FileName, ") has been changed or be affected in this update,",
-		"so the chainvalidate is required for this file, it will verify the trust relationship between the routing origin declaration, and the trust relationship between superiors and subordinates")
 
 	// if not root cer, should have parent cer
 	if len(chainRoa.ParentChainCerAlones) > 0 {
@@ -335,11 +275,11 @@ func getRoaParentChainCer(chains *Chains, roaId uint64) (chainCerAlone ChainCerA
 	return chainCerAlone, nil
 }
 
-func updateRoas(chains *Chains, wg *sync.WaitGroup, dataSource DataSource) {
+func updateRoas(chains *Chains, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	start := time.Now()
-	err := dataSource.UpdateRoas(chains)
+	err := UpdateRoas(chains)
 	if err != nil {
 		belogs.Error("updateRoas(): UpdateRoas fail:", err)
 		return

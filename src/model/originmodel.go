@@ -553,22 +553,116 @@ func JudgeOriginByFilePath(filePath string) (originModel *OriginModel) {
 	} else if strings.Index(filePath, "rpki.athene-center.net") > 0 {
 		rir = ORIGIN_RIR_RIPE_NCC
 		repo = "rpki.athene-center.net"
-	} else {
-		// not found rir: magellan.ipxo.io
+	} else if strings.Index(filePath, "rpki-rps.cnnic.cn") > 0 {
+		rir = ORIGIN_RIR_APNIC
+		repo = "rpki-rps.cnnic.cn"
+	} else if strings.Index(filePath, "krill.47272.net") > 0 {
+		rir = ORIGIN_RIR_RIPE_NCC
+		repo = "krill.47272.net"
+	} else if strings.Index(filePath, "rpki.axivora.net") > 0 {
+		rir = ORIGIN_RIR_RIPE_NCC
+		repo = "rpki.axivora.net"
+	} else if strings.Index(filePath, "akane.maru.co.jp") > 0 {
+		rir = ORIGIN_RIR_APNIC
+		repo = "akane.maru.co.jp"
+	} else if strings.Index(filePath, "rrdp.as214749.net") > 0 {
+		rir = ORIGIN_RIR_RIPE_NCC
+		repo = "rrdp.as214749.net"
+		/*}
 
-		if strings.Index(filePath, "afrinic.net") > 0 {
-			rir = ORIGIN_RIR_AFRINIC
-		} else if strings.Index(filePath, "apnic.net") > 0 {
+		else if strings.Index(filePath, "rpki.zdns.cn") > 0 {
 			rir = ORIGIN_RIR_APNIC
-		} else if strings.Index(filePath, "arin.net") > 0 {
-			rir = ORIGIN_RIR_ARIN
-		} else if strings.Index(filePath, "lacnic.net") > 0 {
-			rir = ORIGIN_RIR_LACNIC
-		} else if strings.Index(filePath, "ripe.net") > 0 {
-			rir = ORIGIN_RIR_RIPE_NCC
-		} else {
-			rir = "unknown"
+			repo = "rpki.zdns.cn"
+		} else if strings.Index(filePath, "cmccrpki.zdns.cn") > 0 {
+			rir = ORIGIN_RIR_APNIC
+			repo = "cmccrpki.zdns.cn"
 		}
+		*/
+	} else if strings.Index(filePath, ".afrinic.net") > 0 {
+		rir = ORIGIN_RIR_AFRINIC
+	} else if strings.Index(filePath, ".apnic.net") > 0 {
+		rir = ORIGIN_RIR_APNIC
+	} else if strings.Index(filePath, ".arin.net") > 0 {
+		rir = ORIGIN_RIR_ARIN
+	} else if strings.Index(filePath, ".lacnic.net") > 0 {
+		rir = ORIGIN_RIR_LACNIC
+	} else if strings.Index(filePath, ".ripe.net") > 0 {
+		rir = ORIGIN_RIR_RIPE_NCC
+	} else if strings.Index(filePath, ".cnnic.cn") > 0 {
+		rir = ORIGIN_RIR_APNIC
+	} else if strings.Index(filePath, ".edu.cn") > 0 {
+		rir = ORIGIN_RIR_APNIC
+	} else if strings.Index(filePath, ".com.cn") > 0 {
+		rir = ORIGIN_RIR_APNIC
+	} else if strings.Index(filePath, ".net.cn") > 0 {
+		rir = ORIGIN_RIR_APNIC
+	} else if strings.Index(filePath, ".org.cn") > 0 {
+		rir = ORIGIN_RIR_APNIC
+	} else if strings.Index(filePath, ".gov.cn") > 0 {
+		rir = ORIGIN_RIR_APNIC
+	} else if strings.Index(filePath, ".mil.cn") > 0 {
+		rir = ORIGIN_RIR_APNIC
+	} else if strings.Index(filePath, ".eu") > 0 ||
+		strings.Index(filePath, ".de") > 0 ||
+		strings.Index(filePath, ".fr") > 0 ||
+		strings.Index(filePath, ".uk") > 0 ||
+		strings.Index(filePath, ".it") > 0 ||
+		strings.Index(filePath, ".es") > 0 ||
+		strings.Index(filePath, ".nl") > 0 ||
+		strings.Index(filePath, ".ch") > 0 ||
+		strings.Index(filePath, ".se") > 0 ||
+		strings.Index(filePath, ".no") > 0 ||
+		strings.Index(filePath, ".dk") > 0 ||
+		strings.Index(filePath, ".fi") > 0 ||
+		strings.Index(filePath, ".pl") > 0 ||
+		strings.Index(filePath, ".at") > 0 ||
+		strings.Index(filePath, ".pt") > 0 ||
+		strings.Index(filePath, ".ru") > 0 ||
+		strings.Index(filePath, ".cz") > 0 ||
+		strings.Index(filePath, ".hu") > 0 ||
+		strings.Index(filePath, ".ro") > 0 ||
+		strings.Index(filePath, ".gr") > 0 {
+		rir = ORIGIN_RIR_RIPE_NCC
+	} else if strings.Index(filePath, ".jp") > 0 ||
+		strings.Index(filePath, ".kr") > 0 ||
+		strings.Index(filePath, ".cn") > 0 ||
+		strings.Index(filePath, ".hk") > 0 ||
+		strings.Index(filePath, ".tw") > 0 ||
+		strings.Index(filePath, ".sg") > 0 ||
+		strings.Index(filePath, ".au") > 0 ||
+		strings.Index(filePath, ".nz") > 0 ||
+		strings.Index(filePath, ".in") > 0 ||
+		strings.Index(filePath, ".my") > 0 ||
+		strings.Index(filePath, ".th") > 0 ||
+		strings.Index(filePath, ".vn") > 0 ||
+		strings.Index(filePath, ".id") > 0 ||
+		strings.Index(filePath, ".ph") > 0 ||
+		strings.Index(filePath, ".ae") > 0 ||
+		strings.Index(filePath, ".sa") > 0 {
+		rir = ORIGIN_RIR_APNIC
+	} else if strings.Index(filePath, ".us") > 0 ||
+		strings.Index(filePath, ".ca") > 0 {
+		rir = ORIGIN_RIR_ARIN
+	} else if strings.Index(filePath, ".br") > 0 ||
+		strings.Index(filePath, ".ar") > 0 ||
+		strings.Index(filePath, ".mx") > 0 ||
+		strings.Index(filePath, ".cl") > 0 ||
+		strings.Index(filePath, ".pe") > 0 ||
+		strings.Index(filePath, ".co") > 0 ||
+		strings.Index(filePath, ".uy") > 0 ||
+		strings.Index(filePath, ".py") > 0 ||
+		strings.Index(filePath, ".bo") > 0 {
+		rir = ORIGIN_RIR_LACNIC
+	} else if strings.Index(filePath, ".za") > 0 ||
+		strings.Index(filePath, ".ng") > 0 ||
+		strings.Index(filePath, ".eg") > 0 ||
+		strings.Index(filePath, ".ke") > 0 ||
+		strings.Index(filePath, ".ma") > 0 {
+		rir = ORIGIN_RIR_AFRINIC
+	} else {
+		rir = "unknown"
+	}
+	if repo == "" {
 		tmp := strings.Replace(filePath, conf.String("rsync::destPath")+osutil.GetPathSeparator(), "", -1)
 		tmp = strings.Replace(tmp, conf.String("rrdp::destPath")+osutil.GetPathSeparator(), "", -1)
 		split := strings.Split(tmp, osutil.GetPathSeparator())
@@ -577,10 +671,13 @@ func JudgeOriginByFilePath(filePath string) (originModel *OriginModel) {
 		} else {
 			repo = split[0]
 		}
-		belogs.Info("JudgeOriginByFilePath(): just default rir:", rir, "  repo:", repo, " filePath:", filePath)
 	}
+	belogs.Info("JudgeOriginByFilePath(): just default rir", "rir", rir, "repo", repo,
+		"filePath", filePath)
+
 	originModel = &OriginModel{Rir: rir, Repo: repo}
-	belogs.Debug("JudgeOriginByFilePath(): filePath:", filePath, "   originModel:", jsonutil.MarshalJson(originModel))
+	belogs.Info("JudgeOriginByFilePath(): ok",
+		"filePath", filePath, "originModel", jsonutil.MarshalJson(originModel))
 	return originModel
 }
 

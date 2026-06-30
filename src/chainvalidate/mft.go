@@ -17,15 +17,15 @@ import (
 	"github.com/cpusoft/goutil/osutil"
 )
 
-func getChainMfts(chains *Chains, chainWg *sync.WaitGroup, syncLogId uint64, dataSource DataSource) {
+func getChainMfts(chains *Chains, chainWg *sync.WaitGroup, syncLogId uint64) {
 
 	defer chainWg.Done()
 	start := time.Now()
 
 	var mftWg sync.WaitGroup
 	chainMftDatasCh := make(chan []*ChainCertData, conf.Int("chain::getDbConcurrentCount"))
-	go callAddMftToChain(chains, syncLogId, chainMftDatasCh, &mftWg, dataSource)
-	err := dataSource.GetChainMftData(chainMftDatasCh, &mftWg)
+	go callAddMftToChain(chains, syncLogId, chainMftDatasCh, &mftWg)
+	err := GetChainMftData(chainMftDatasCh, &mftWg)
 	if err != nil {
 		belogs.Error("getChainMfts(): GetChainCrlData fail: ", err)
 		close(chainMftDatasCh)
@@ -38,7 +38,7 @@ func getChainMfts(chains *Chains, chainWg *sync.WaitGroup, syncLogId uint64, dat
 }
 
 func callAddMftToChain(chains *Chains, syncLogId uint64,
-	chainMftDatasCh chan []*ChainCertData, mftWg *sync.WaitGroup, dataSource DataSource) {
+	chainMftDatasCh chan []*ChainCertData, mftWg *sync.WaitGroup) {
 	start := time.Now()
 	var index uint64
 	for {
@@ -47,7 +47,7 @@ func callAddMftToChain(chains *Chains, syncLogId uint64,
 			belogs.Debug("callAddMftToChain(): get from chainMftDatasCh, len(chainMftDatas):", len(chainMftDatas),
 				"  index:", index, "  ok:", ok)
 			if ok {
-				addMftToChain(chains, chainMftDatas, syncLogId, mftWg, dataSource)
+				addMftToChain(chains, chainMftDatas, syncLogId, mftWg)
 				index++
 				belogs.Debug("callAddMftToChain(): addMftToChain, syncLogId:", syncLogId, " index:", index)
 			} else {
@@ -59,7 +59,7 @@ func callAddMftToChain(chains *Chains, syncLogId uint64,
 }
 
 func addMftToChain(chains *Chains, chainMftDatas []*ChainCertData,
-	syncLogId uint64, mftWg *sync.WaitGroup, dataSource DataSource) {
+	syncLogId uint64, mftWg *sync.WaitGroup) {
 	defer func() {
 		mftWg.Done()
 		belogs.Debug("addMftToChain(): mftWg.Done(), len(chainMftDatas):", len(chainMftDatas))
@@ -79,7 +79,7 @@ func addMftToChain(chains *Chains, chainMftDatas []*ChainCertData,
 
 		belogs.Debug("addMftToChain(): will getChainFileHashsDb, id:", chainMft.Id)
 
-		chainMft.ChainFileHashs, err = dataSource.GetChainFileHashs(chainMft)
+		chainMft.ChainFileHashs, err = GetChainFileHashs(chainMft)
 		if err != nil {
 			belogs.Error("addMftToChain(): getChainFileHashsDb fail, id:", chainMft.Id, err, "  time(s):", time.Since(start))
 			return
@@ -87,32 +87,13 @@ func addMftToChain(chains *Chains, chainMftDatas []*ChainCertData,
 		belogs.Debug("addMftToChain(): len(chainMft.ChainFileHashs):", len(chainMft.ChainFileHashs), " id:", chainMft.Id, "  time(s):", time.Since(start))
 
 		// todo 需要获取
-		chainMft.PreviousMft, err = dataSource.GetPreviousMft(chainMft)
+		chainMft.PreviousMft, err = GetPreviousMft(chainMft)
 		belogs.Debug("addMftToChain(): previousMft:", chainMft.PreviousMft)
 		if err != nil {
 			belogs.Error("addMftToChain(): getPreviousMftDb fail, id:", chainMft.Id, err, "  time(s):", time.Since(start))
 			return
 		}
 		belogs.Debug("addMftToChain(): chainMft.PreviousMft:", jsonutil.MarshalJson(chainMft.PreviousMft), " id:", chainMft.Id, "  time(s):", time.Since(start)) //shaodebug
-
-		// if syncLogId == 0 , is global chainvalidate, should need validate
-		// if syncLogId > 0, only chainSqls[i].SynclogId == syncLogId, should need validate
-		if syncLogId == 0 {
-			chainMft.NeedValidate = true
-			belogs.Info("addMftToChain(): Due to the adopt global chainvalidate,",
-				"so this MFT file (id is", chainMftDatas[i].Id, ") needs to be validated",
-				"regardless of whether it has been updated or not")
-		}
-		if syncLogId > 0 && chainMftDatas[i].SyncLogId == syncLogId {
-			chainMft.NeedValidate = true
-			belogs.Info("addMftToChain(): Due to the adopt partial chainvalidate,",
-				"so this MFT file (id is", chainMftDatas[i].Id, ") has been updated",
-				"and therefore needs to be validated")
-		}
-
-		if chainMft.NeedValidate {
-			chains.AddIdentifierNeedValidate(chainMft.Aki)
-		}
 
 		chains.AddMftId(chainMftDatas[i].Id)
 		chains.AddMft(&chainMft)
@@ -124,55 +105,6 @@ func addMftToChain(chains *Chains, chainMftDatas []*ChainCertData,
 	return
 }
 
-/*
-	func getChainMfts(chains *Chains, chainWg *sync.WaitGroup, syncLogId uint64) {
-		defer chainWg.Done()
-		start := time.Now()
-		belogs.Debug("getChainMfts(): syncLogId:", syncLogId)
-
-		chainMftSqls, err := getChainMftSqlsDb()
-		if err != nil {
-			belogs.Error("getChainMfts(): getChainMftSqlsDb:", err)
-			return
-		}
-		belogs.Debug("getChainMfts(): getChainMftSqlsDb, len(chainMftSqls):", len(chainMftSqls))
-
-		for i := range chainMftSqls {
-			chainMft := chainMftSqls[i].ToChainMft()
-			chainMft.ChainFileHashs, err = getChainFileHashsDb(chainMft.Id)
-			if err != nil {
-				belogs.Error("getChainMfts(): getChainFileHashsDb fail:", chainMft.Id, err)
-				return
-			}
-			belogs.Debug("getChainMfts():i:", i, " chainMft.ChainFileHashs:", chainMft.ChainFileHashs)
-
-			chainMft.PreviousMft, err = getPreviousMftDb(chainMft.Id)
-			belogs.Debug("getChainMfts():i:", i, " previousMft:", i, chainMft.PreviousMft)
-			if err != nil {
-				belogs.Error("getChainMfts(): getPreviousMftDb fail:", chainMft.Id, err)
-				return
-			}
-			belogs.Debug("getChainMfts():i:", i, " chainMft.PreviousMft:", chainMft.PreviousMft) //shaodebug
-
-			// if syncLogId == 0 , is global chainvalidate, should need validate
-			// if syncLogId > 0, only chainSqls[i].SynclogId == syncLogId, should need validate
-			if syncLogId == 0 {
-				chainMft.NeedValidate = true
-			}
-			if syncLogId > 0 && chainMftSqls[i].SyncLogId == syncLogId {
-				chainMft.NeedValidate = true
-			}
-			belogs.Debug("getChainMfts(): chainMft.ChainFileHashs:", chainMft.ChainFileHashs,
-				"   chainMft:", jsonutil.MarshalJson(chainMft),
-				"  syncLogId:", syncLogId, "    chainMftSqls[i].SyncLogId:", chainMftSqls[i].SyncLogId)
-			chains.MftIds = append(chains.MftIds, chainMftSqls[i].Id)
-			chains.AddMft(&chainMft)
-		}
-
-		belogs.Debug("getChainMfts(): end len(chainMftSqls):", len(chainMftSqls), ",   len(chains.MftIds):", len(chains.MftIds), "  time(s):", time.Since(start))
-		return
-	}
-*/
 func validateMfts(chains *Chains, wg *sync.WaitGroup) {
 	defer wg.Done()
 
@@ -219,16 +151,6 @@ func validateMft(chains *Chains, mftId uint64, wg *sync.WaitGroup, chainMftCh ch
 	}
 	belogs.Debug("validateMft(): getMftParentChainCers, mftId:", mftId, "  file:", chainMft.FilePath, chainMft.FileName,
 		"  len(chainMft.ParentChainCerAlones):", len(chainMft.ParentChainCerAlones), "  time(s):", time.Since(start))
-
-	if !chainMft.NeedValidate {
-		chainMft.StateModel.JudgeState()
-		chains.UpdateFileTypeIdToMft(&chainMft)
-		belogs.Info("validateMft(): when adopt partial chainvalidate, this file(", chainMft.FilePath, chainMft.FileName, ") has not been changed in this update,",
-			"so the chainvalidate is not required for this file")
-		return
-	}
-	belogs.Info("validateMft(): when adopt partial chainvalidate, this file(", chainMft.FilePath, chainMft.FileName, ") has been changed or be affected in this update,",
-		"so the chainvalidate is required for this file, it will verify the resource list file and the hash value")
 
 	// exists parent cer
 	if len(chainMft.ParentChainCerAlones) > 0 {
@@ -675,6 +597,14 @@ func getSameAkiCerRoaCrlFilesChainMfts(chains *Chains, mftId uint64) (sameAkiCer
 					}
 					sameAkiChainMfts = append(sameAkiChainMfts, chainMft)
 					belogs.Debug("getSameAkiCerRoaCrlFilesChainMfts(): GetMftByFileTypeId mftId:", mftId, "  chainMft.FileName:", chainMft.FileName)
+				case "moa":
+					chainMoa, err := chains.GetMoaByFileTypeId(fileTypeId)
+					if err != nil {
+						belogs.Error("getSameAkiCerRoaCrlFilesChainMfts(): GetMoaByFileTypeId, mftId:", mftId, "  fileTypeId:", fileTypeId, err)
+						return nil, nil, nil, err
+					}
+					sameAkiCerRoaAsaCrlFiles = append(sameAkiCerRoaAsaCrlFiles, chainMoa.FileName)
+					belogs.Debug("getSameAkiCerRoaCrlFilesChainMfts(): GetMoaByFileTypeId mftId:", mftId, "  chainMoa.FileName:", chainMoa.FileName)
 				}
 			}
 		}
@@ -778,6 +708,20 @@ func updateChainByMft(chains *Chains, invalidMftEffect string) (err error) {
 				chains.UpdateFileTypeIdToAsa(&chainAsa)
 				belogs.Debug("updateChainByMft(): mftId:", mftId, "   chainMft:", chainMft.FilePath, chainMft.FileName,
 					" chainAsa:", chainAsa.FilePath, chainAsa.FileName, jsonutil.MarshalJson(chainAsa.StateModel))
+			case "moa":
+				chainMoa, err := chains.GetMoaByFileTypeId(fileTypeId)
+				if err != nil {
+					belogs.Error("updateChainByMft(): GetMoaByFileTypeId, mftId:", mftId, "  fileTypeId:", fileTypeId, err)
+					return err
+				}
+				if invalidMftEffect == "warning" {
+					chainMoa.StateModel.AddWarning(&stateMsg)
+				} else if invalidMftEffect == "invalid" {
+					chainMoa.StateModel.AddError(&stateMsg)
+				}
+				chains.UpdateFileTypeIdToMoa(&chainMoa)
+				belogs.Debug("updateChainByMft(): mftId:", mftId, "   chainMft:", chainMft.FilePath, chainMft.FileName,
+					" chainMoa:", chainMoa.FilePath, chainMoa.FileName, jsonutil.MarshalJson(chainMoa.StateModel))
 			default:
 				// do nothing
 			}
@@ -789,11 +733,11 @@ func updateChainByMft(chains *Chains, invalidMftEffect string) (err error) {
 	return nil
 }
 
-func updateMfts(chains *Chains, wg *sync.WaitGroup, dataSource DataSource) {
+func updateMfts(chains *Chains, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	start := time.Now()
-	err := dataSource.UpdateMfts(chains)
+	err := UpdateMfts(chains)
 	if err != nil {
 		belogs.Error("updateMfts(): UpdateMfts fail:", err)
 		return

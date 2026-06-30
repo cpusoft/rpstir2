@@ -12,7 +12,7 @@ import (
 	"xorm.io/xorm"
 )
 
-func (s *SQLDataSource) GetChainMftData(chainMftDataCh chan []*ChainCertData, mftWg *sync.WaitGroup) error {
+func   GetChainMftData(chainMftDataCh chan []*ChainCertData, mftWg *sync.WaitGroup) error {
 
 	start := time.Now()
 	belogs.Debug("getChainMftSqlDb(): will select rpki_mft")
@@ -111,7 +111,7 @@ func getChainMftSqlsDb() (chainCertSqls []ChainCertSql, err error) {
 	return chainCertSqls, nil
 }
 
-func (s *SQLDataSource) GetChainFileHashs(chainMft ChainMft) (chainFileHashs []ChainFileHash, err error) {
+func   GetChainFileHashs(chainMft ChainMft) (chainFileHashs []ChainFileHash, err error) {
 	start := time.Now()
 	mftId := chainMft.Id
 	belogs.Debug("SQLDataSource.GetChainFileHashs(): will select lab_rpki_mft_file_hash_view, mftId:", mftId)
@@ -197,7 +197,7 @@ func (s *SQLDataSource) GetChainFileHashs(chainMft ChainMft) (chainFileHashs []C
 	return chainFileHashs, nil
 }
 
-func (s *SQLDataSource) GetPreviousMft(chainMft ChainMft) (previousMft PreviousMft, err error) {
+func   GetPreviousMft(chainMft ChainMft) (previousMft PreviousMft, err error) {
 	start := time.Now()
 	mftId := chainMft.Id
 	/* // because using json directly, it will cause ' Out of sort memory, consider increasing server sort buffer size'
@@ -267,7 +267,7 @@ func updateMftDb(session *xorm.Session, chains *Chains, mftId uint64,
 	return nil
 }
 
-func (s *SQLDataSource) UpdateMfts(chains *Chains) error {
+func   UpdateMfts(chains *Chains) error {
 	start := time.Now()
 	session, err := xormdb.NewSession()
 	if err != nil {

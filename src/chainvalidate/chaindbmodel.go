@@ -158,3 +158,24 @@ func NewChainDbAsaModel(chainAsa *ChainAsa) *ChainDbAsaModel {
 
 	return chainDbAsaModel
 }
+
+// for chaincert in db table
+type ChainDbMoaModel struct {
+	Id              uint64            `json:"id" xorm:"id int"`
+	ParentChainCers []ChainDbCerModel `json:"parentChainCers,omitempty"`
+}
+
+func NewChainDbMoaModel(chainMoa *ChainMoa) *ChainDbMoaModel {
+	chainDbMoaModel := &ChainDbMoaModel{}
+	chainDbMoaModel.Id = chainMoa.Id
+	belogs.Debug("NewChainDbMoaModel():chainDbMoaModel.Id:", chainDbMoaModel.Id, "   len(chainMoa.ParentChainCerAlones):", len(chainMoa.ParentChainCerAlones))
+	chainDbMoaModel.ParentChainCers = make([]ChainDbCerModel, 0, len(chainMoa.ParentChainCerAlones))
+	for i := range chainMoa.ParentChainCerAlones {
+		// only save id
+		chainDbCerModel := ChainDbCerModel{}
+		chainDbCerModel.Id = chainMoa.ParentChainCerAlones[i].Id
+		chainDbMoaModel.ParentChainCers = append(chainDbMoaModel.ParentChainCers, chainDbCerModel)
+	}
+
+	return chainDbMoaModel
+}

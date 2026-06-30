@@ -8,11 +8,9 @@ import (
 
 	"github.com/bgpsecurity/rpstir2/model"
 	"github.com/cpusoft/goutil/belogs"
-	"github.com/cpusoft/goutil/conf"
 	"github.com/cpusoft/goutil/convert"
 	"github.com/cpusoft/goutil/iputil"
 	"github.com/cpusoft/goutil/jsonutil"
-	"github.com/guregu/null"
 )
 
 type RtrSerialQueryModel struct {
@@ -105,14 +103,10 @@ func ParseToSerialQuery(buf *bytes.Reader, protocolVersion uint8) (rtrPduModel R
 // when len(rtrIncrementals)==0, just return endofdata, it is not an error
 func AssembleSerialResponses(rtrIncrementals []model.LabRpkiRtrIncremental,
 	rtrAsaIncrementals []model.LabRpkiRtrAsaIncremental,
-	rtrHroaIncrementals []model.LabRpkiRtrHroaIncremental,
-	rtrAsraIncrementals []model.LabRpkiRtrAsraIncremental,
 	protocolVersion uint8, sessionId uint16, serialNumber uint32) (rtrPduModels []RtrPduModel, err error) {
 	start := time.Now()
 	belogs.Info("AssembleSerialResponses(): len(rtrIncrementals):", len(rtrIncrementals),
 		"   len(rtrAsaIncrementals):", len(rtrAsaIncrementals),
-		"   len(rtrHroaIncrementals):", len(rtrHroaIncrementals),
-		"   len(rtrAsraIncrementals):", len(rtrAsraIncrementals),
 		"   protocolVersion:", protocolVersion, "   sessionId:", sessionId, "   serialNumber:", serialNumber)
 	if protocolVersion != PDU_PROTOCOL_VERSION_0 &&
 		protocolVersion != PDU_PROTOCOL_VERSION_1 &&
@@ -124,22 +118,15 @@ func AssembleSerialResponses(rtrIncrementals []model.LabRpkiRtrIncremental,
 
 	rtrPduModels = make([]RtrPduModel, 0)
 	dataAvailable := false
-	supportHroa := conf.String("rtr::supportHroa") == "true"
-	supportAsra := conf.String("rtr::supportAsra") == "true"
 
 	// start response
 	cacheResponseModel := NewRtrCacheResponseModel(protocolVersion, sessionId)
 	rtrPduModels = append(rtrPduModels, cacheResponseModel)
 	prefixAsaVersion := protocolVersion
-	hroaAsraVersion := protocolVersion
-	if (supportHroa || supportAsra) && protocolVersion >= PDU_PROTOCOL_VERSION_3 {
-		prefixAsaVersion = PDU_PROTOCOL_VERSION_2
-	}
+
 	belogs.Debug("AssembleSerialResponses(): cacheResponseModel:", jsonutil.MarshalJson(cacheResponseModel),
-		"   supportHroa:", supportHroa, "   supportAsra:", supportAsra,
 		"   protocolVersion:", protocolVersion,
-		"   prefixAsaVersion:", prefixAsaVersion,
-		"   hroaAsraVersion:", hroaAsraVersion)
+		"   prefixAsaVersion:", prefixAsaVersion)
 
 	//rtr incr from roa rtr
 	if protocolVersion == PDU_PROTOCOL_VERSION_0 ||
@@ -184,45 +171,7 @@ func AssembleSerialResponses(rtrIncrementals []model.LabRpkiRtrIncremental,
 		}
 
 	}
-	if supportHroa && protocolVersion == PDU_PROTOCOL_VERSION_3 {
-		//rtr incremental from hroa rtr
-		if len(rtrHroaIncrementals) > 0 {
-			belogs.Debug("AssembleSerialResponses(): will get rtrHroaIncrementals, len(rtrHroaIncrementals):", len(rtrHroaIncrementals),
-				"   hroaAsraVersion:", hroaAsraVersion,
-				"   sessionId:", sessionId, "   serialNumber:", serialNumber)
 
-			// rtr hroa incremental to response
-			rtrHroaIncrementalPduModels, err := convertRtrHroaIncrementalsToRtrPduModels(rtrHroaIncrementals, hroaAsraVersion)
-			if err != nil {
-				belogs.Error("AssembleSerialResponses(): convertRtrHroaIncrementalsToRtrPduModels fail: ", err)
-				return nil, err
-			}
-			rtrPduModels = append(rtrPduModels, rtrHroaIncrementalPduModels...)
-			dataAvailable = true
-			belogs.Info("AssembleSerialResponses(): get rtrHroaIncrementalPduModels, len(rtrHroaIncrementalPduModels):", len(rtrHroaIncrementalPduModels),
-				"  time(s):", time.Since(start))
-		}
-	}
-
-	if supportAsra && protocolVersion == PDU_PROTOCOL_VERSION_3 {
-		//rtr incremental from asra rtr
-		if len(rtrAsraIncrementals) > 0 {
-			belogs.Debug("AssembleSerialResponses(): will get rtrAsraIncrementals, len(rtrAsraIncrementals):", len(rtrAsraIncrementals),
-				"   hroaAsraVersion:", hroaAsraVersion,
-				"   sessionId:", sessionId, "   serialNumber:", serialNumber)
-
-			// rtr asra incremental to response
-			rtrAsraIncrementalPduModels, err := convertRtrAsraIncrementalsToRtrPduModels(rtrAsraIncrementals, hroaAsraVersion)
-			if err != nil {
-				belogs.Error("AssembleSerialResponses(): convertRtrAsraIncrementalsToRtrPduModels fail: ", err)
-				return nil, err
-			}
-			rtrPduModels = append(rtrPduModels, rtrAsraIncrementalPduModels...)
-			dataAvailable = true
-			belogs.Info("AssembleSerialResponses(): get rtrAsraIncrementalPduModels, len(rtrAsraIncrementalPduModels):", len(rtrAsraIncrementalPduModels),
-				"  time(s):", time.Since(start))
-		}
-	}
 	if !dataAvailable {
 		errorReportModel := NewRtrErrorReportModel(protocolVersion, PDU_TYPE_ERROR_CODE_NO_DATA_AVAILABLE, nil, nil)
 		rtrPduModels = append(rtrPduModels, errorReportModel)
@@ -236,15 +185,11 @@ func AssembleSerialResponses(rtrIncrementals []model.LabRpkiRtrIncremental,
 		belogs.Debug("AssembleSerialResponses(): endOfDataModel:", jsonutil.MarshalJson(endOfDataModel))
 
 		belogs.Info("AssembleSerialResponses(): will send Cache Response of incrtmental rtr,",
-			"   supportHroa:", supportHroa, "   supportAsra:", supportAsra,
 			"   protocolVersion:", protocolVersion,
 			"   prefixAsaVersion:", prefixAsaVersion,
-			"   hroaAsraVersion:", hroaAsraVersion,
 			"   sessionId:", sessionId, "  serialNumber:", serialNumber,
 			"   len(rtrIncrementals):", len(rtrIncrementals),
 			"   len(rtrAsaIncrementals):", len(rtrAsaIncrementals),
-			"   len(rtrHroaIncrementals):", len(rtrHroaIncrementals),
-			"   len(rtrAsraIncrementals):", len(rtrAsraIncrementals),
 			"   len(rtrPduModels):", len(rtrPduModels), "  time(s):", time.Since(start))
 	}
 	belogs.Debug("AssembleSerialResponses(): ok, rtrPduModels:", jsonutil.MarshalJson(rtrPduModels), "  time(s):", time.Since(start))
@@ -315,107 +260,4 @@ func convertRtrAsaIncrementalsToRtrPduModels(rtrAsaIncrementals []model.LabRpkiR
 		" len(rtrAsaPduModels):", len(rtrAsaPduModels), "  time(s):", time.Since(start))
 
 	return rtrAsaPduModels, nil
-}
-
-func convertRtrHroaIncrementalToRtrPduModel(rtrHroaIncremental *model.LabRpkiRtrHroaIncremental, protocolVersion uint8) (rtrPduModel RtrPduModel, err error) {
-	belogs.Debug("convertRtrHroaIncrementalToRtrPduModel(): rtrHroaIncremental:", jsonutil.MarshalJson(rtrHroaIncremental))
-	afiFlags := rtrHroaIncremental.AfiFlags
-	encodedSubTree := [4]byte{0x00}
-	b, _ := convert.IntToBytes(rtrHroaIncremental.EncodedSubtree.ValueOrZero())
-	copy(encodedSubTree[:], b[4:]) // only 4 bytes
-	belogs.Debug("convertRtrHroaIncrementalToRtrPduModel(): b:", b, "   encodedSubTree:", encodedSubTree)
-	if afiFlags == iputil.Ipv4Type {
-		subtreeIdentifier := [4]byte{0x00}
-		copy(subtreeIdentifier[:], rtrHroaIncremental.SubtreeIdentifierBytes[12:])
-		rtrIpv4HroaModel := NewRtrIpv4HroaModel(protocolVersion,
-			subtreeIdentifier, encodedSubTree,
-			uint32(rtrHroaIncremental.HroaAsn.ValueOrZero()))
-		belogs.Debug("convertRtrHroaIncrementalToRtrPduModel(): rtrIpv4HroaModel:", jsonutil.MarshalJson(rtrIpv4HroaModel))
-		return rtrIpv4HroaModel, nil
-	} else if afiFlags == iputil.Ipv6Type {
-		rtrIpv6HroaModel := NewRtrIpv6HroaModel(protocolVersion,
-			rtrHroaIncremental.SubtreeIdentifierBytes, encodedSubTree,
-			uint32(rtrHroaIncremental.HroaAsn.ValueOrZero()))
-		belogs.Debug("convertRtrHroaIncrementalToRtrPduModel(): rtrIpv6HroaModel:", jsonutil.MarshalJson(rtrIpv6HroaModel))
-		return rtrIpv6HroaModel, nil
-	}
-	return rtrPduModel, errors.New("convert to rtr format, error afiFlags")
-}
-
-func convertRtrHroaIncrementalsToRtrPduModels(rtrHroaIncrementals []model.LabRpkiRtrHroaIncremental,
-	protocolVersion uint8) (rtrPduModels []RtrPduModel, err error) {
-	rtrPduModels = make([]RtrPduModel, 0)
-	for i := range rtrHroaIncrementals {
-		rtrPduModel, err := convertRtrHroaIncrementalToRtrPduModel(&rtrHroaIncrementals[i], protocolVersion)
-		if err != nil {
-			belogs.Error("convertRtrHroaIncrementalsToRtrPduModels(): convertRtrHroaIncrementalToRtrPduModel fail: ", err)
-			return nil, err
-		}
-		rtrPduModels = append(rtrPduModels, rtrPduModel)
-	}
-	belogs.Debug("convertRtrHroaIncrementalsToRtrPduModels(): len(rtrHroaIncrementals):", len(rtrHroaIncrementals),
-		" len(rtrPduModels):", len(rtrPduModels))
-	return rtrPduModels, nil
-}
-
-func convertRtrAsraIncrementalToRtrPduModel(rtrAsraIncremental *model.LabRpkiRtrAsraIncremental, protocolVersion uint8) (rtrPduModel RtrPduModel, err error) {
-	belogs.Debug("convertRtrAsraIncrementalToRtrPduModel(): rtrAsraIncremental:", jsonutil.MarshalJson(rtrAsraIncremental))
-
-	customerAsnAsra := uint32(rtrAsraIncremental.CustomerAsnAsra.ValueOrZero())
-	providerAsnAsras := make([]uint32, 0)
-	err = jsonutil.UnmarshalJson(rtrAsraIncremental.ProviderAsnAsrasStr, &providerAsnAsras)
-	if err != nil {
-		belogs.Error("convertRtrAsraIncrementalToRtrPduModel(): get providerAsnAsras fail, rtrAsraIncremental.ProviderAsnAsrasStr:",
-			rtrAsraIncremental.ProviderAsnAsrasStr, err)
-		return rtrPduModel, err
-	}
-	rtrAsraModel := NewRtrAsraModel(protocolVersion, PDU_FLAG_ANNOUNCE, null.IntFrom(0),
-		customerAsnAsra, providerAsnAsras)
-
-	if len(rtrAsraIncremental.OtherNeighborAsnAsrasStr) > 0 {
-		asNumber := make([]uint32, 0)
-		err = jsonutil.UnmarshalJson(rtrAsraIncremental.OtherNeighborAsnAsrasStr, &asNumber)
-		if err != nil {
-			belogs.Error("convertRtrAsraIncrementalToRtrPduModel(): get OtherNeighborAsnAsrasStr fail, rtrAsraIncremental.OtherNeighborAsnAsrasStr:",
-				rtrAsraIncremental.OtherNeighborAsnAsrasStr, err)
-			return rtrPduModel, err
-		}
-		rtrAsraModel.AddAsNumbers(PDU_TYPE_ASRA_TYPE_ON, asNumber)
-	}
-	if len(rtrAsraIncremental.CustomerAsnAsrasStr) > 0 {
-		asNumber := make([]uint32, 0)
-		err = jsonutil.UnmarshalJson(rtrAsraIncremental.CustomerAsnAsrasStr, &asNumber)
-		if err != nil {
-			belogs.Error("convertRtrAsraIncrementalToRtrPduModel(): get CustomerAsnAsrasStr fail, rtrAsraIncremental.CustomerAsnAsrasStr:",
-				rtrAsraIncremental.CustomerAsnAsrasStr, err)
-			return rtrPduModel, err
-		}
-		rtrAsraModel.AddAsNumbers(PDU_TYPE_ASRA_TYPE_C, asNumber)
-	}
-	if len(rtrAsraIncremental.LateralPeerAsnAsrasStr) > 0 {
-		asNumber := make([]uint32, 0)
-		err = jsonutil.UnmarshalJson(rtrAsraIncremental.LateralPeerAsnAsrasStr, &asNumber)
-		if err != nil {
-			belogs.Error("convertRtrAsraIncrementalToRtrPduModel(): get LateralPeerAsnAsrasStr fail, rtrAsraIncremental.LateralPeerAsnAsrasStr:",
-				rtrAsraIncremental.LateralPeerAsnAsrasStr, err)
-			return rtrPduModel, err
-		}
-		rtrAsraModel.AddAsNumbers(PDU_TYPE_ASRA_TYPE_L, asNumber)
-	}
-	return rtrAsraModel, nil
-}
-func convertRtrAsraIncrementalsToRtrPduModels(rtrAsraIncrementals []model.LabRpkiRtrAsraIncremental,
-	protocolVersion uint8) (rtrPduModels []RtrPduModel, err error) {
-	rtrPduModels = make([]RtrPduModel, 0)
-	for i := range rtrAsraIncrementals {
-		rtrPduModel, err := convertRtrAsraIncrementalToRtrPduModel(&rtrAsraIncrementals[i], protocolVersion)
-		if err != nil {
-			belogs.Error("convertRtrAsraIncrementalsToRtrPduModels(): convertRtrAsraIncrementalToRtrPduModel fail: ", err)
-			return nil, err
-		}
-		rtrPduModels = append(rtrPduModels, rtrPduModel)
-	}
-	belogs.Debug("convertRtrAsraIncrementalsToRtrPduModels(): len(rtrAsraIncrementals):", len(rtrAsraIncrementals),
-		" len(rtrPduModels):", len(rtrPduModels))
-	return rtrPduModels, nil
 }

@@ -333,7 +333,7 @@ func (c MftModel) String() string {
 
 type FileHashModel struct {
 	File string `json:"file" xorm:"file varchar(1024)"`
-	Hash string `json:"hash" xorm:"file varchar(1024)"`
+	Hash string `json:"hash" xorm:"hash varchar(1024)"`
 }
 
 // //////////////////////////////////////
@@ -587,4 +587,42 @@ type CustomerAsn struct {
 	CustomerAsnOwner  string   `json:"customerAsnOwner"`
 	ProviderAsns      []uint64 `json:"providerAsns"`
 	ProviderAsnOwners []string `json:"ProviderAsnOwners"`
+}
+
+// //////////////////////////////////////
+// Moa
+type MoaModel struct {
+	// must be 0, but always is not in file actually
+	//The version number of this version of the roa specification MUST be 0.
+	Version int `json:"version"`
+
+	Ski      string `json:"ski" xorm:"ski varchar(128)"`
+	Aki      string `json:"aki" xorm:"aki varchar(128)"`
+	FilePath string `json:"filePath" xorm:"filePath varchar(512)"`
+	FileName string `json:"fileName" xorm:"fileName varchar(128)"`
+	FileHash string `json:"fileHash" xorm:"fileHash varchar(512)"`
+
+	//OID: 1.2.240.113549.1.9.16.1.52  //temp
+	EContentType string `json:"eContentType"`
+
+	Ipv6MappingPrefix string   `json:"ipv6MappingPrefix"`
+	Ipv4Prefixes      []string `json:"ipv4Prefixes"`
+	SiaModel          SiaModel `json:"siaModel"`
+	AiaModel          AiaModel `json:"aiaModel"`
+
+	EeModel         EeCertModel     `json:"eeModel"`
+	SignerInfoModel SignerInfoModel `json:"signerInfoModel"`
+}
+
+func (c MoaModel) String() string {
+	m := make(map[string]interface{})
+	m["ski"] = c.Ski
+	m["aki"] = c.Aki
+	m["ipv6MappingPrefix"] = c.Ipv6MappingPrefix
+	m["ipv4Prefixes"] = jsonutil.MarshalJson(c.Ipv4Prefixes)
+	m["filePath"] = c.FilePath
+	m["fileName"] = c.FileName
+	m["aiaModel"] = c.AiaModel.String()
+	m["siaModel"] = c.SiaModel.String()
+	return jsonutil.MarshalJson(m)
 }

@@ -30,16 +30,6 @@ const (
 	PDU_TYPE_ASA          = 11
 
 	// extend
-	PDU_TYPE_IPV4_HROA = 4
-	PDU_TYPE_IPV6_HROA = 6
-	PDU_TYPE_ASRA      = 11
-
-	PDU_TYPE_ASRA_TYPE_C  = 0
-	PDU_TYPE_ASRA_TYPE_L  = 1
-	PDU_TYPE_ASRA_TYPE_ON = 2
-	PDU_TYPE_ASRA_TYPE_P  = 3
-	PDU_TYPE_ASRA_TYPE_V  = 4
-	PDU_TYPE_ASRA_TYPE_H  = 5
 
 	// min pdu type length is reset query
 	PDU_TYPE_MIN_LEN = 8
@@ -126,22 +116,18 @@ func ParseToRtrPduModel(buf *bytes.Reader) (rtrPduModel RtrPduModel, err error) 
 	case PDU_TYPE_CACHE_RESPONSE:
 		return ParseToCacheResponse(buf, protocolVersion)
 
-	case PDU_TYPE_IPV4_PREFIX: //PDU_TYPE_IPV4_HROA:
+	case PDU_TYPE_IPV4_PREFIX:
 		if protocolVersion == PDU_PROTOCOL_VERSION_0 ||
 			protocolVersion == PDU_PROTOCOL_VERSION_1 ||
 			protocolVersion == PDU_PROTOCOL_VERSION_2 {
 			return ParseToIpv4Prefix(buf, protocolVersion)
-		} else if protocolVersion == PDU_PROTOCOL_VERSION_3 {
-			return ParseToIpv4Hroa(buf, protocolVersion)
 		}
 
-	case PDU_TYPE_IPV6_PREFIX: //PDU_TYPE_IPV6_HROA:
+	case PDU_TYPE_IPV6_PREFIX:
 		if protocolVersion == PDU_PROTOCOL_VERSION_0 ||
 			protocolVersion == PDU_PROTOCOL_VERSION_1 ||
 			protocolVersion == PDU_PROTOCOL_VERSION_2 {
 			return ParseToIpv6Prefix(buf, protocolVersion)
-		} else if protocolVersion == PDU_PROTOCOL_VERSION_3 {
-			return ParseToIpv6Hroa(buf, protocolVersion)
 		}
 
 	case PDU_TYPE_END_OF_DATA:
@@ -161,8 +147,6 @@ func ParseToRtrPduModel(buf *bytes.Reader) (rtrPduModel RtrPduModel, err error) 
 			protocolVersion == PDU_PROTOCOL_VERSION_1 ||
 			protocolVersion == PDU_PROTOCOL_VERSION_2 {
 			return ParseToAsa(buf, protocolVersion)
-		} else if protocolVersion == PDU_PROTOCOL_VERSION_3 {
-			return ParseToAsra(buf, protocolVersion)
 		}
 	}
 

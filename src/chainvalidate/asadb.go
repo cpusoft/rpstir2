@@ -12,7 +12,7 @@ import (
 	"xorm.io/xorm"
 )
 
-func (s *SQLDataSource) GetChainAsaData(chainRoaDataCh chan []*ChainCertData, asaWg *sync.WaitGroup) error {
+func GetChainAsaData(chainRoaDataCh chan []*ChainCertData, asaWg *sync.WaitGroup) error {
 	start := time.Now()
 	belogs.Debug("getChainAsaSqlDb(): will select rpki_asa")
 
@@ -157,7 +157,7 @@ func getChainAsaSqlsDb() (chainCertSqls []ChainCertSql, err error) {
 	return chainCertSqls, nil
 }
 
-func (s *SQLDataSource) UpdateAsas(chains *Chains) error {
+func UpdateAsas(chains *Chains) error {
 	start := time.Now()
 	session, err := xormdb.NewSession()
 	if err != nil {

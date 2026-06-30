@@ -1,7 +1,6 @@
 package model
 
 import (
-	"math/big"
 	"time"
 
 	"github.com/cpusoft/goutil/jsonutil"
@@ -203,6 +202,19 @@ type LabRpkiSyncLogFile struct {
 	State     string    `json:"state" xorm:"state json"`                //LabRpkiSyncLogFileState:
 }
 
+func (c LabRpkiSyncLogFile) SimpleString() string {
+	m := make(map[string]interface{})
+	m["id"] = c.Id
+	m["syncLogId"] = c.SyncLogId
+	m["filePath"] = c.FilePath
+	m["fileName"] = c.FileName
+	m["fileType"] = c.FileType
+	m["syncType"] = c.SyncType
+	m["sourceUrl"] = c.SourceUrl
+	m["syncTime"] = c.SyncTime.Format("2006-01-02 15:04:05")
+	return jsonutil.MarshalJson(m)
+}
+
 type LabRpkiSyncLogFileState struct {
 	//finished
 	Sync string `json:"sync"`
@@ -346,114 +358,6 @@ type LabRpkiRtrAsaIncremental struct {
 	SourceFrom string `json:"sourceFrom" xorm:"sourceFrom json"`
 }
 
-// /////////////////////////////////////
-// HROA
-// /////////////////////////////////////
-type LabRpkiRtrHroaFull struct {
-	Id                     uint64   `json:"id" xorm:"id int"`
-	SerialNumber           uint64   `json:"serialNumber" xorm:"serialNumber int"`
-	HroaAsn                null.Int `json:"hroaAsn" xorm:"hroaAsn int"`
-	SubtreeIdentifier      big.Int  `json:"subtree_identifier"`
-	SubtreeIdentifierBytes [16]byte `json:"subtree_identifier_bytes" xorm:"subtreeIdentifier blob"`
-	EncodedSubtree         null.Int `json:"encoded_subtree" xorm:"encodedSubtree int"`
-	AfiFlags               uint64   `json:"afiFlags" xorm:"afiFlags int"`
-	SourceFrom             string   `json:"sourceFrom" xorm:"sourceFrom json"`
-}
-
-type LabRpkiRtrHroaFullLog struct {
-	Id                     uint64   `json:"id" xorm:"id int"`
-	SerialNumber           uint64   `json:"serialNumber" xorm:"serialNumber int"`
-	HroaAsn                null.Int `json:"hroaAsn" xorm:"hroaAsn int"`
-	SubtreeIdentifier      big.Int  `json:"subtree_identifier"`
-	SubtreeIdentifierBytes [16]byte `json:"subtree_identifier_bytes" xorm:"subtreeIdentifier blob"`
-	EncodedSubtree         null.Int `json:"encoded_subtree" xorm:"encodedSubtree int"`
-	AfiFlags               uint64   `json:"afiFlags" xorm:"afiFlags int"`
-	SourceFrom             string   `json:"sourceFrom" xorm:"sourceFrom json"`
-}
-
-// lab_rpki_rtr_hroa_incremental
-type LabRpkiRtrHroaIncremental struct {
-	Id           uint64 `json:"id" xorm:"id int"`
-	SerialNumber uint64 `json:"serialNumber" xorm:"serialNumber bigint"`
-	//announce/withdraw, is 1/0 in protocol
-	Style                  string   `json:"style" xorm:"style varchar(16)"`
-	HroaAsn                null.Int `json:"hroaAsn" xorm:"hroaAsn int"`
-	SubtreeIdentifier      big.Int  `json:"subtree_identifier"`
-	SubtreeIdentifierBytes [16]byte `json:"subtree_identifier_bytes" xorm:"subtreeIdentifier blob"`
-	EncodedSubtree         null.Int `json:"encoded_subtree" xorm:"encodedSubtree int"`
-	AfiFlags               uint64   `json:"afiFlags" xorm:"afiFlags int"`
-	//'come from : {souce:sync/slurm/transfer,syncLogId/syncLogFileId/slurmId/slurmFileId/transferLogId}',
-	SourceFrom string `json:"sourceFrom" xorm:"sourceFrom json"`
-}
-
-// ////////////////////////////////////////////////////
-// ASRA
-// ///////////////////////////////////////////////////
-type LabRpkiRtrAsraFull struct {
-	Id           uint64 `json:"id" xorm:"id int"`
-	SerialNumber uint64 `json:"serialNumber" xorm:"serialNumber bigint"`
-
-	CustomerAsnAsra          null.Int     `json:"customerAsnAsra" xorm:"customerAsnAsra int"`
-	AddressFamilyAsra        string       `json:"addressFamilyAsra" xorm:"addressFamilyAsra varchar(16)"`
-	ProviderAsnAsrasStr      string       `json:"providerAsnAsrasStr" xorm:"providerAsnAsrasStr json"`
-	ProviderAsnAsras         []null.Int   `json:"providerAsnAsras"`
-	OtherNeighborAsnAsrasStr string       `json:"otherNeighborAsnAsrasStr" xorm:"otherNeighborAsnAsrasStr json"`
-	OtherNeighborAsnAsras    []null.Int   `json:"otherNeighborAsnAsras"`
-	CustomerAsnAsrasStr      string       `json:"customerAsnAsrasStr" xorm:"customerAsnAsrasStr json"`
-	CustomerAsnAsras         []null.Int   `json:"customerAsnAsras"`
-	LateralPeerAsnAsrasStr   string       `json:"lateralPeerAsnAsrasStr" xorm:"lateralPeerAsnAsrasStr json"`
-	LateralPeerAsnAsras      []null.Int   `json:"lateralPeerAsnAsras"`
-	HybridAsrasStr           string       `json:"hybridAsrasStr" xorm:"hybridAsrasStr json"`
-	HybridAsras              []Hybrid     `json:"hybridAsras"`
-	ValleyPathAsnAsrasStr    string       `json:"valleyPathAsnAsrasStr" xorm:"valleyPathAsnAsrasStr json"`
-	ValleyPathAsnAsras       [][]null.Int `json:"valleyPathAsnAsras"`
-	SourceFrom               string       `json:"sourceFrom" xorm:"sourceFrom json"`
-}
-
-type LabRpkiRtrAsraFullLog struct {
-	Id           uint64 `json:"id" xorm:"id int"`
-	SerialNumber uint64 `json:"serialNumber" xorm:"serialNumber bigint"`
-
-	CustomerAsnAsra          null.Int     `json:"customerAsnAsra" xorm:"customerAsnAsra int"`
-	AddressFamilyAsra        string       `json:"addressFamilyAsra" xorm:"addressFamilyAsra varchar(16)"`
-	ProviderAsnAsrasStr      string       `json:"providerAsnAsrasStr" xorm:"providerAsnAsrasStr json"`
-	ProviderAsnAsras         []null.Int   `json:"providerAsnAsras"`
-	OtherNeighborAsnAsrasStr string       `json:"otherNeighborAsnAsrasStr" xorm:"otherNeighborAsnAsrasStr json"`
-	OtherNeighborAsnAsras    []null.Int   `json:"otherNeighborAsnAsras"`
-	CustomerAsnAsrasStr      string       `json:"customerAsnAsrasStr" xorm:"customerAsnAsrasStr json"`
-	CustomerAsnAsras         []null.Int   `json:"customerAsnAsras"`
-	LateralPeerAsnAsrasStr   string       `json:"lateralPeerAsnAsrasStr" xorm:"lateralPeerAsnAsrasStr json"`
-	LateralPeerAsnAsras      []null.Int   `json:"lateralPeerAsnAsras"`
-	HybridAsrasStr           string       `json:"hybridAsrasStr" xorm:"hybridAsrasStr json"`
-	HybridAsras              []Hybrid     `json:"hybridAsras"`
-	ValleyPathAsnAsrasStr    string       `json:"valleyPathAsnAsrasStr" xorm:"valleyPathAsnAsrasStr json"`
-	ValleyPathAsnAsras       [][]null.Int `json:"valleyPathAsnAsras"`
-	SourceFrom               string       `json:"sourceFrom" xorm:"sourceFrom json"`
-}
-
-type LabRpkiRtrAsraIncremental struct {
-	Id           uint64 `json:"id" xorm:"id int"`
-	SerialNumber uint64 `json:"serialNumber" xorm:"serialNumber bigint"`
-	//announce/withdraw, is 1/0 in protocol
-	Style string `json:"style" xorm:"style varchar(16)"`
-
-	CustomerAsnAsra          null.Int     `json:"customerAsnAsra" xorm:"customerAsnAsra int"`
-	AddressFamilyAsra        string       `json:"addressFamilyAsra" xorm:"addressFamilyAsra varchar(16)"`
-	ProviderAsnAsrasStr      string       `json:"providerAsnAsrasStr" xorm:"providerAsnAsrasStr json"`
-	ProviderAsnAsras         []null.Int   `json:"providerAsnAsras"`
-	OtherNeighborAsnAsrasStr string       `json:"otherNeighborAsnAsrasStr" xorm:"otherNeighborAsnAsrasStr json"`
-	OtherNeighborAsnAsras    []null.Int   `json:"otherNeighborAsnAsras"`
-	CustomerAsnAsrasStr      string       `json:"customerAsnAsrasStr" xorm:"customerAsnAsrasStr json"`
-	CustomerAsnAsras         []null.Int   `json:"customerAsnAsras"`
-	LateralPeerAsnAsrasStr   string       `json:"lateralPeerAsnAsrasStr" xorm:"lateralPeerAsnAsrasStr json"`
-	LateralPeerAsnAsras      []null.Int   `json:"lateralPeerAsnAsras"`
-	HybridAsrasStr           string       `json:"hybridAsrasStr" xorm:"hybridAsrasStr json"`
-	HybridAsras              []Hybrid     `json:"hybridAsras"`
-	ValleyPathAsnAsrasStr    string       `json:"valleyPathAsnAsrasStr" xorm:"valleyPathAsnAsrasStr json"`
-	ValleyPathAsnAsras       [][]null.Int `json:"valleyPathAsnAsras"`
-	SourceFrom               string       `json:"sourceFrom" xorm:"sourceFrom json"`
-}
-
 // //////////////////////////
 // source
 // /////////////////////////
@@ -484,27 +388,6 @@ type SlurmToRtrFullLog struct {
 	CustomerAsn   null.Int `json:"customerAsn" xorm:"customerAsn int"`
 	ProviderAsn   null.Int `json:"providerAsn" xorm:"providerAsn int"`
 	AddressFamily string   `json:"addressFamily" xorm:"addressFamily varchar(16)"`
-
-	HroaAsn                null.Int `json:"hroaAsn" xorm:"hroaAsn int"`
-	SubtreeIdentifier      *big.Int `json:"subtree_identifier"`
-	SubtreeIdentifierBytes []byte   `json:"subtree_identifier_bytes" xorm:"subtreeIdentifier blob"`
-	EncodedSubtree         null.Int `json:"encoded_subtree" xorm:"encodedSubtree int"`
-	AfiFlags               uint64   `json:"afiFlags" xorm:"afiFlags int"`
-
-	CustomerAsnAsra          null.Int     `json:"customerAsnAsra" xorm:"customerAsnAsra int"`
-	AddressFamilyAsra        string       `json:"addressFamilyAsra" xorm:"addressFamilyAsra varchar(16)"`
-	ProviderAsnAsrasStr      string       `json:"providerAsnAsrasStr" xorm:"providerAsnAsrasStr json"`
-	ProviderAsnAsras         []null.Int   `json:"providerAsnAsras"`
-	OtherNeighborAsnAsrasStr string       `json:"otherNeighborAsnAsrasStr" xorm:"otherNeighborAsnAsrasStr json"`
-	OtherNeighborAsnAsras    []null.Int   `json:"otherNeighborAsnAsras"`
-	CustomerAsnAsrasStr      string       `json:"customerAsnAsrasStr" xorm:"customerAsnAsrasStr json"`
-	CustomerAsnAsras         []null.Int   `json:"customerAsnAsras"`
-	LateralPeerAsnAsrasStr   string       `json:"lateralPeerAsnAsrasStr" xorm:"lateralPeerAsnAsrasStr json"`
-	LateralPeerAsnAsras      []null.Int   `json:"lateralPeerAsnAsras"`
-	HybridAsrasStr           string       `json:"hybridAsrasStr" xorm:"hybridAsrasStr json"`
-	HybridAsras              []Hybrid     `json:"hybridAsras"`
-	ValleyPathAsnAsrasStr    string       `json:"valleyPathAsnAsrasStr" xorm:"valleyPathAsnAsrasStr json"`
-	ValleyPathAsnAsras       [][]null.Int `json:"valleyPathAsnAsras"`
 
 	SlurmId        uint64 `json:"slurmId" xorm:"slurmId int"`
 	SlurmLogId     uint64 `json:"slurmLogId" xorm:"slurmLogId int"`

@@ -13,9 +13,6 @@ import (
 	rtrproducer "github.com/bgpsecurity/rpstir2/rtr-producer"
 	rtrserver "github.com/bgpsecurity/rpstir2/rtr-server"
 	entiremixsync "github.com/bgpsecurity/rpstir2/sync-entire/mixsync"
-	entirerrdp "github.com/bgpsecurity/rpstir2/sync-entire/rrdp"
-	entirersync "github.com/bgpsecurity/rpstir2/sync-entire/rsync"
-	entiresync "github.com/bgpsecurity/rpstir2/sync-entire/sync"
 	tal "github.com/bgpsecurity/rpstir2/sync-tal"
 	sys "github.com/bgpsecurity/rpstir2/sys"
 	"github.com/cpusoft/goutil/belogs"
@@ -68,10 +65,10 @@ func startRpServer() {
 
 	engine.POST("/entiresync/syncstart", entiremixsync.SyncStart)
 	//engine.POST("/entiresync/syncstart", entiresync.SyncStart)
-	engine.POST("/entiresync/rrdpresult", entiresync.RrdpResult)
-	engine.POST("/entiresync/rsyncresult", entiresync.RsyncResult)
-	engine.POST("/entiresync/rrdprequest", entirerrdp.RrdpRequest)
-	engine.POST("/entiresync/rsyncrequest", entirersync.RsyncRequest)
+	//engine.POST("/entiresync/rrdpresult", entiremixsync.RrdpResult)
+	//engine.POST("/entiresync/rsyncresult", entiremixsync.RsyncResult)
+	//engine.POST("/entiresync/rrdprequest", entiremixsync.RrdpRequest)
+	//engine.POST("/entiresync/rsyncrequest", entiremixsync.RsyncRequest)
 	engine.POST("/parsevalidate/start", parsevalidate.ParseValidateStart)
 	engine.POST("/parsevalidate/file", parsevalidate.ParseValidateFile)
 	engine.POST("/parsevalidate/parsefile", parsevalidate.ParseFile)

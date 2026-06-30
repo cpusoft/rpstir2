@@ -12,7 +12,7 @@ import (
 	"xorm.io/xorm"
 )
 
-func (s *SQLDataSource) GetChainCerData(chainRoaDataCh chan []*ChainCertData, cerWg *sync.WaitGroup) error {
+func   GetChainCerData(chainRoaDataCh chan []*ChainCertData, cerWg *sync.WaitGroup) error {
 
 	start := time.Now()
 	belogs.Debug("getChainCerSqlDb(): will select rpki_cer")
@@ -201,7 +201,7 @@ func updateCerDb(session *xorm.Session, chains *Chains, cerId uint64,
 	return nil
 }
 
-func (s *SQLDataSource) UpdateCers(chains *Chains) error {
+func   UpdateCers(chains *Chains) error {
 	start := time.Now()
 	session, err := xormdb.NewSession()
 	if err != nil {

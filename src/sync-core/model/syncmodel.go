@@ -9,11 +9,11 @@ import (
 type SyncState struct {
 	SyncStyle string `json:"syncStyle"`
 
-	StartTime time.Time `json:"startTime,omitempty"`
-	EndTime   time.Time `json:"endTime,omitempty"`
+	StartTime time.Time `json:"startTime,omitzero"`
+	EndTime   time.Time `json:"endTime,omitzero"`
 
-	SyncUrls   []string         `json:"syncUrls"`
-	SyncResult model.SyncResult `json:"syncResult"`
+	SyncUrls   []string          `json:"syncUrls"`
+	SyncResult *model.SyncResult `json:"syncResult"`
 }
 
 type LabDistributedSelectDetail struct {

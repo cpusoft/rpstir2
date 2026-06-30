@@ -94,16 +94,16 @@ func ParseValidateFileModel(fileModel *model.FileModel) (certType string, certMo
 		belogs.Debug("ParseValidateFileModel(): after parseValidateRoa(): fileModel:", jsonutil.MarshalJson(fileModel), "  roaModel:", roaModel.String(),
 			"  stateModel:", jsonutil.MarshalJson(stateModel), "  err:", err, "  time(s):", time.Since(start))
 		return "roa", roaModel, stateModel, originModel, fileHash, err
-	} else if strings.HasSuffix(fileModel.FilePathName, ".sig") {
-		sigModel, stateModel, err := parseValidateSig(fileModel)
-		belogs.Debug("ParseValidateFileModel(): after parseValidateSig(): fileModel:", jsonutil.MarshalJson(fileModel), "  sigModel:", sigModel.String(),
-			"  stateModel:", jsonutil.MarshalJson(stateModel), "  err:", err, "  time(s):", time.Since(start))
-		return "sig", sigModel, stateModel, originModel, fileHash, err
 	} else if strings.HasSuffix(fileModel.FilePathName, ".asa") {
 		asaModel, stateModel, err := parseValidateAsa(fileModel)
 		belogs.Debug("ParseValidateFileModel(): after parseValidateAsa(): fileModel:", jsonutil.MarshalJson(fileModel), "  asaModel:", asaModel.String(),
 			"  stateModel:", jsonutil.MarshalJson(stateModel), "  err:", err, "  time(s):", time.Since(start))
 		return "asa", asaModel, stateModel, originModel, fileHash, err
+	} else if strings.HasSuffix(fileModel.FilePathName, ".moa") {
+		moaModel, stateModel, err := parseValidateMoa(fileModel)
+		belogs.Debug("ParseValidateFileModel(): after parseValidateAsa(): fileModel:", jsonutil.MarshalJson(fileModel), "  moaModel:", moaModel.String(),
+			"  stateModel:", jsonutil.MarshalJson(stateModel), "  err:", err, "  time(s):", time.Since(start))
+		return "moa", moaModel, stateModel, originModel, fileHash, err
 	} else if strings.HasSuffix(fileModel.FilePathName, ".gbr") {
 		belogs.Debug("ParseValidateFileModel(): not support .gbr file: fileModel:", jsonutil.MarshalJson(fileModel))
 		return "", nil, stateModel, originModel, "", errors.New("gbr file type is not supported")

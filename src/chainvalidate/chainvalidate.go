@@ -8,40 +8,24 @@ import (
 	"github.com/cpusoft/goutil/conf"
 )
 
-var UseCache = false
-
-//var CayleyStore *cayleyutil.CayleyStore
-
 // chainValidateStart 开始证书链验证
-//
-//	@param isGlobal 是否支持局部验证
-//	@return nextStep 下一步需要执行的功能
-//	@return err 返回错误
-func chainValidateStart(isGlobal bool) (nextStep string, err error) {
+
+// @return nextStep 下一步需要执行的功能
+// @return err 返回错误
+func chainValidateStart() (nextStep string, err error) {
 	start := time.Now()
 
-	belogs.Info("chainValidateStart(): isGlobal:", isGlobal)
+	belogs.Info("chainValidateStart():")
 	// save chain validate starttime to lab_rpki_sync_log
 	syncLogId, err := updateRsyncLogChainValidateStateStartDb("chainvalidating")
 	if err != nil {
 		belogs.Error("chainValidateStart():updateRsyncLogChainValidateStateStartDb fail:", err)
 		return "", err
 	}
-	belogs.Debug("chainValidateStart():updateRsyncLogChainValidateStateStartDb, isGlobal:", isGlobal, "  syncLogId:", syncLogId)
-
-	// build and validate chain all cert (include all)
-	if !isGlobal {
-
-		belogs.Info("chainValidateStart(): This chainvalidate will use partial validate methods")
-		err = chainValidate(syncLogId)
-	} else {
-		// isGlobal
-		belogs.Info("chainValidateStart(): This chainvalidate will use global validate methods")
-
-		err = chainValidate(syncLogId)
-	}
+	belogs.Debug("chainValidateStart():updateRsyncLogChainValidateStateStartDb, syncLogId:", syncLogId)
+	err = chainValidate(syncLogId)
 	if err != nil {
-		belogs.Error("chainValidateStart():chainValidate fail, isGlobal:", isGlobal, "  syncLogId:", syncLogId, err)
+		belogs.Error("chainValidateStart():chainValidate fail, syncLogId:", syncLogId, err)
 		return "", err
 	}
 
@@ -56,9 +40,6 @@ func chainValidateStart(isGlobal bool) (nextStep string, err error) {
 	return "rtr", nil
 }
 
-// 空实现 为通过编译
-func InitGraph() {}
-
 // chainValidate 开始证书链实际验证
 //
 //	@param syncLogId 当前同步id
@@ -69,23 +50,26 @@ func chainValidate(syncLogId uint64) (err error) {
 	chains := NewChains(80000)
 
 	start := time.Now()
-	dataSource := getDataSource()
+
 	var chainWg sync.WaitGroup
 	// get Chains
 	chainWg.Add(1)
-	go getChainMfts(chains, &chainWg, syncLogId, dataSource)
+	go getChainMfts(chains, &chainWg, syncLogId)
 
 	chainWg.Add(1)
-	go getChainCrls(chains, &chainWg, syncLogId, dataSource)
+	go getChainCrls(chains, &chainWg, syncLogId)
 
 	chainWg.Add(1)
-	go getChainCers(chains, &chainWg, syncLogId, dataSource)
+	go getChainCers(chains, &chainWg, syncLogId)
 
 	chainWg.Add(1)
-	go getChainRoas(chains, &chainWg, syncLogId, dataSource)
+	go getChainRoas(chains, &chainWg, syncLogId)
 
 	chainWg.Add(1)
-	go getChainAsas(chains, &chainWg, syncLogId, dataSource)
+	go getChainAsas(chains, &chainWg, syncLogId)
+
+	chainWg.Add(1)
+	go getChainMoas(chains, &chainWg, syncLogId)
 
 	chainWg.Wait()
 	belogs.Info("chainValidate(): GetChains time(s):", time.Since(start))
@@ -108,6 +92,9 @@ func chainValidate(syncLogId uint64) (err error) {
 	wgValidate.Add(1)
 	go validateAsas(chains, &wgValidate)
 
+	wgValidate.Add(1)
+	go validateMoas(chains, &wgValidate)
+
 	wgValidate.Wait()
 	belogs.Info("chainValidate(): after Validates time(s):", time.Since(start))
 
@@ -122,19 +109,22 @@ func chainValidate(syncLogId uint64) (err error) {
 	start = time.Now()
 	var wgUpdate sync.WaitGroup
 	wgUpdate.Add(1)
-	go updateMfts(chains, &wgUpdate, dataSource)
+	go updateMfts(chains, &wgUpdate)
 
 	wgUpdate.Add(1)
-	go updateCrls(chains, &wgUpdate, dataSource)
+	go updateCrls(chains, &wgUpdate)
 
 	wgUpdate.Add(1)
-	go updateCers(chains, &wgUpdate, dataSource)
+	go updateCers(chains, &wgUpdate)
 
 	wgUpdate.Add(1)
-	go updateRoas(chains, &wgUpdate, dataSource)
+	go updateRoas(chains, &wgUpdate)
 
 	wgUpdate.Add(1)
-	go updateAsas(chains, &wgUpdate, dataSource)
+	go updateAsas(chains, &wgUpdate)
+
+	wgUpdate.Add(1)
+	go updateMoas(chains, &wgUpdate)
 
 	wgUpdate.Wait()
 	belogs.Info("chainValidate(): after updates time(s):", time.Since(start))
@@ -161,7 +151,7 @@ func updateChainByCheckAll(chains *Chains) (err error) {
 	return nil
 }
 
-//
+/*
 
 type DataSource interface {
 	GetChainRoaData(chainRoaDataCh chan []*ChainCertData, roaWg *sync.WaitGroup) error
@@ -182,3 +172,4 @@ type DataSource interface {
 	GetChainFileHashs(chainMft ChainMft) ([]ChainFileHash, error)
 	GetPreviousMft(chainMft ChainMft) (PreviousMft, error)
 }
+*/

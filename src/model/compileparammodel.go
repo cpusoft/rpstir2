@@ -10,7 +10,6 @@ import (
 type CompileParam struct {
 	Rp          []string `json:"rp"`
 	Vc          []string `json:"vc"`
-	License     []string `json:"license"`
 	Distributed []string `json:"distributed"`
 }
 
@@ -34,10 +33,6 @@ func FoundProgram(compileParam *CompileParam, programName string) bool {
 		return len(compileParam.Rp) > 0
 	} else if programName == "vc" {
 		return len(compileParam.Vc) > 0
-	} else if programName == "license" {
-		return len(compileParam.License) > 0
-	} else if programName == "distributed" {
-		return len(compileParam.Distributed) > 0
 	}
 	return false
 }
@@ -52,20 +47,6 @@ func FoundProgramModel(compileParam *CompileParam, programName, programModelDeta
 		return false
 	} else if programName == "vc" {
 		for _, d := range compileParam.Vc {
-			if d == programModelDetail {
-				return true
-			}
-		}
-		return false
-	} else if programName == "license" {
-		for _, d := range compileParam.License {
-			if d == programModelDetail {
-				return true
-			}
-		}
-		return false
-	} else if programName == "distributed" {
-		for _, d := range compileParam.Distributed {
 			if d == programModelDetail {
 				return true
 			}

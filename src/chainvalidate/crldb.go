@@ -12,7 +12,7 @@ import (
 	"xorm.io/xorm"
 )
 
-func (s *SQLDataSource) GetChainCrlData(chainCrlDataCh chan []*ChainCertData, crlWg *sync.WaitGroup) error {
+func   GetChainCrlData(chainCrlDataCh chan []*ChainCertData, crlWg *sync.WaitGroup) error {
 
 	start := time.Now()
 	belogs.Debug("getChainCrlSqlDb(): will select rpki_crl")
@@ -177,7 +177,7 @@ func updateCrlDb(session *xorm.Session, chains *Chains, crlId uint64,
 	return nil
 }
 
-func (s *SQLDataSource) UpdateCrls(chains *Chains) error {
+func   UpdateCrls(chains *Chains) error {
 	start := time.Now()
 	session, err := xormdb.NewSession()
 	if err != nil {

@@ -15,7 +15,7 @@ import (
 	"github.com/cpusoft/goutil/osutil"
 )
 
-func getChainAsas(chains *Chains, chainWg *sync.WaitGroup, syncLogId uint64, dataSource DataSource) {
+func getChainAsas(chains *Chains, chainWg *sync.WaitGroup, syncLogId uint64) {
 
 	defer chainWg.Done()
 	start := time.Now()
@@ -23,7 +23,7 @@ func getChainAsas(chains *Chains, chainWg *sync.WaitGroup, syncLogId uint64, dat
 	var asaWg sync.WaitGroup
 	chainRoaDatasCh := make(chan []*ChainCertData, conf.Int("chain::getDbConcurrentCount"))
 	go callAddAsaToChain(chains, syncLogId, chainRoaDatasCh, &asaWg)
-	err := dataSource.GetChainAsaData(chainRoaDatasCh, &asaWg)
+	err := GetChainAsaData(chainRoaDatasCh, &asaWg)
 	if err != nil {
 		belogs.Error("getChainAsas(): getChainRoaSqlDb fail: ", err)
 		close(chainRoaDatasCh)
@@ -41,14 +41,14 @@ func callAddAsaToChain(chains *Chains, syncLogId uint64, chainAsaDatasCh chan []
 	for {
 		select {
 		case chainAsaDatas, ok := <-chainAsaDatasCh:
-			belogs.Debug("callAddRoaToChain(): get from chainRoaSqlCh, len(chainRoaSqls):", len(chainAsaDatas),
+			belogs.Debug("callAddAsaToChain(): get from chainAsaSqlCh, len(chainAsaSqls):", len(chainAsaDatas),
 				"  index:", index, " ok:", ok)
 			if ok {
 				go addAsaToChain(chains, chainAsaDatas, syncLogId, roaWg)
 				index++
-				belogs.Debug("callAddRoaToChain(): addRoaToChain index:", index)
+				belogs.Debug("callAddAsaToChain(): addAsaToChain index:", index)
 			} else {
-				belogs.Info("callAddRoaToChain(): close chainRoaSqlsCh, index:", index, "   time(s):", time.Since(start))
+				belogs.Info("callAddAsaToChain(): close chainAsaSqlsCh, index:", index, "   time(s):", time.Since(start))
 				return
 			}
 
@@ -92,23 +92,6 @@ func addAsaToChain(chains *Chains, chainAsaDatas []*ChainCertData, syncLogId uin
 			belogs.Error("addAsaToChain(): ToChainAsa fail, chainAsaSql.Id:", chainAsaDatas[i].Id, err)
 			return
 		}
-		// if syncLogId == 0 , is global chainvalidate, should need validate
-		// if syncLogId > 0, only chainSqls[i].SynclogId == syncLogId, should need validate
-		if syncLogId == 0 {
-			chainAsa.NeedValidate = true
-			belogs.Info("addAsaToChain(): Due to the adopt global chainvalidate,",
-				"so this ASPA file (id is", chainAsaDatas[i].Id, ") needs to be validated",
-				"regardless of whether it has been updated or not")
-		}
-		if syncLogId > 0 && chainAsaDatas[i].SyncLogId == syncLogId {
-			chainAsa.NeedValidate = true
-			belogs.Info("addAsaToChain(): Due to the adopt partial chainvalidate,",
-				"so this ASPA file (id is", chainAsaDatas[i].Id, ") has been updated",
-				"and therefore needs to be validated")
-		}
-		if chainAsa.NeedValidate {
-			chains.AddIdentifierNeedValidate(chainAsa.Aki)
-		}
 
 		chains.AddAsaId(chainAsaDatas[i].Id)
 		chains.AddAsa(&chainAsa)
@@ -120,39 +103,6 @@ func addAsaToChain(chains *Chains, chainAsaDatas []*ChainCertData, syncLogId uin
 	return
 }
 
-/*
-	func getChainAsas(chains *Chains, chainWg *sync.WaitGroup, syncLogId uint64) {
-		defer chainWg.Done()
-		start := time.Now()
-		belogs.Debug("getChainAsas(): syncLogId:", syncLogId)
-
-		chainAsaSqls, err := getChainAsaSqlsDb()
-		if err != nil {
-			belogs.Error("getChainAsas(): getChainAsaSqlsDb:", err)
-			return
-		}
-		belogs.Debug("getChainAsas(): getChainAsaSqlsDb, len(chainAsaSqls):", len(chainAsaSqls))
-
-		for i := range chainAsaSqls {
-			chainAsa := chainAsaSqls[i].ToChainAsa()
-			// if syncLogId == 0 , is global chainvalidate, should need validate
-			// if syncLogId > 0, only chainSqls[i].SynclogId == syncLogId, should need validate
-			if syncLogId == 0 {
-				chainAsa.NeedValidate = true
-			}
-			if syncLogId > 0 && chainAsaSqls[i].SyncLogId == syncLogId {
-				chainAsa.NeedValidate = true
-			}
-			belogs.Debug("getChainAsas(): chainAsa:", jsonutil.MarshalJson(chainAsa),
-				"  syncLogId:", syncLogId, "    chainAsaSqls[i].SyncLogId:", chainAsaSqls[i].SyncLogId)
-			chains.AsaIds = append(chains.AsaIds, chainAsaSqls[i].Id)
-			chains.AddAsa(&chainAsa)
-		}
-
-		belogs.Debug("getChainAsas(): end, len(chainAsaSqls):", len(chainAsaSqls), ",   len(chains.AsaIds):", len(chains.AsaIds), "  time(s):", time.Since(start))
-		return
-	}
-*/
 func validateAsas(chains *Chains, wg *sync.WaitGroup) {
 	defer wg.Done()
 
@@ -196,16 +146,6 @@ func validateAsa(chains *Chains, asaId uint64, wg *sync.WaitGroup, chainAsaCh ch
 		return
 	}
 	belogs.Debug("validateAsa():getAsaParentChainCers, asaId:", asaId, "   len(chainAsa.ParentChainCers):", len(chainAsa.ParentChainCerAlones))
-
-	if !chainAsa.NeedValidate {
-		chainAsa.StateModel.JudgeState()
-		chains.UpdateFileTypeIdToAsa(&chainAsa)
-		belogs.Info("validateAsa(): when adopt partial chainvalidate, this file(", chainAsa.FilePath, chainAsa.FileName, ") has not been changed in this update,",
-			"so the chainvalidate is not required for this file")
-		return
-	}
-	belogs.Info("validateAsa(): when adopt partial chainvalidate, this file(", chainAsa.FilePath, chainAsa.FileName, ") has been changed or be affected in this update,",
-		"so the chainvalidate is required for this file, it will verify the trust relationship between superiors and subordinates")
 
 	// if not root cer, should have parent cer
 	if len(chainAsa.ParentChainCerAlones) > 0 {
@@ -295,13 +235,6 @@ func basicValidateAsa(chains *Chains, asaId uint64, wg *sync.WaitGroup, chainAsa
 		return
 	}
 	belogs.Debug("validateAsa():getAsaParentChainCers, asaId:", asaId, "   len(chainAsa.ParentChainCers):", len(chainAsa.ParentChainCerAlones))
-
-	if !chainAsa.NeedValidate {
-		chainAsa.StateModel.JudgeState()
-		chains.UpdateFileTypeIdToAsa(&chainAsa)
-		belogs.Debug("validateAsa(): NeedValidate is false, asaId:", asaId, "  file:", chainAsa.FilePath, chainAsa.FileName)
-		return
-	}
 
 	// if not root cer, should have parent cer
 	if len(chainAsa.ParentChainCerAlones) > 0 {
@@ -421,11 +354,11 @@ func getAsaParentChainCer(chains *Chains, asaId uint64) (chainCerAlone ChainCerA
 	return chainCerAlone, nil
 }
 
-func updateAsas(chains *Chains, wg *sync.WaitGroup, dataSource DataSource) {
+func updateAsas(chains *Chains, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	start := time.Now()
-	err := dataSource.UpdateAsas(chains)
+	err := UpdateAsas(chains)
 	if err != nil {
 		belogs.Error("updateAsas(): UpdateAsas fail:", err)
 		return

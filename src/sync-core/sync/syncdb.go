@@ -57,6 +57,12 @@ func DelByFilePathDb(filePath string) (err error) {
 			filePath, err)
 		return err
 	}
+	err = delMoaDb(session, filePath)
+	if err != nil {
+		belogs.Error("DelByFilePathDb(): delMoaDb fail, filePath: ",
+			filePath, err)
+		return err
+	}
 
 	err = xormdb.CommitSession(session)
 	if err != nil {

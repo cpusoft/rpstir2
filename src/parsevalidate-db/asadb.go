@@ -2,13 +2,10 @@ package parsevalidatedb
 
 import (
 	"errors"
-	"strings"
 	"time"
 
 	"github.com/bgpsecurity/rpstir2/model"
 	"github.com/cpusoft/goutil/belogs"
-	"github.com/cpusoft/goutil/conf"
-	"github.com/cpusoft/goutil/convert"
 	"github.com/cpusoft/goutil/jsonutil"
 	"github.com/cpusoft/goutil/xormdb"
 	"xorm.io/xorm"
@@ -250,11 +247,12 @@ func DelAsaByIdDbWithSession(session *xorm.Session, asaId uint64) (err error) {
 	return nil
 }
 
+/*
 func getExpireAsaDb(now time.Time) (certIdStateModels []model.CertIdStateModel, err error) {
 
 	certIdStateModels = make([]model.CertIdStateModel, 0)
 	t := now.Local().Format("2006-01-02T15:04:05-0700")
-	sql := `select id, state as stateStr,str_to_date( SUBSTRING_INDEX(c.jsonAll->>'$.eeCertModel.notAfter','+',1),'%Y-%m-%dT%H:%i:%S')  as endTime  from  lab_rpki_asa c 
+	sql := `select id, state as stateStr,str_to_date( SUBSTRING_INDEX(c.jsonAll->>'$.eeCertModel.notAfter','+',1),'%Y-%m-%dT%H:%i:%S')  as endTime  from  lab_rpki_asa c
 			where c.jsonAll->>'$.eeCertModel.notAfter' < ? order by id `
 
 	err = xormdb.XormEngine.SQL(sql, t).Find(&certIdStateModels)
@@ -344,3 +342,4 @@ func UpdateAsaByCheckAll(now time.Time) error {
 	return nil
 
 }
+*/

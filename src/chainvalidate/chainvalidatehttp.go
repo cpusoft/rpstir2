@@ -8,30 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ChainValidatePartialStart  开始证书链验证接口（支持局部验证）
-//
-//	@param c 服务端上下文信息
-func ChainValidatePartialStart(c *gin.Context) {
-	belogs.Info("ChainValidatePartialStart(): use partial chainvalidate")
-	chainValidateHttpStart(c, false)
-}
-
 // ChainValidateStart 开始证书链验证接口
 //
 //	@param c 服务端上下文信息
 func ChainValidateStart(c *gin.Context) {
 	belogs.Info("ChainValidateStart(): use global chainvalidate")
-	chainValidateHttpStart(c, true)
-}
 
-// chainValidateHttpStart 实际执行证书链验证
-//
-//	@param c 服务端上下文信息
-//	@param isGlobal 是否支持证书链局部验证
-func chainValidateHttpStart(c *gin.Context, isGlobal bool) {
 	rpstir2RpUrl := "https://" + conf.String("rpstir2-rp::serverHost") + ":" + conf.String("rpstir2-rp::serverHttpsPort")
 	rpstir2VcUrl := "https://" + conf.String("rpstir2-vc::serverHost") + ":" + conf.String("rpstir2-vc::serverHttpsPort")
-	belogs.Info("chainValidateHttpStart(): start,  rpstir2RpUrl:", rpstir2RpUrl, "   rpstir2VcUrl:", rpstir2VcUrl, "  isGlobal:", isGlobal, "  usecache:", UseCache)
+	belogs.Info("chainValidateHttpStart(): start,  rpstir2RpUrl:", rpstir2RpUrl, "   rpstir2VcUrl:", rpstir2VcUrl)
 
 	//check serviceState
 	_, _, err := httpclient.Post(rpstir2RpUrl+"/sys/servicestate", `{"operate":"enter","state":"chainvalidate"}`, false)
@@ -39,7 +24,7 @@ func chainValidateHttpStart(c *gin.Context, isGlobal bool) {
 		belogs.Error("chainValidateHttpStart(): servicestate enter chainvalidate fail, rpstir2RpUrl:", rpstir2RpUrl, err)
 	}
 	go func() {
-		nextStep, err := chainValidateStart(isGlobal)
+		nextStep, err := chainValidateStart()
 		belogs.Debug("chainValidateHttpStart(): chainValidateStart end,  nextStep is:", nextStep, err)
 		// leave serviceState
 		if err != nil {
@@ -70,9 +55,6 @@ func chainValidateHttpStart(c *gin.Context, isGlobal bool) {
 
 			// call statistics
 			go httpclient.Post(rpstir2RpUrl+"/statistic/start", "", false)
-
-			// call roacompete
-			go httpclient.Post(rpstir2RpUrl+"/roacompete/start", "", false)
 
 			// call roahistory
 			//go httpclient.Post(rpstir2RpUrl+"/roahistory/start", "", false)

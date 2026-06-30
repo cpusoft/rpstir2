@@ -2,13 +2,10 @@ package parsevalidatedb
 
 import (
 	"errors"
-	"strings"
 	"time"
 
 	"github.com/bgpsecurity/rpstir2/model"
 	"github.com/cpusoft/goutil/belogs"
-	"github.com/cpusoft/goutil/conf"
-	"github.com/cpusoft/goutil/convert"
 	"github.com/cpusoft/goutil/jsonutil"
 	"github.com/cpusoft/goutil/xormdb"
 	"xorm.io/xorm"
@@ -303,11 +300,12 @@ func DelCerByIdDbWithSession(session *xorm.Session, cerId uint64) (err error) {
 	return nil
 }
 
+/*
 func getExpireCerDb(now time.Time) (certIdStateModels []model.CertIdStateModel, err error) {
 
 	certIdStateModels = make([]model.CertIdStateModel, 0)
 	t := convert.Time2String(now)
-	sql := `select id, state as stateStr, c.NotAfter as endTime from  lab_rpki_cer c 
+	sql := `select id, state as stateStr, c.NotAfter as endTime from  lab_rpki_cer c
 			where timestamp(c.NotAfter) < ? order by id `
 
 	err = xormdb.XormEngine.SQL(sql, t).Find(&certIdStateModels)
@@ -318,7 +316,9 @@ func getExpireCerDb(now time.Time) (certIdStateModels []model.CertIdStateModel, 
 	belogs.Info("getExpireCerDb(): now t:", t, "  , len(certIdStateModels):", len(certIdStateModels))
 	return certIdStateModels, nil
 }
+*/
 
+/*
 func updateCerStateDb(certIdStateModels []model.CertIdStateModel) error {
 	start := time.Now()
 	session, err := xormdb.NewSession()
@@ -348,7 +348,8 @@ func updateCerStateDb(certIdStateModels []model.CertIdStateModel) error {
 
 	return nil
 }
-
+*/
+/*
 func UpdateCerByCheckAll(now time.Time) error {
 	// check expire
 	curCertIdStateModels, err := getExpireCerDb(now)
@@ -395,3 +396,4 @@ func UpdateCerByCheckAll(now time.Time) error {
 	belogs.Info("UpdateCerByCheckAll(): ok len(newCertIdStateModels):", len(newCertIdStateModels))
 	return nil
 }
+*/

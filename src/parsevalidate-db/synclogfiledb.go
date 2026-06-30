@@ -7,7 +7,6 @@ import (
 	"github.com/bgpsecurity/rpstir2/model"
 	"github.com/cpusoft/goutil/belogs"
 	"github.com/cpusoft/goutil/jsonutil"
-	"github.com/cpusoft/goutil/osutil"
 	"github.com/cpusoft/goutil/xormdb"
 	"xorm.io/xorm"
 )
@@ -19,12 +18,13 @@ func GetSyncLogFileModelBySyncLogIdDb(labRpkiSyncLogId uint64, syncLogFileModels
 	belogs.Debug("GetSyncLogFileModelBySyncLogIdDb(): will select lab_rpki_sync_log_file, labRpkiSyncLogId:", labRpkiSyncLogId)
 	syncLogFileModel := new(model.SyncLogFileModel)
 	sql := `select s.id,s.syncLogId,s.filePath,s.fileName, s.fileType, s.syncType, 
-				cast(CONCAT(IFNULL(c.id,''),IFNULL(m.id,''),IFNULL(l.id,''),IFNULL(r.id,''),IFNULL(a.id,'')) as unsigned int) as certId from lab_rpki_sync_log_file s 
+				cast(CONCAT(IFNULL(c.id,''),IFNULL(m.id,''),IFNULL(l.id,''),IFNULL(r.id,''),IFNULL(a.id,''),IFNULL(o.id,'')) as unsigned int) as certId from lab_rpki_sync_log_file s 
 			left join lab_rpki_cer c on c.filePath = s.filePath and c.fileName = s.fileName  
 			left join lab_rpki_mft m on m.filePath = s.filePath and m.fileName = s.fileName  
 			left join lab_rpki_crl l on l.filePath = s.filePath and l.fileName = s.fileName  
 			left join lab_rpki_roa r on r.filePath = s.filePath and r.fileName = s.fileName 
 			left join lab_rpki_asa a on a.filePath = s.filePath and a.fileName = s.fileName 
+			left join lab_rpki_moa o on o.filePath = s.filePath and o.fileName = s.fileName 
 			where s.state->>'$.updateCertTable'='notYet' and s.syncLogId=? order by s.id `
 	rows, err := xormdb.XormEngine.SQL(sql, labRpkiSyncLogId).Rows(syncLogFileModel)
 	if err != nil {
@@ -83,7 +83,7 @@ func UpdateSyncLogFileJsonAllAndStateDbWithSession(session *xorm.Session, syncLo
 	  f.jsonAll=?  where f.id=?`
 	rtrState := "notNeed"
 	jsonAll := ""
-	if (syncLogFileModel.FileType == "roa" || syncLogFileModel.FileType == "asa") &&
+	if (syncLogFileModel.FileType == "roa" || syncLogFileModel.FileType == "asa" || syncLogFileModel.FileType == "moa") &&
 		syncLogFileModel.SyncType != "del" {
 		rtrState = "notYet"
 	}
@@ -111,83 +111,4 @@ func UpdateSyncLogFileJsonAllAndStateDbWithSession(session *xorm.Session, syncLo
 	belogs.Debug("UpdateSyncLogFileJsonAllAndStateDbWithSession(): update lab_rpki_sync_log_file, id:", syncLogFileModel.Id,
 		"   file:", syncLogFileModel.FilePath, syncLogFileModel.FileName)
 	return nil
-}
-
-func saveToSyncLogFileDb(distributedResult *model.DistributedResult) (syncLogFileId uint64, err error) {
-
-	start := time.Now()
-	session, err := xormdb.NewSession()
-	if err != nil {
-		belogs.Error("saveToSyncLogFileDb(): NewSession fail:", err)
-		return 0, err
-	}
-	defer session.Close()
-
-	syncLogId := distributedResult.DistributedPublishWithdrawResult.SyncLogId
-	filePathName := distributedResult.DistributedPublishWithdrawResult.CenterFilePathName
-	filePath, fileName := osutil.Split(filePathName)
-	fileType := osutil.ExtNoDot(fileName)
-	sourceUrl := distributedResult.DistributedPublishWithdrawResult.SnapshotOrDeltaUrl
-	syncTime := distributedResult.DistributedPublishWithdrawResult.SyncTime
-	syncStyle := "rrdp"
-	fileHash := distributedResult.DistributedPublishWithdrawResult.FileHash
-	isSnapshot := distributedResult.DistributedPublishWithdrawResult.IsSnapshot
-	isPublish := distributedResult.DistributedPublishWithdrawResult.IsPublish
-	var syncType, jsonAll string
-	if isPublish {
-		syncType = "add"
-		jsonAll = jsonutil.MarshalJson(distributedResult.DistributedPublishWithdrawResult.CertModel)
-	} else {
-		syncType = "del"
-		jsonAll = "" // when withdraw, jsonAll is empty
-	}
-	rtr := "notNeed"
-	if isPublish &&
-		(fileType == "roa" || fileType == "asa") {
-		rtr = "notYet"
-	}
-	syncLogFileState := model.LabRpkiSyncLogFileState{
-		Sync:            "finished",
-		UpdateCertTable: "finished",
-		Rtr:             rtr,
-	}
-	state := jsonutil.MarshalJson(syncLogFileState)
-	belogs.Info("saveToSyncLogFileDb(): syncLogId:", syncLogId, "  filePathName:", filePathName,
-		"  isSnapshot:", isSnapshot, " isPublish:", isPublish, "  sourceUrl:", sourceUrl,
-		"  syncType:", syncType, "  syncStyle:", syncStyle, "  fileHash:", fileHash, "  len(jsonAll):", len(jsonAll))
-
-	//lab_rpki_sync_log_file
-	sqlStr := `INSERT lab_rpki_sync_log_file
-			   (syncLogId,fileType,syncTime,
-			   filePath,fileName,sourceUrl,
-			   syncType,syncStyle,state,
-			   fileHash,jsonAll)
-		 VALUES(?,?,?,
-		 ?,?,?,
-		 ?,?,?,
-		 ?,?)`
-	res, err := session.Exec(sqlStr,
-		syncLogId, fileType, syncTime,
-		filePath, fileName, sourceUrl,
-		syncType, syncStyle, state,
-		xormdb.SqlNullString(fileHash),
-		xormdb.SqlNullString(jsonAll))
-	if err != nil {
-		belogs.Error("saveToSyncLogFileDb():INSERT lab_rpki_sync_log_file fail, distributedResult:", distributedResult.String(), err)
-		return 0, xormdb.RollbackAndLogError(session, "INSERT lab_rpki_sync_log_file fail", err)
-	}
-	id, err := res.LastInsertId()
-	if err != nil {
-		belogs.Error("saveToSyncLogFileDb(): LastInsertId id fail,distributedResult:", distributedResult.String(), err)
-		return 0, err
-	}
-
-	err = xormdb.CommitSession(session)
-	if err != nil {
-		return 0, xormdb.RollbackAndLogError(session, "saveToSyncLogFileDb(): CommitSession fail:", err)
-	}
-	belogs.Debug("saveToSyncLogFileDb(): ok, syncLogId:", syncLogId, "  syncLogFileId:", id, "  filePathName:", filePathName, "  sourceUrl:", sourceUrl,
-		"  syncType:", syncType, "  syncStyle:", syncStyle, "  fileHash:", fileHash, "  time(s):", time.Since(start))
-
-	return uint64(id), nil
 }

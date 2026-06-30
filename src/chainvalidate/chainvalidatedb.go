@@ -9,14 +9,15 @@ import (
 	"github.com/cpusoft/goutil/xormdb"
 )
 
+/*
 // SQLDataSource 实现了 DataSource 接口，用于 MySQL 数据源
 type SQLDataSource struct{}
 
 func getDataSource() *SQLDataSource {
 	return &SQLDataSource{}
 }
-
 //func getChainCertSqlDb(oneSize, myCount int64, sql string,
+*/
 //	wg *sync.WaitGroup, chainCertSqlsCh chan []*ChainCertSql) (selectCount int64) {
 //	start := time.Now()
 //	var offset int64

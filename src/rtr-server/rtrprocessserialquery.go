@@ -58,7 +58,7 @@ func processSerialQuery(rtrPduModel rtrcore.RtrPduModel) (serialResponses []rtrc
 		belogs.Debug("processSerialQuery():server get  len(serialNumbers) >0 && <=2 , will send Cache Response of rtr incremental,",
 			" clientSessionId: ", clientSessionId, ", clientSerialNumber:", clientSerialNumber,
 			", len(serialNumbers): ", len(serialNumbers))
-		rtrIncrementals, rtrAsaIncrementals, rtrHroaIncrementals, rtrAsraIncrementals,
+		rtrIncrementals, rtrAsaIncrementals,
 			sessionId, serialNumber, err := getRtrXIncrementalDb(clientSerialNumber)
 		if err != nil {
 			belogs.Error("processSerialQuery(): len(serialNumbers) >0 && <=2,  getRtrXIncrementalDb fail: ", clientSerialNumber, err)
@@ -66,12 +66,10 @@ func processSerialQuery(rtrPduModel rtrcore.RtrPduModel) (serialResponses []rtrc
 		}
 		belogs.Debug("processSerialQuery(): len(rtrIncrementals):", len(rtrIncrementals),
 			"  len(rtrAsaIncrementals):", len(rtrAsaIncrementals),
-			"  len(rtrHroaIncrementals):", len(rtrHroaIncrementals),
-			"  len(rtrAsraIncrementals):", len(rtrAsraIncrementals),
 			"  sessionId:", sessionId, "  serialNumber:", serialNumber)
 
 		rtrPduModels, err := rtrcore.AssembleSerialResponses(rtrIncrementals, rtrAsaIncrementals,
-			rtrHroaIncrementals, rtrAsraIncrementals, rtrSerialQueryModel.GetProtocolVersion(), sessionId, serialNumber)
+			rtrSerialQueryModel.GetProtocolVersion(), sessionId, serialNumber)
 		if err != nil {
 			belogs.Error("processSerialQuery():server get len(serialNumbers) >0 && <=2 , AssembleSerialResponses fail: ", err)
 			return nil, err
@@ -81,8 +79,6 @@ func processSerialQuery(rtrPduModel rtrcore.RtrPduModel) (serialResponses []rtrc
 			"   len(serialNumbers): ", len(serialNumbers),
 			"   len(rtrIncrementals):", len(rtrIncrementals),
 			"   len(rtrAsaIncrementals):", len(rtrAsaIncrementals),
-			"   len(rtrHroaIncrementals):", len(rtrHroaIncrementals),
-			"   len(rtrAsraIncrementals):", len(rtrAsraIncrementals),
 			"   len(rtrPduModels):", len(rtrPduModels), "  time(s):", time.Since(start))
 
 		return rtrPduModels, nil

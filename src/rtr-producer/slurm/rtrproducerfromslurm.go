@@ -34,41 +34,11 @@ func RtrUpdateFromSlurm() (err error) {
 	belogs.Debug("RtrUpdateFromSlurm(): asaSlurmToRtrFullLogs:", len(asaSlurmToRtrFullLogs), jsonutil.MarshalJson(asaSlurmToRtrFullLogs))
 	belogs.Info("RtrUpdateFromSlurm(): len(asaSlurmToRtrFullLogs):", len(asaSlurmToRtrFullLogs), "  time(s):", time.Since(start))
 
-	hroaSlurmToRtrFullLogs, err := rtrcommon.GetAllSlurmsDb("hroa")
-	if err != nil {
-		belogs.Error("RtrUpdateFromSlurm(): GetAllSlurmsDb hroa fail:", err)
-		return err
-	}
-	belogs.Debug("RtrUpdateFromSlurm(): hroaSlurmToRtrFullLogs:", len(hroaSlurmToRtrFullLogs), jsonutil.MarshalJson(hroaSlurmToRtrFullLogs))
-	belogs.Info("RtrUpdateFromSlurm(): len(hroaSlurmToRtrFullLogs):", len(hroaSlurmToRtrFullLogs), "  time(s):", time.Since(start))
-
-	asraSlurmToRtrFullLogs, err := rtrcommon.GetAllSlurmsDb("asra")
-	if err != nil {
-		belogs.Error("RtrUpdateFromSlurm(): GetAllSlurmsDb asra fail:", err)
-		return err
-	}
-	belogs.Debug("RtrUpdateFromSlurm(): asraSlurmToRtrFullLogs:", len(asraSlurmToRtrFullLogs), jsonutil.MarshalJson(asraSlurmToRtrFullLogs))
-	belogs.Info("RtrUpdateFromSlurm(): len(asraSlurmToRtrFullLogs):", len(asraSlurmToRtrFullLogs), "  time(s):", time.Since(start))
-
 	if len(prefixSlurmToRtrFullLogs) == 0 &&
-		len(asaSlurmToRtrFullLogs) == 0 &&
-		len(hroaSlurmToRtrFullLogs) == 0 &&
-		len(asraSlurmToRtrFullLogs) == 0 {
-		belogs.Info("RtrUpdateFromSlurm(): prefixSlurmToRtrFullLogs and asaSlurmToRtrFullLogs and hroaSlurmToRtrFullLogs" +
-			" and asraSlurmToRtrFullLogs all are empty, will return 'end' ")
+		len(asaSlurmToRtrFullLogs) == 0 {
+		belogs.Info("RtrUpdateFromSlurm(): prefixSlurmToRtrFullLogs and asaSlurmToRtrFullLogs" +
+			" all are empty, will return 'end' ")
 		return nil
-	}
-
-	// check is top of rushnode
-	rushNodeModel, has, err := selectSelfNodeDb()
-	if err != nil {
-		belogs.Error("RtrUpdateFromSlurm():rushNodeIsTopResult fail:", err)
-		return err
-	}
-	belogs.Info("RtrUpdateFromSlurm(): rushNodeModel:", jsonutil.MarshalJson(rushNodeModel), " has:", has)
-	isTop := "false"
-	if !has || rushNodeModel.ParentNodeId.IsZero() || rushNodeModel.ParentNodeId.ValueOrZero() == 0 {
-		isTop = "true"
 	}
 
 	// GetSerialNumberDb, get serialNumber
@@ -78,25 +48,17 @@ func RtrUpdateFromSlurm() (err error) {
 		return err
 	}
 	newSerialNumberModel := &rtrcommon.SerialNumberModel{}
-	if isTop == "true" {
-		newSerialNumberModel.SerialNumber = curSerialNumberModel.SerialNumber + 1
-		newSerialNumberModel.GlobalSerialNumber = curSerialNumberModel.GlobalSerialNumber + 1
-		newSerialNumberModel.SubpartSerialNumber = curSerialNumberModel.SubpartSerialNumber
-	} else {
-		newSerialNumberModel.SerialNumber = curSerialNumberModel.SerialNumber + 1
-		newSerialNumberModel.GlobalSerialNumber = curSerialNumberModel.GlobalSerialNumber
-		newSerialNumberModel.SubpartSerialNumber = curSerialNumberModel.SubpartSerialNumber + 1
-	}
+	newSerialNumberModel.SerialNumber = curSerialNumberModel.SerialNumber + 1
+	newSerialNumberModel.GlobalSerialNumber = curSerialNumberModel.GlobalSerialNumber + 1
+	newSerialNumberModel.SubpartSerialNumber = curSerialNumberModel.SubpartSerialNumber
 
-	belogs.Info("RtrUpdateFromSlurm(): isTop:", isTop,
-		"   curSerialNumberModel:", jsonutil.MarshalJson(curSerialNumberModel),
+	belogs.Info("RtrUpdateFromSlurm(): curSerialNumberModel:", jsonutil.MarshalJson(curSerialNumberModel),
 		"   newSerialNumberModel:", jsonutil.MarshalJson(newSerialNumberModel),
 		"   time(s):", time.Since(start))
 
 	// update
 	err = updateRtrFullAndFullLogAndIncrementalFromSlurm(curSerialNumberModel, newSerialNumberModel,
-		prefixSlurmToRtrFullLogs, asaSlurmToRtrFullLogs,
-		hroaSlurmToRtrFullLogs, asraSlurmToRtrFullLogs)
+		prefixSlurmToRtrFullLogs, asaSlurmToRtrFullLogs)
 	if err != nil {
 		belogs.Error("RtrUpdateFromSlurm():updateRtrFullAndFullLogAndIncrementalFromSlurm fail:", err)
 		return err
@@ -107,16 +69,13 @@ func RtrUpdateFromSlurm() (err error) {
 }
 
 func updateRtrFullAndFullLogAndIncrementalFromSlurm(curSerialNumberModel, newSerialNumberModel *rtrcommon.SerialNumberModel,
-	prefixSlurmToRtrFullLogs, asaSlurmToRtrFullLogs,
-	hroaSlurmToRtrFullLogs, asraSlurmToRtrFullLogs []model.SlurmToRtrFullLog) (err error) {
+	prefixSlurmToRtrFullLogs, asaSlurmToRtrFullLogs []model.SlurmToRtrFullLog) (err error) {
 	start := time.Now()
 
 	belogs.Debug("updateRtrFullAndFullLogAndIncrementalFromSlurm():curSerialNumberModel:", jsonutil.MarshalJson(curSerialNumberModel),
 		"   newSerialNumberModel:", jsonutil.MarshalJson(newSerialNumberModel),
 		"  len(prefixSlurmToRtrFullLogs):", len(prefixSlurmToRtrFullLogs),
-		"  len(asaSlurmToRtrFullLogs):", len(asaSlurmToRtrFullLogs),
-		"  len(hroaSlurmToRtrFullLogs):", len(hroaSlurmToRtrFullLogs),
-		"  len(asraSlurmToRtrFullLogs):", len(asraSlurmToRtrFullLogs))
+		"  len(asaSlurmToRtrFullLogs):", len(asaSlurmToRtrFullLogs))
 
 	err = insertNewSerialNumberDb(newSerialNumberModel)
 	if err != nil {
@@ -216,98 +175,6 @@ func updateRtrFullAndFullLogAndIncrementalFromSlurm(curSerialNumberModel, newSer
 		return err
 	}
 	belogs.Debug("updateRtrFullAndFullLogAndIncrementalFromSlurm():insertRtrAsaIncrementalByEffectSlurmDb, effectAsaSlurm:", jsonutil.MarshalJson(effectAsaSlurm), "  time(s):", time.Since(start))
-
-	// hroa
-	err = insertRtrHroaFullLogFromCurSerialNumberDb(curSerialNumberModel, newSerialNumberModel)
-	if err != nil {
-		belogs.Error("updateRtrFullAndFullLogAndIncrementalFromSlurm(): insertRtrHroaFullLogFromCurSerialNumberDb fail, new SerialNumber:", newSerialNumberModel.SerialNumber,
-			"  cur SerialNumber:", curSerialNumberModel.SerialNumber, err)
-		return err
-	}
-	belogs.Debug("updateRtrFullAndFullLogAndIncrementalFromSlurm():insertRtrHroaFullLogFromCurSerialNumberDb, newSerialNumberModel:", jsonutil.MarshalJson(newSerialNumberModel), "   time(s):", time.Since(start))
-
-	effectHroaSlurm, err := rtrcommon.UpdateRtrHroaFullOrFullLogFromSlurmDb("lab_rpki_rtr_hroa_full_log", newSerialNumberModel.SerialNumber, hroaSlurmToRtrFullLogs, true)
-	if err != nil {
-		belogs.Error("updateRtrFullAndFullLogAndIncrementalFromSlurm():UpdateRtrHroaFullOrFullLogFromSlurmDb fail, lab_rpki_rtr_hroa_full_log, new SerialNumber:", newSerialNumberModel.SerialNumber, "   len(hroaSlurmToRtrFullLogs):", hroaSlurmToRtrFullLogs, err)
-		return err
-	}
-	belogs.Debug("updateRtrFullAndFullLogAndIncrementalFromSlurm():UpdateRtrHroaFullOrFullLogFromSlurmDb, lab_rpki_rtr_hroa_full_log effectHroaSlurm:", jsonutil.MarshalJson(effectHroaSlurm), "   len(hroaSlurmToRtrFullLogs):", hroaSlurmToRtrFullLogs, "   time(s):", time.Since(start))
-
-	err = updateRtrXFullByNewSerialNumberDb("lab_rpki_rtr_hroa_full", newSerialNumberModel)
-	if err != nil {
-		belogs.Error("updateRtrFullAndFullLogAndIncrementalFromSlurm():updateRtrXFullByNewSerialNumberDb fail: new serialNumber:",
-			newSerialNumberModel.SerialNumber, err)
-		return err
-	}
-	belogs.Debug("updateRtrFullAndFullLogAndIncrementalFromSlurm():updateRtrXFullByNewSerialNumberDb, lab_rpki_rtr_hroa_full newSerialNumberModel:", jsonutil.MarshalJson(newSerialNumberModel), "   time(s):", time.Since(start))
-
-	err = delRtrXFullFromSlurmDb("lab_rpki_rtr_hroa_full")
-	if err != nil {
-		belogs.Error("updateRtrFullAndFullLogAndIncrementalFromSlurm():delRtrXFullFromSlurmDb lab_rpki_rtr_hroa_full fail:", err)
-		return err
-	}
-	belogs.Debug("updateRtrFullAndFullLogAndIncrementalFromSlurm():delRtrXFullFromSlurmDb, lab_rpki_rtr_hroa_full, time(s):", time.Since(start))
-
-	_, err = rtrcommon.UpdateRtrHroaFullOrFullLogFromSlurmDb("lab_rpki_rtr_hroa_full", newSerialNumberModel.SerialNumber, hroaSlurmToRtrFullLogs, false)
-	if err != nil {
-		belogs.Error("updateRtrFullAndFullLogAndIncrementalFromSlurm():UpdateRtrHroaFullOrFullLogFromSlurmDb lab_rpki_hroa_rtr_full fail, new SerialNumber:", newSerialNumberModel.SerialNumber, err)
-		return err
-	}
-	belogs.Debug("updateRtrFullAndFullLogAndIncrementalFromSlurm():UpdateRtrHroaFullOrFullLogFromSlurmDb, hroaSlurmToRtrFullLogs:", jsonutil.MarshalJson(hroaSlurmToRtrFullLogs), "  time(s):", time.Since(start))
-
-	err = insertRtrHroaIncrementalByEffectSlurmDb(newSerialNumberModel, effectHroaSlurm)
-	if err != nil {
-		belogs.Error("updateRtrFullAndFullLogAndIncrementalFromSlurm():insertRtrHroaIncrementalByEffectSlurmDb fail, new SerialNumber:", newSerialNumberModel.SerialNumber,
-			"   len(effectHroaSlurm):", len(effectHroaSlurm), err)
-		return err
-	}
-	belogs.Debug("updateRtrFullAndFullLogAndIncrementalFromSlurm():insertRtrHroaIncrementalByEffectSlurmDb, effectHroaSlurm:", jsonutil.MarshalJson(effectHroaSlurm), "  time(s):", time.Since(start))
-
-	// asra
-	err = insertRtrAsraFullLogFromCurSerialNumberDb(curSerialNumberModel, newSerialNumberModel)
-	if err != nil {
-		belogs.Error("updateRtrFullAndFullLogAndIncrementalFromSlurm(): insertRtrAsraFullLogFromCurSerialNumberDb fail, new SerialNumber:", newSerialNumberModel.SerialNumber,
-			"  cur SerialNumber:", curSerialNumberModel.SerialNumber, err)
-		return err
-	}
-	belogs.Debug("updateRtrFullAndFullLogAndIncrementalFromSlurm():insertRtrAsraFullLogFromCurSerialNumberDb, newSerialNumberModel:", jsonutil.MarshalJson(newSerialNumberModel), "   time(s):", time.Since(start))
-
-	effectAsraSlurm, err := rtrcommon.UpdateRtrAsraFullOrFullLogFromSlurmDb("lab_rpki_rtr_asra_full_log", newSerialNumberModel.SerialNumber, asraSlurmToRtrFullLogs, true)
-	if err != nil {
-		belogs.Error("updateRtrFullAndFullLogAndIncrementalFromSlurm():UpdateRtrAsraFullOrFullLogFromSlurmDb fail, lab_rpki_rtr_asra_full_log, new SerialNumber:", newSerialNumberModel.SerialNumber, "   len(asraSlurmToRtrFullLogs):", asraSlurmToRtrFullLogs, err)
-		return err
-	}
-	belogs.Debug("updateRtrFullAndFullLogAndIncrementalFromSlurm():UpdateRtrAsraFullOrFullLogFromSlurmDb, lab_rpki_rtr_asra_full_log effectAsraSlurm:", jsonutil.MarshalJson(effectAsraSlurm), "   len(asraSlurmToRtrFullLogs):", asraSlurmToRtrFullLogs, "   time(s):", time.Since(start))
-
-	err = updateRtrXFullByNewSerialNumberDb("lab_rpki_rtr_asra_full", newSerialNumberModel)
-	if err != nil {
-		belogs.Error("updateRtrFullAndFullLogAndIncrementalFromSlurm():updateRtrXFullByNewSerialNumberDb fail: new serialNumber:",
-			newSerialNumberModel.SerialNumber, err)
-		return err
-	}
-	belogs.Debug("updateRtrFullAndFullLogAndIncrementalFromSlurm():updateRtrXFullByNewSerialNumberDb, lab_rpki_rtr_asra_full newSerialNumberModel:", jsonutil.MarshalJson(newSerialNumberModel), "   time(s):", time.Since(start))
-
-	err = delRtrXFullFromSlurmDb("lab_rpki_rtr_asra_full")
-	if err != nil {
-		belogs.Error("updateRtrFullAndFullLogAndIncrementalFromSlurm():delRtrXFullFromSlurmDb lab_rpki_rtr_asra_full fail:", err)
-		return err
-	}
-	belogs.Debug("updateRtrFullAndFullLogAndIncrementalFromSlurm():delRtrXFullFromSlurmDb, lab_rpki_rtr_asra_full, time(s):", time.Since(start))
-
-	_, err = rtrcommon.UpdateRtrAsraFullOrFullLogFromSlurmDb("lab_rpki_rtr_asra_full", newSerialNumberModel.SerialNumber, asraSlurmToRtrFullLogs, false)
-	if err != nil {
-		belogs.Error("updateRtrFullAndFullLogAndIncrementalFromSlurm():UpdateRtrAsraFullOrFullLogFromSlurmDb lab_rpki_asra_rtr_full fail, new SerialNumber:", newSerialNumberModel.SerialNumber, err)
-		return err
-	}
-	belogs.Debug("updateRtrFullAndFullLogAndIncrementalFromSlurm():UpdateRtrAsraFullOrFullLogFromSlurmDb, asraSlurmToRtrFullLogs:", jsonutil.MarshalJson(asraSlurmToRtrFullLogs), "  time(s):", time.Since(start))
-
-	err = insertRtrAsraIncrementalByEffectSlurmDb(newSerialNumberModel, effectAsraSlurm)
-	if err != nil {
-		belogs.Error("updateRtrFullAndFullLogAndIncrementalFromSlurm():insertRtrAsraIncrementalByEffectSlurmDb fail, new SerialNumber:", newSerialNumberModel.SerialNumber,
-			"   len(effectAsraSlurm):", len(effectAsraSlurm), err)
-		return err
-	}
-	belogs.Debug("updateRtrFullAndFullLogAndIncrementalFromSlurm():insertRtrAsraIncrementalByEffectSlurmDb, effectAsraSlurm:", jsonutil.MarshalJson(effectAsraSlurm), "  time(s):", time.Since(start))
 
 	// end
 	belogs.Info("updateRtrFullAndFullLogAndIncrementalFromSlurm():CommitSession ok,  time(s):", time.Since(start))

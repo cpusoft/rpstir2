@@ -64,7 +64,7 @@ func ConvertToSyncLogFile(syncLogId uint64, rsyncTime time.Time,
 	syncType string, rsyncFileHash *rsyncutil.RsyncFileHash) (syncLogFile model.LabRpkiSyncLogFile) {
 
 	rtr := "notNeed"
-	if rsyncFileHash.FileType == "roa" || rsyncFileHash.FileType == "asa" {
+	if rsyncFileHash.FileType == "roa" || rsyncFileHash.FileType == "asa" || rsyncFileHash.FileType == "moa" {
 		rtr = "notYet"
 	}
 

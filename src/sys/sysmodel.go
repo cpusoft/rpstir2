@@ -19,6 +19,8 @@ type CertResults struct {
 	CrlResult CertResult `json:"crlResult"`
 	MftResult CertResult `json:"mftResult"`
 	RoaResult CertResult `json:"roaResult"`
+	AsaResult CertResult `json:"asaResult"`
+	MoaResult CertResult `json:"moaResult"`
 }
 
 // CertResult

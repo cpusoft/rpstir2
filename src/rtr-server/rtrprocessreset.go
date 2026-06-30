@@ -9,18 +9,16 @@ import (
 
 func processResetQuery(rtrPduModel rtrcore.RtrPduModel) (resetResponses []rtrcore.RtrPduModel, err error) {
 	start := time.Now()
-	rtrFulls, rtrAsaFulls, rtrHroaFulls, rtrAsarFulls, sessionId, serialNumber, err := getRtrXFullDb()
+	rtrFulls, rtrAsaFulls, sessionId, serialNumber, err := getRtrXFullDb()
 	if err != nil {
 		belogs.Error("processResetQuery(): GetRtrFullAndSerialNumAndSessionId fail: ", err)
 		return resetResponses, err
 	}
 	belogs.Debug("processResetQuery(): len(rtrFulls):", len(rtrFulls),
 		"  len(rtrAsaFulls):", len(rtrAsaFulls),
-		"  len(rtrHroaFulls):", len(rtrHroaFulls),
-		"  len(rtrAsarFulls):", len(rtrAsarFulls),
 		"  sessionId:", sessionId, "  serialNumber: ", serialNumber, "  time(s):", time.Since(start))
 	rtrPduModels, err := rtrcore.AssembleResetResponses(rtrFulls,
-		rtrAsaFulls, rtrHroaFulls, rtrAsarFulls,
+		rtrAsaFulls,
 		rtrPduModel.GetProtocolVersion(), sessionId, serialNumber)
 	if err != nil {
 		belogs.Error("processResetQuery(): AssembleResetResponses fail: ", err)

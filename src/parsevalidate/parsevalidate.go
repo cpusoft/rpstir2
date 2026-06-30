@@ -177,6 +177,11 @@ func delAndInsertCert(syncLogFileModels []*model.SyncLogFileModel, wg *sync.Wait
 			if err == nil && (syncType == "update" || syncType == "add") {
 				err = parsevalidatedb.InsertAsaDb(syncLogFileModel)
 			}
+		case "moa":
+			err = parsevalidatedb.DelMoaDb(syncLogFileModel)
+			if err == nil && (syncType == "update" || syncType == "add") {
+				err = parsevalidatedb.InsertMoaDb(syncLogFileModel)
+			}
 		}
 		if err != nil {
 			belogs.Error("delAndInsertCert(): Del or Insert fail, syncLogFileModel:", syncLogFileModel.String(), err, " time(s):", time.Since(startOne))

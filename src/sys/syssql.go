@@ -343,6 +343,34 @@ CREATE TABLE If Not Exists lab_rpki_asa_customer_provider_asn (
 	foreign key (asaId) references lab_rpki_asa(id)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='asa customerAsn'
 `,
+
+	`
+CREATE TABLE If Not Exists lab_rpki_moa (
+	id int(10) unsigned not null primary key auto_increment,
+	ski varchar(128) ,
+	aki varchar(128) ,
+	filePath varchar(1024) NOT NULL ,
+	fileName varchar(128) NOT NULL ,
+	state json comment 'state info in json',
+	ipv6MappingPrefix varchar(1024) NOT NULL,
+	ipv4Prefixes      json NOT NULL,
+	jsonAll json NOT NULL,
+	chainCerts json comment 'chain certs(cer/crl/mft/roa) in json',
+	syncLogId int(10) unsigned not null comment 'foreign key references lab_rpki_sync_log(id)',
+	syncLogFileId int(10) unsigned not null comment 'foreign key references lab_rpki_sync_log_file(id)',
+	updateTime datetime NOT NULL,
+	fileHash varchar(512) NOT NULL ,
+	origin json comment 'origin(rir->repo) in json',
+	key ski (ski),
+	key aki (aki),
+	key filePath (filePath(256)),
+	key fileName (fileName),
+	key syncLogId (syncLogId),
+	key syncLogFileId (syncLogFileId),
+	unique moaFilePathFileName (filePath(256),fileName)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='moa info'
+`,
+
 	`
 ################################################
 ## recored every sync log for cer/crl/roa/mft/asa
@@ -532,7 +560,7 @@ CREATE TABLE If Not Exists lab_rpki_rss_rsync_file_log (
 CREATE TABLE If Not Exists lab_rpki_slurm (
 	id int(10) unsigned not null primary key auto_increment,
 	version int(10) unsigned default 1,
-	style varchar(128) not null comment 'prefixFilter/bgpsecFilter/aspaFilter/hroaFilter/  prefixAssertion/bgpsecAssertion//aspaAssertion/hroaAssertion',
+	style varchar(128) not null comment 'prefixFilter/bgpsecFilter/aspaFilter/  prefixAssertion/bgpsecAssertion/aspaAssertion',
 
 	asn int(10) unsigned comment 'prefix asn',
 	addressPrefix varchar(512) comment 'prefix address: 198.51.100.0/24 or 2001:DB8::/32',
@@ -544,20 +572,6 @@ CREATE TABLE If Not Exists lab_rpki_slurm (
 	customerAsn int(10) unsigned comment 'asa customerAsn',
 	providerAsn  int(10) unsigned comment 'asa providerAsn',
 	addressFamily varchar(16) comment 'asa addressFamily',
-
-	hroaAsn  int(10) unsigned comment 'hroa Asn',
-	subtreeIdentifier blob(128) comment 'hroa subtreeIdentifier',
-	encodedSubtree int(10) unsigned comment 'hroa encodedSubtree',
-	afiFlags  int(10) unsigned comment 'hroa afiFlags',
-
-	customerAsnAsra int(10) unsigned comment 'asra customerAsnAsra',
-	addressFamilyAsra varchar(16) comment 'asa addressFamily',
-	providerAsnAsras json comment 'asra providerAsnAsras',
-	otherNeighborAsnAsras json comment 'asra otherNeighborAsnAsras',
-	customerAsnAsras json comment 'asra customerAsnAsras',
-	lateralPeerAsnAsras json comment 'asra lateralPeerAsnAsras',
-	hybridAsras json comment 'asra hybridAsras',
-	valleyPathAsnAsras json comment 'asra valleyPathAsnAsras',
 
 	comment varchar(256),
 	slurmLogId int(10) unsigned not null comment 'lab_rpki_slurm_log.id',
@@ -568,8 +582,7 @@ CREATE TABLE If Not Exists lab_rpki_slurm (
 	key addressPrefix(addressPrefix),
 	key customerAsn(customerAsn),
 	key providerAsn(providerAsn),
-	key hroaAsn(hroaAsn),
-	unique slurmPrefixAsaHroa (asn,addressPrefix,maxLength,customerAsn,providerAsn,addressFamily,hroaAsn,subtreeIdentifier(128),encodedSubtree)
+	unique slurmPrefixAsa (asn,addressPrefix,maxLength,customerAsn,providerAsn,addressFamily)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='valid slurms'
 `,
 
@@ -578,7 +591,7 @@ CREATE TABLE If Not Exists lab_rpki_slurm (
 CREATE TABLE If Not Exists lab_rpki_slurm_log (
 	id int(10) unsigned not null primary key auto_increment,
 	version int(10) unsigned default 1,
-	style varchar(128) not null comment 'prefixFilter/bgpsecFilter/aspaFilter/hroaFilter   prefixAssertion/bgpsecAssertion/aspaAssertion/hroaAssertion/',
+	style varchar(128) not null comment 'prefixFilter/bgpsecFilter/aspaFilter/  prefixAssertion/bgpsecAssertion/aspaAssertion/',
 
 	asn int(10) unsigned comment 'prefix asn',
 	addressPrefix varchar(512) comment 'prefix address: 198.51.100.0/24 or 2001:DB8::/32',
@@ -590,21 +603,6 @@ CREATE TABLE If Not Exists lab_rpki_slurm_log (
 	customerAsn int(10) unsigned comment 'asa customerAsn',
 	providerAsn  int(10) unsigned comment 'asa providerAsn',
 	addressFamily varchar(16) comment 'asa addressFamily',
-
-	hroaAsn  int(10) unsigned comment 'hroa Asn',
-	subtreeIdentifier blob(128) comment 'hroa subtreeIdentifier',
-	encodedSubtree int(10) unsigned comment 'hroa encodedSubtree',
-	afiFlags  int(10) unsigned comment 'hroa afiFlags',
-
-
-	customerAsnAsra int(10) unsigned comment 'asra customerAsnAsra',
-	addressFamilyAsra varchar(16) comment 'asa addressFamily',
-	providerAsnAsras json comment 'asra providerAsnAsras',
-	otherNeighborAsnAsras json comment 'asra otherNeighborAsnAsras',
-	customerAsnAsras json comment 'asra customerAsnAsras',
-	lateralPeerAsnAsras json comment 'asra lateralPeerAsnAsras',
-	hybridAsras json comment 'asra hybridAsras',
-	valleyPathAsnAsras json comment 'asra valleyPathAsnAsras',
 
 	comment varchar(256),
 	state json not null comment '[state:unknown/valid/invalid]',
@@ -946,110 +944,6 @@ CREATE TABLE If Not Exists lab_rpki_rtr_asa_incremental (
 `,
 
 	`
-CREATE TABLE If Not Exists lab_rpki_rtr_hroa_full (
-	id int(10) unsigned not null primary key auto_increment,
-	serialNumber bigint(20) unsigned not null,
-	
-	hroaAsn  int(10) unsigned comment 'hroa Asn',
-	subtreeIdentifier blob(128) comment 'hroa subtreeIdentifier',
-	encodedSubtree int(10) unsigned comment 'hroa encodedSubtree',
-	afiFlags int(10) unsigned comment 'hroa afi',
-	
-	sourceFrom json not null comment 'come from : {souce:sync/slurm/rush,syncLogId/syncLogFileId/slurmId/slurmFileId/rushDataLogId}',
-	key serialNumber(serialNumber)	
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='full rtr asa'
-`,
-
-	`
-CREATE TABLE If Not Exists lab_rpki_rtr_hroa_full_log (
-	id int(10) unsigned not null primary key auto_increment,
-	serialNumber bigint(20) unsigned not null,
-	
-	hroaAsn  int(10) unsigned comment 'hroa Asn',
-	subtreeIdentifier blob(128) comment 'hroa subtreeIdentifier',
-	encodedSubtree int(10) unsigned comment 'hroa encodedSubtree',
-	afiFlags int(10) unsigned comment 'hroa afi',
-	
-	sourceFrom json not null comment 'come from : {souce:sync/slurm/rush,syncLogId/syncLogFileId/slurmId/slurmFileId/rushDataLogId}',
-	key serialNumber(serialNumber)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='full rtr asa log history'
-`,
-
-	`
-CREATE TABLE If Not Exists lab_rpki_rtr_hroa_incremental (
-	id int(10) unsigned not null primary key auto_increment,
-	serialNumber bigint(20) unsigned not null,
-	style varchar(16) not null comment 'announce/withdraw, is 1/0 in protocol',
-	
-	hroaAsn  int(10) unsigned comment 'hroa Asn',
-	subtreeIdentifier blob(128) comment 'hroa subtreeIdentifier',
-	encodedSubtree int(10) unsigned comment 'hroa encodedSubtree',
-	afiFlags int(10) unsigned comment 'hroa afi',
-	
-	sourceFrom json not null comment 'come from : {souce:sync/slurm/rush,syncLogId/syncLogFileId/slurmId/slurmFileId/rushDataLogId}',
-	key serialNumber(serialNumber)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='incremental rtr asa'
-`,
-
-	`
-CREATE TABLE If Not Exists lab_rpki_rtr_asra_full (
-	id int(10) unsigned not null primary key auto_increment,
-	serialNumber bigint(20) unsigned not null,
-
-	customerAsnAsra int(10) unsigned comment 'asra customerAsnAsra',
-	addressFamilyAsra varchar(16) comment 'asa addressFamily',
-	providerAsnAsras json comment 'asra providerAsnAsras',
-	otherNeighborAsnAsras json comment 'asra otherNeighborAsnAsras',
-	customerAsnAsras json comment 'asra customerAsnAsras',
-	lateralPeerAsnAsras json comment 'asra lateralPeerAsnAsras',
-	hybridAsras json comment 'asra hybridAsras',
-	valleyPathAsnAsras json comment 'asra valleyPathAsnAsras',
-
-	sourceFrom json not null comment 'come from : {souce:sync/slurm/rush,syncLogId/syncLogFileId/slurmId/slurmFileId/rushDataLogId}',
-	key serialNumber(serialNumber)	
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='full rtr asra'
-`,
-
-	`
-CREATE TABLE If Not Exists lab_rpki_rtr_asra_full_log (
-	id int(10) unsigned not null primary key auto_increment,
-	serialNumber bigint(20) unsigned not null,
-
-	customerAsnAsra int(10) unsigned comment 'asra customerAsnAsra',
-	addressFamilyAsra varchar(16) comment 'asa addressFamily',
-	providerAsnAsras json comment 'asra providerAsnAsras',
-	otherNeighborAsnAsras json comment 'asra otherNeighborAsnAsras',
-	customerAsnAsras json comment 'asra customerAsnAsras',
-	lateralPeerAsnAsras json comment 'asra lateralPeerAsnAsras',
-	hybridAsras json comment 'asra hybridAsras',
-	valleyPathAsnAsras json comment 'asra valleyPathAsnAsras',
-
-	sourceFrom json not null comment 'come from : {souce:sync/slurm/rush,syncLogId/syncLogFileId/slurmId/slurmFileId/rushDataLogId}',
-	key serialNumber(serialNumber)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='full rtr asra log history'
-`,
-
-	`
-CREATE TABLE If Not Exists lab_rpki_rtr_asra_incremental (
-	id int(10) unsigned not null primary key auto_increment,
-	serialNumber bigint(20) unsigned not null,
-	style varchar(16) not null comment 'announce/withdraw, is 1/0 in protocol',
-
-	customerAsnAsra int(10) unsigned comment 'asra customerAsnAsra',
-	addressFamilyAsra varchar(16) comment 'asa addressFamily',
-	providerAsnAsras json comment 'asra providerAsnAsras',
-	otherNeighborAsnAsras json comment 'asra otherNeighborAsnAsras',
-	customerAsnAsras json comment 'asra customerAsnAsras',
-	lateralPeerAsnAsras json comment 'asra lateralPeerAsnAsras',
-	hybridAsras json comment 'asra hybridAsras',
-	valleyPathAsnAsras json comment 'asra valleyPathAsnAsras',
-
-	sourceFrom json not null comment 'come from : {souce:sync/slurm/rush,syncLogId/syncLogFileId/slurmId/slurmFileId/rushDataLogId}',
-	key serialNumber(serialNumber)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='incremental rtr asra'
-`,
-
-	`
 #####################
 #### rush: init not drop
 #####################
@@ -1240,9 +1134,6 @@ var dropVcSqls []string = []string{
 	`drop table if exists lab_rpki_rtr_asa_full_log`,
 	`drop table if exists lab_rpki_rtr_asa_full`,
 	`drop table if exists lab_rpki_rtr_asa_incremental`,
-	`drop table if exists lab_rpki_rtr_hroa_full_log`,
-	`drop table if exists lab_rpki_rtr_hroa_full`,
-	`drop table if exists lab_rpki_rtr_hroa_incremental`,
 	`drop table if exists lab_rpki_rtr_serial_number`,
 	`drop table if exists lab_rpki_rtr_session`,
 }
@@ -1305,9 +1196,6 @@ var truncateVcSqls []string = []string{
 	`truncate  table  lab_rpki_rtr_asa_full`,
 	`truncate  table  lab_rpki_rtr_asa_full_log`,
 	`truncate  table  lab_rpki_rtr_asa_incremental`,
-	`truncate  table  lab_rpki_rtr_hroa_full_log`,
-	`truncate  table  lab_rpki_rtr_hroa_full`,
-	`truncate  table  lab_rpki_rtr_hroa_incremental`,
 }
 var truncateLicenseSqls []string = []string{}
 
@@ -1368,9 +1256,6 @@ var optimizeVcSqls []string = []string{
 	`optimize  table  lab_rpki_rtr_asa_full`,
 	`optimize  table  lab_rpki_rtr_asa_full_log`,
 	`optimize  table  lab_rpki_rtr_asa_incremental`,
-	`optimize  table  lab_rpki_rtr_hroa_full_log`,
-	`optimize  table  lab_rpki_rtr_hroa_full`,
-	`optimize  table  lab_rpki_rtr_hroa_incremental`,
 	`optimize  table  lab_rpki_rush_node`,
 	`optimize  table  lab_rpki_rush_node_audit`,
 	`optimize  table  lab_rpki_rush_node_log`,

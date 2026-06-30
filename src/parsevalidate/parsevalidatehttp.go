@@ -1,7 +1,6 @@
 package parsevalidate
 
 import (
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -66,7 +65,7 @@ func ParseValidateStart(c *gin.Context) {
 // only one file
 func ParseValidateFile(c *gin.Context) {
 	start := time.Now()
-	tmpDir, err := ioutil.TempDir("", "ParseValidateFile") // temp dir
+	tmpDir, err := os.MkdirTemp("", "ParseValidateFile") // temp dir
 	if err != nil {
 		belogs.Error("ParseValidateFile(): TempDir fail:", err)
 		ginserver.ResponseFail(c, err, "")
@@ -104,7 +103,7 @@ func ParseValidateFile(c *gin.Context) {
 // only one file
 func ParseFile(c *gin.Context) {
 	start := time.Now()
-	tmpDir, err := ioutil.TempDir("", "ParseFile") // temp dir
+	tmpDir, err := os.MkdirTemp("", "ParseFile") // temp dir
 	if err != nil {
 		belogs.Error("ParseFile(): TempDir fail:", err)
 		ginserver.ResponseFail(c, err, "")
@@ -135,7 +134,7 @@ func ParseFile(c *gin.Context) {
 // upload file to parse to get ca repo
 func ParseFileSimple(c *gin.Context) {
 	start := time.Now()
-	tmpDir, err := ioutil.TempDir("", "ParseFileSimple") // temp dir
+	tmpDir, err := os.MkdirTemp("", "ParseFileSimple") // temp dir
 	if err != nil {
 		belogs.Error("ParseFileSimple(): TempDir fail:", err)
 		ginserver.ResponseFail(c, err, "")

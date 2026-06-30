@@ -118,7 +118,7 @@ func ConvertToSyncLogFile(
 	// filetype
 	fileType := osutil.ExtNoDot(rrdpFile.FileName)
 	rtr := "notNeed"
-	if fileType == "roa" || fileType == "asa" {
+	if fileType == "roa" || fileType == "asa" || fileType == "moa" {
 		rtr = "notYet"
 	}
 

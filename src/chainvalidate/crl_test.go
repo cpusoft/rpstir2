@@ -7,10 +7,9 @@ import (
 
 func Test_getChainCrls(t *testing.T) {
 	type args struct {
-		chains     *Chains
-		chainWg    *sync.WaitGroup
-		syncLogId  uint64
-		dataSource DataSource
+		chains    *Chains
+		chainWg   *sync.WaitGroup
+		syncLogId uint64
 	}
 	tests := []struct {
 		name string
@@ -20,7 +19,7 @@ func Test_getChainCrls(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			getChainCrls(tt.args.chains, tt.args.chainWg, tt.args.syncLogId, tt.args.dataSource)
+			getChainCrls(tt.args.chains, tt.args.chainWg, tt.args.syncLogId)
 		})
 	}
 }

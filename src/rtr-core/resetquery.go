@@ -8,11 +8,9 @@ import (
 
 	"github.com/bgpsecurity/rpstir2/model"
 	"github.com/cpusoft/goutil/belogs"
-	"github.com/cpusoft/goutil/conf"
 	"github.com/cpusoft/goutil/convert"
 	"github.com/cpusoft/goutil/iputil"
 	"github.com/cpusoft/goutil/jsonutil"
-	"github.com/guregu/null"
 )
 
 type RtrResetQueryModel struct {
@@ -91,14 +89,10 @@ func ParseToResetQuery(buf *bytes.Reader, protocolVersion uint8) (rtrPduModel Rt
 // when len(rtrFull)==0, it is an error with no_data_available
 func AssembleResetResponses(rtrFulls []model.LabRpkiRtrFull,
 	rtrAsaFulls []model.LabRpkiRtrAsaFull,
-	rtrHroaFulls []model.LabRpkiRtrHroaFull,
-	rtrAsraFulls []model.LabRpkiRtrAsraFull,
 	protocolVersion uint8, sessionId uint16, serialNumber uint32) (rtrPduModels []RtrPduModel, err error) {
 	start := time.Now()
 	belogs.Info("AssembleResetResponses(): len(rtrFulls):", len(rtrFulls),
 		"   len(rtrAsaFulls):", len(rtrAsaFulls),
-		"   len(rtrHroaFulls):", len(rtrHroaFulls),
-		"   len(rtrAsraFulls):", len(rtrAsraFulls),
 		"   protocolVersion:", protocolVersion, "   sessionId:", sessionId, "   serialNumber:", serialNumber)
 	if protocolVersion != PDU_PROTOCOL_VERSION_0 &&
 		protocolVersion != PDU_PROTOCOL_VERSION_1 &&
@@ -110,22 +104,14 @@ func AssembleResetResponses(rtrFulls []model.LabRpkiRtrFull,
 
 	rtrPduModels = make([]RtrPduModel, 0)
 	dataAvailable := false
-	supportHroa := conf.String("rtr::supportHroa") == "true"
-	supportAsra := conf.String("rtr::supportAsra") == "true"
-
 	// start response
 	cacheResponseModel := NewRtrCacheResponseModel(protocolVersion, sessionId)
 	rtrPduModels = append(rtrPduModels, cacheResponseModel)
 	prefixAsaVersion := protocolVersion
-	hroaAsraVersion := protocolVersion
-	if (supportHroa || supportAsra) && protocolVersion >= PDU_PROTOCOL_VERSION_3 {
-		prefixAsaVersion = PDU_PROTOCOL_VERSION_2
-	}
+
 	belogs.Debug("AssembleResetResponses(): cacheResponseModel:", jsonutil.MarshalJson(cacheResponseModel),
-		"   supportHroa:", supportHroa, "   supportAsra:", supportAsra,
 		"   protocolVersion:", protocolVersion,
-		"   prefixAsaVersion:", prefixAsaVersion,
-		"   hroaAsraVersion:", hroaAsraVersion)
+		"   prefixAsaVersion:", prefixAsaVersion)
 	// rtr full from roa rtr
 	if protocolVersion == PDU_PROTOCOL_VERSION_0 ||
 		protocolVersion == PDU_PROTOCOL_VERSION_1 ||
@@ -170,45 +156,6 @@ func AssembleResetResponses(rtrFulls []model.LabRpkiRtrFull,
 		}
 	}
 
-	if supportHroa && protocolVersion == PDU_PROTOCOL_VERSION_3 {
-		//rtr full from hroa rtr
-		if len(rtrHroaFulls) > 0 {
-			belogs.Debug("AssembleResetResponses(): will get rtrHroaFullPduModels, len(rtrHroaFulls):", len(rtrHroaFulls),
-				"   hroaAsraVersion:", hroaAsraVersion,
-				"   sessionId:", sessionId, "   serialNumber:", serialNumber)
-
-			// rtr hroa full to response
-			rtrHroaFullPduModels, err := convertRtrHroaFullsToRtrPduModels(rtrHroaFulls, hroaAsraVersion)
-			if err != nil {
-				belogs.Error("AssembleResetResponses(): convertRtrHroaFullsToRtrPduModels fail: ", err)
-				return nil, err
-			}
-			rtrPduModels = append(rtrPduModels, rtrHroaFullPduModels...)
-			dataAvailable = true
-			belogs.Info("AssembleResetResponses(): get rtrHroaFullPduModels, len(rtrHroaFullPduModels):", len(rtrHroaFullPduModels),
-				"  time(s):", time.Since(start))
-		}
-	}
-	if supportAsra && protocolVersion == PDU_PROTOCOL_VERSION_3 {
-		//rtr full from asra rtr
-		if len(rtrAsraFulls) > 0 {
-			belogs.Debug("AssembleResetResponses(): will get rtrHroaFullPduModels, len(rtrAsraFulls):", len(rtrAsraFulls),
-				"   hroaAsraVersion:", hroaAsraVersion,
-				"   sessionId:", sessionId, "   serialNumber:", serialNumber)
-
-			// rtr hroa full to response
-			rtrAsraFullPduModels, err := convertRtrAsraFullsToRtrPduModels(rtrAsraFulls, hroaAsraVersion)
-			if err != nil {
-				belogs.Error("AssembleResetResponses(): convertRtrAsraFullsToRtrPduModels fail: ", err)
-				return nil, err
-			}
-			rtrPduModels = append(rtrPduModels, rtrAsraFullPduModels...)
-			dataAvailable = true
-			belogs.Info("AssembleResetResponses(): get rtrAsraFullPduModels, len(rtrAsraFullPduModels):", len(rtrAsraFullPduModels),
-				"  time(s):", time.Since(start))
-		}
-	}
-
 	if !dataAvailable {
 		errorReportModel := NewRtrErrorReportModel(protocolVersion, PDU_TYPE_ERROR_CODE_NO_DATA_AVAILABLE, nil, nil)
 		rtrPduModels = append(rtrPduModels, errorReportModel)
@@ -222,15 +169,11 @@ func AssembleResetResponses(rtrFulls []model.LabRpkiRtrFull,
 		belogs.Debug("AssembleResetResponses(): endOfDataModel:", jsonutil.MarshalJson(endOfDataModel))
 
 		belogs.Info("AssembleResetResponses(): will send Cache Response of all rtr,",
-			"   supportHroa:", supportHroa, "   supportAsra:", supportAsra,
 			"   protocolVersion:", protocolVersion,
 			"   prefixAsaVersion:", prefixAsaVersion,
-			"   hroaAsraVersion:", hroaAsraVersion,
 			"   sessionId:", sessionId, "  serialNumber:", serialNumber,
 			"   len(rtrFulls):", len(rtrFulls),
 			"   len(rtrAsaFulls):", len(rtrAsaFulls),
-			"   len(rtrHroaFulls):", len(rtrHroaFulls),
-			"   len(rtrAsraFulls):", len(rtrAsraFulls),
 			"   len(rtrPduModels):", len(rtrPduModels), "  time(s):", time.Since(start))
 	}
 	belogs.Debug("AssembleResetResponses(): ok, rtrPduModels:", jsonutil.MarshalJson(rtrPduModels), "  time(s):", time.Since(start))
@@ -299,108 +242,4 @@ func convertRtrAsaFullsToRtrPduModels(rtrAsaFulls []model.LabRpkiRtrAsaFull,
 	belogs.Info("convertRtrAsaFullsToRtrPduModels(): len(rtrAsaFulls):", len(rtrAsaFulls),
 		" len(rtrAsaPduModels):", len(rtrAsaPduModels), "  time(s):", time.Since(start))
 	return rtrAsaPduModels, nil
-}
-
-func convertRtrHroaFullToRtrPduModel(rtrHroaFull *model.LabRpkiRtrHroaFull, protocolVersion uint8) (rtrPduModel RtrPduModel, err error) {
-	belogs.Debug("convertRtrHroaFullToRtrPduModel(): rtrHroaFull:", jsonutil.MarshalJson(rtrHroaFull))
-	afiFlags := rtrHroaFull.AfiFlags
-	encodedSubTree := [4]byte{0x00}
-	b, _ := convert.IntToBytes(rtrHroaFull.EncodedSubtree.ValueOrZero())
-	copy(encodedSubTree[:], b[4:]) // only 4 bytes
-	belogs.Debug("convertRtrHroaFullToRtrPduModel(): b:", b, "   encodedSubTree:", encodedSubTree)
-	if afiFlags == iputil.Ipv4Type {
-		subtreeIdentifier := [4]byte{0x00}
-		copy(subtreeIdentifier[:], rtrHroaFull.SubtreeIdentifierBytes[12:])
-		rtrIpv4HroaModel := NewRtrIpv4HroaModel(protocolVersion,
-			subtreeIdentifier, encodedSubTree,
-			uint32(rtrHroaFull.HroaAsn.ValueOrZero()))
-		belogs.Debug("convertRtrHroaFullToRtrPduModel(): rtrIpv4HroaModel:", jsonutil.MarshalJson(rtrIpv4HroaModel))
-		return rtrIpv4HroaModel, nil
-	} else if afiFlags == iputil.Ipv6Type {
-		rtrIpv6HroaModel := NewRtrIpv6HroaModel(protocolVersion,
-			rtrHroaFull.SubtreeIdentifierBytes, encodedSubTree,
-			uint32(rtrHroaFull.HroaAsn.ValueOrZero()))
-		belogs.Debug("convertRtrHroaFullToRtrPduModel(): rtrIpv6HroaModel:", jsonutil.MarshalJson(rtrIpv6HroaModel))
-		return rtrIpv6HroaModel, nil
-	}
-	return rtrPduModel, errors.New("convert to rtr format, error afiFlags")
-}
-
-func convertRtrHroaFullsToRtrPduModels(rtrHroaFulls []model.LabRpkiRtrHroaFull,
-	protocolVersion uint8) (rtrPduModels []RtrPduModel, err error) {
-	rtrPduModels = make([]RtrPduModel, 0)
-	for i := range rtrHroaFulls {
-		rtrPduModel, err := convertRtrHroaFullToRtrPduModel(&rtrHroaFulls[i], protocolVersion)
-		if err != nil {
-			belogs.Error("convertRtrHroaFullsToRtrPduModels(): convertRtrHroaFullToRtrPduModel fail: ", err)
-			return nil, err
-		}
-		rtrPduModels = append(rtrPduModels, rtrPduModel)
-	}
-	belogs.Debug("convertRtrHroaFullsToRtrPduModels(): len(rtrHroaFulls):", len(rtrHroaFulls),
-		" len(rtrPduModels):", len(rtrPduModels))
-	return rtrPduModels, nil
-}
-
-func convertRtrAsraFullToRtrPduModel(rtrAsraFull *model.LabRpkiRtrAsraFull, protocolVersion uint8) (rtrPduModel RtrPduModel, err error) {
-	belogs.Debug("convertRtrAsraFullToRtrPduModel(): rtrAsraFull:", jsonutil.MarshalJson(rtrAsraFull))
-
-	customerAsnAsra := uint32(rtrAsraFull.CustomerAsnAsra.ValueOrZero())
-	providerAsnAsras := make([]uint32, 0)
-	err = jsonutil.UnmarshalJson(rtrAsraFull.ProviderAsnAsrasStr, &providerAsnAsras)
-	if err != nil {
-		belogs.Error("convertRtrAsraFullToRtrPduModel(): get providerAsnAsras fail, rtrAsraFull.ProviderAsnAsrasStr:",
-			rtrAsraFull.ProviderAsnAsrasStr, err)
-		return rtrPduModel, err
-	}
-	rtrAsraModel := NewRtrAsraModel(protocolVersion, PDU_FLAG_ANNOUNCE, null.IntFrom(0),
-		customerAsnAsra, providerAsnAsras)
-
-	if len(rtrAsraFull.OtherNeighborAsnAsrasStr) > 0 {
-		asNumber := make([]uint32, 0)
-		err = jsonutil.UnmarshalJson(rtrAsraFull.OtherNeighborAsnAsrasStr, &asNumber)
-		if err != nil {
-			belogs.Error("convertRtrAsraFullToRtrPduModel(): get OtherNeighborAsnAsrasStr fail, rtrAsraFull.OtherNeighborAsnAsrasStr:",
-				rtrAsraFull.OtherNeighborAsnAsrasStr, err)
-			return rtrPduModel, err
-		}
-		rtrAsraModel.AddAsNumbers(PDU_TYPE_ASRA_TYPE_ON, asNumber)
-	}
-	if len(rtrAsraFull.CustomerAsnAsrasStr) > 0 {
-		asNumber := make([]uint32, 0)
-		err = jsonutil.UnmarshalJson(rtrAsraFull.CustomerAsnAsrasStr, &asNumber)
-		if err != nil {
-			belogs.Error("convertRtrAsraFullToRtrPduModel(): get CustomerAsnAsrasStr fail, rtrAsraFull.CustomerAsnAsrasStr:",
-				rtrAsraFull.CustomerAsnAsrasStr, err)
-			return rtrPduModel, err
-		}
-		rtrAsraModel.AddAsNumbers(PDU_TYPE_ASRA_TYPE_C, asNumber)
-	}
-	if len(rtrAsraFull.LateralPeerAsnAsrasStr) > 0 {
-		asNumber := make([]uint32, 0)
-		err = jsonutil.UnmarshalJson(rtrAsraFull.LateralPeerAsnAsrasStr, &asNumber)
-		if err != nil {
-			belogs.Error("convertRtrAsraFullToRtrPduModel(): get LateralPeerAsnAsrasStr fail, rtrAsraFull.LateralPeerAsnAsrasStr:",
-				rtrAsraFull.LateralPeerAsnAsrasStr, err)
-			return rtrPduModel, err
-		}
-		rtrAsraModel.AddAsNumbers(PDU_TYPE_ASRA_TYPE_L, asNumber)
-	}
-	return rtrAsraModel, nil
-}
-
-func convertRtrAsraFullsToRtrPduModels(rtrAsraFulls []model.LabRpkiRtrAsraFull,
-	protocolVersion uint8) (rtrPduModels []RtrPduModel, err error) {
-	rtrPduModels = make([]RtrPduModel, 0)
-	for i := range rtrAsraFulls {
-		rtrPduModel, err := convertRtrAsraFullToRtrPduModel(&rtrAsraFulls[i], protocolVersion)
-		if err != nil {
-			belogs.Error("convertRtrAsraFullsToRtrPduModels(): convertRtrAsraFullToRtrPduModel fail: ", err)
-			return nil, err
-		}
-		rtrPduModels = append(rtrPduModels, rtrPduModel)
-	}
-	belogs.Debug("convertRtrAsraFullsToRtrPduModels(): len(rtrAsraFulls):", len(rtrAsraFulls),
-		" len(rtrPduModels):", len(rtrPduModels))
-	return rtrPduModels, nil
 }
