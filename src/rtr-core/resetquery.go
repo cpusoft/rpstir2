@@ -96,8 +96,7 @@ func AssembleResetResponses(rtrFulls []model.LabRpkiRtrFull,
 		"   protocolVersion:", protocolVersion, "   sessionId:", sessionId, "   serialNumber:", serialNumber)
 	if protocolVersion != PDU_PROTOCOL_VERSION_0 &&
 		protocolVersion != PDU_PROTOCOL_VERSION_1 &&
-		protocolVersion != PDU_PROTOCOL_VERSION_2 &&
-		protocolVersion != PDU_PROTOCOL_VERSION_3 {
+		protocolVersion != PDU_PROTOCOL_VERSION_2 {
 		belogs.Error("AssembleResetResponses(): protocolVersion is error, protocolVersion:", protocolVersion)
 		return nil, errors.New("protocolVersion is error")
 	}
@@ -115,8 +114,7 @@ func AssembleResetResponses(rtrFulls []model.LabRpkiRtrFull,
 	// rtr full from roa rtr
 	if protocolVersion == PDU_PROTOCOL_VERSION_0 ||
 		protocolVersion == PDU_PROTOCOL_VERSION_1 ||
-		protocolVersion == PDU_PROTOCOL_VERSION_2 ||
-		protocolVersion == PDU_PROTOCOL_VERSION_3 {
+		protocolVersion == PDU_PROTOCOL_VERSION_2 {
 		if len(rtrFulls) > 0 {
 
 			belogs.Debug("AssembleResetResponses(): will get rtrFullPduModels, len(rtrFulls)>0, len(rtrFulls):", len(rtrFulls),
@@ -135,8 +133,7 @@ func AssembleResetResponses(rtrFulls []model.LabRpkiRtrFull,
 				"  time(s):", time.Since(start))
 		}
 	}
-	if protocolVersion == PDU_PROTOCOL_VERSION_2 ||
-		protocolVersion == PDU_PROTOCOL_VERSION_3 {
+	if protocolVersion == PDU_PROTOCOL_VERSION_2 {
 		//rtr full from asa rtr
 		if len(rtrAsaFulls) > 0 {
 			belogs.Debug("AssembleResetResponses(): will get rtrAsaFullPduModels, len(rtrAsaFulls):", len(rtrAsaFulls),

@@ -53,11 +53,6 @@ func ChainValidateStart(c *gin.Context) {
 				}
 			}()
 
-			// call statistics
-			go httpclient.Post(rpstir2RpUrl+"/statistic/start", "", false)
-
-			// call roahistory
-			//go httpclient.Post(rpstir2RpUrl+"/roahistory/start", "", false)
 			belogs.Info("ChainValidateStart(): end,  nextStep is :", nextStep)
 		}
 	}()

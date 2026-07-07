@@ -35,8 +35,7 @@ func NewRtrEndOfDataModel(protocolVersion uint8, sessionId uint16,
 		}
 
 	} else if protocolVersion == PDU_PROTOCOL_VERSION_1 ||
-		protocolVersion == PDU_PROTOCOL_VERSION_2 ||
-		protocolVersion == PDU_PROTOCOL_VERSION_3 {
+		protocolVersion == PDU_PROTOCOL_VERSION_2 {
 		return &RtrEndOfDataModel{
 			ProtocolVersion: protocolVersion,
 			PduType:         PDU_TYPE_END_OF_DATA,
@@ -141,8 +140,7 @@ func ParseToEndOfData(buf *bytes.Reader, protocolVersion uint8) (rtrPduModel Rtr
 		return rtrPduModel, rtrError
 	}
 	if (protocolVersion == PDU_PROTOCOL_VERSION_1 ||
-		protocolVersion == PDU_PROTOCOL_VERSION_2 ||
-		protocolVersion == PDU_PROTOCOL_VERSION_3) && length != 24 {
+		protocolVersion == PDU_PROTOCOL_VERSION_2) && length != 24 {
 		belogs.Error("ParseToEndOfData():PDU_TYPE_END_OF_DATA,   when version is 1, length must be 24, buf:", buf, "  length:", length)
 		rtrError := NewRtrError(
 			errors.New("pduType is CACHE RESPONSE, when version is 1, length must be 24"),

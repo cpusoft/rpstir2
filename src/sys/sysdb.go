@@ -74,21 +74,15 @@ func initResetImplDb(session *xorm.Session, sysStyle SysStyle, sysCompileParam *
 		if model.FoundProgram(sysCompileParam, "rp") {
 			sqls = append(sqls, dropRpSqls...)
 			sqls = append(sqls, dropVcSqls...)
-			sqls = append(sqls, dropLicenseSqls...)
 		} else if model.FoundProgram(sysCompileParam, "vc") {
 			sqls = append(sqls, dropVcSqls...)
-		} else if model.FoundProgram(sysCompileParam, "license") {
-			sqls = append(sqls, dropLicenseSqls...)
 		}
 
 		if model.FoundProgram(sysCompileParam, "rp") {
 			sqls = append(sqls, createRpSqls...)
 			sqls = append(sqls, createVcSqls...)
-			sqls = append(sqls, createLicenseSqls...)
 		} else if model.FoundProgram(sysCompileParam, "vc") {
 			sqls = append(sqls, createVcSqls...)
-		} else if model.FoundProgram(sysCompileParam, "license") {
-			sqls = append(sqls, createLicenseSqls...)
 		}
 
 	case "fullsync":
@@ -96,15 +90,11 @@ func initResetImplDb(session *xorm.Session, sysStyle SysStyle, sysCompileParam *
 			sqls = append(sqls, truncateRpSqls...)
 		} else if model.FoundProgram(sysCompileParam, "vc") {
 			sqls = append(sqls, truncateVcSqls...)
-		} else if model.FoundProgram(sysCompileParam, "license") {
-			sqls = append(sqls, truncateLicenseSqls...)
 		}
 		if model.FoundProgram(sysCompileParam, "rp") {
 			sqls = append(sqls, optimizeRpSqls...)
 		} else if model.FoundProgram(sysCompileParam, "vc") {
 			sqls = append(sqls, optimizeVcSqls...)
-		} else if model.FoundProgram(sysCompileParam, "license") {
-			sqls = append(sqls, optimizeLicenseSqls...)
 		}
 	}
 	//belogs.Debug("initResetImplDb():will Exec sqls:", jsonutil.MarshalJson(sqls))

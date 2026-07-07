@@ -358,6 +358,45 @@ type LabRpkiRtrAsaIncremental struct {
 	SourceFrom string `json:"sourceFrom" xorm:"sourceFrom json"`
 }
 
+// /////////////////////////////////////
+// MOA
+// /////////////////////////////////////
+// lab_rpki_rtr_moa_full
+type LabRpkiRtrMoaFull struct {
+	Id                uint64 `json:"id" xorm:"id int"`
+	SerialNumber      uint64 `json:"serialNumber" xorm:"serialNumber int"`
+	Ipv6MappingPrefix string `json:"ipv6MappingPrefix" xorm:"ipv6MappingPrefix varchar(128)"`
+	Ipv4Prefixes      string `json:"ipv4Prefixes" xorm:"ipv4Prefixes json"`
+	SourceFrom        string `json:"sourceFrom" xorm:"sourceFrom json"`
+}
+
+type LabRpkiRtrMoaFullLog struct {
+	Id                uint64 `json:"id" xorm:"id int"`
+	SerialNumber      uint64 `json:"serialNumber" xorm:"serialNumber int"`
+	Ipv6MappingPrefix string `json:"ipv6MappingPrefix" xorm:"ipv6MappingPrefix varchar(128)"`
+	Ipv4Prefixes      string `json:"ipv4Prefixes" xorm:"ipv4Prefixes json"`
+	SourceFrom        string `json:"sourceFrom" xorm:"sourceFrom json"`
+}
+
+type MoaToRtrFullLog struct {
+	MoaId             uint64 `json:"moaId" xorm:"moaId int"`
+	Ipv6MappingPrefix string `json:"ipv6MappingPrefix" xorm:"ipv6MappingPrefix varchar(128)"`
+	Ipv4Prefixes      string `json:"ipv4Prefixes" xorm:"ipv4Prefixes json"`
+	SyncLogId         uint64 `json:"syncLogId" xorm:"syncLogId int"`
+	SyncLogFileId     uint64 `json:"syncLogFileId" xorm:"syncLogFileId int"`
+}
+
+// lab_rpki_rtr_moa_incremental
+type LabRpkiRtrMoaIncremental struct {
+	Id           uint64 `json:"id" xorm:"id int"`
+	SerialNumber uint64 `json:"serialNumber" xorm:"serialNumber bigint"`
+	//announce/withdraw, is 1/0 in protocol
+	Style             string `json:"style" xorm:"style varchar(16)"`
+	Ipv6MappingPrefix string `json:"ipv6MappingPrefix" xorm:"ipv6MappingPrefix varchar(128)"`
+	Ipv4Prefixes      string `json:"ipv4Prefixes" xorm:"ipv4Prefixes json"`
+	SourceFrom        string `json:"sourceFrom" xorm:"sourceFrom json"`
+}
+
 // //////////////////////////
 // source
 // /////////////////////////

@@ -110,8 +110,7 @@ func AssembleSerialResponses(rtrIncrementals []model.LabRpkiRtrIncremental,
 		"   protocolVersion:", protocolVersion, "   sessionId:", sessionId, "   serialNumber:", serialNumber)
 	if protocolVersion != PDU_PROTOCOL_VERSION_0 &&
 		protocolVersion != PDU_PROTOCOL_VERSION_1 &&
-		protocolVersion != PDU_PROTOCOL_VERSION_2 &&
-		protocolVersion != PDU_PROTOCOL_VERSION_3 {
+		protocolVersion != PDU_PROTOCOL_VERSION_2 {
 		belogs.Error("AssembleSerialResponses(): protocolVersion is error, protocolVersion:", protocolVersion)
 		return nil, errors.New("protocolVersion is error")
 	}
@@ -131,8 +130,7 @@ func AssembleSerialResponses(rtrIncrementals []model.LabRpkiRtrIncremental,
 	//rtr incr from roa rtr
 	if protocolVersion == PDU_PROTOCOL_VERSION_0 ||
 		protocolVersion == PDU_PROTOCOL_VERSION_1 ||
-		protocolVersion == PDU_PROTOCOL_VERSION_2 ||
-		protocolVersion == PDU_PROTOCOL_VERSION_3 {
+		protocolVersion == PDU_PROTOCOL_VERSION_2 {
 		if len(rtrIncrementals) > 0 {
 			belogs.Debug("AssembleSerialResponses(): will get rtrIncrementals, len(rtrIncrementals):", len(rtrIncrementals),
 				"   prefixAsaVersion:", prefixAsaVersion,
@@ -151,8 +149,7 @@ func AssembleSerialResponses(rtrIncrementals []model.LabRpkiRtrIncremental,
 		}
 	}
 
-	if protocolVersion == PDU_PROTOCOL_VERSION_2 ||
-		protocolVersion == PDU_PROTOCOL_VERSION_3 {
+	if protocolVersion == PDU_PROTOCOL_VERSION_2 {
 		//rtr incr from asa rtr
 		if len(rtrAsaIncrementals) > 0 {
 			belogs.Debug("AssembleSerialResponses():  will get rtrAsaIncrementals,  len(rtrAsaIncrementals):", len(rtrAsaIncrementals),

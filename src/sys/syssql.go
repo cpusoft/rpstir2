@@ -470,90 +470,6 @@ CREATE TABLE If Not Exists lab_rpki_sync_rrdp_delta (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='rrdp url'
 `,
 	`
-################################################
-## sync distribute node
-################################################
-CREATE TABLE If Not Exists lab_rpki_distributed_node (
-	id int(10) unsigned not null primary key auto_increment,
-	nodeName varchar(256) not null comment 'node name, is urls host',
-	nodeType varchar(16) not null comment 'center/node',
-	url varchar(256) not null comment 'interface url: https://1.1.1.1:8080',
-	note varchar(256) comment 'comment',
-	state json not null comment '{state:valid/invalid/unknown}',
-	performance json comment '{cpu:**,mem:**,disk:**,network:**,localtion:***}',
-	location json comment '{}',
-	repoStates json comment '[{}]',
-	updateTime datetime not null comment 'update time',
-	key nodeName(nodeName),
-	key url(url)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='recored every sync log'
-`,
-	`
-CREATE TABLE lab_rpki_distributed_select_detail  (
-  id int(10) unsigned not null primary key auto_increment,
-  logId varchar(100) not null,
-  idx int not null,
-  startTime datetime,
-  selectTime datetime,
-  detail json,
-  key idxLogId(logId)
-)  ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='detail'
-`,
-
-	`
-##################
-## RSS
-##################
-# 1 notify :: n delta_log
-CREATE TABLE If Not Exists lab_rpki_rss_rrdp_notify (
-	id int(10) unsigned not null primary key auto_increment,
-	notifyUrl varchar(512) not null comment 'notification.xml url',
-	sessionId varchar(512) not null comment 'session_id',
-	latestSerial int(10) unsigned not null comment 'lateset delta serial',
-	snapshotUrl varchar(512) not null comment 'snapshot url',
-	updateTime datetime not null comment 'start update time',
-	unique notifyUrl(notifyUrl)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='rss rrdp notify'
-`,
-	`
-CREATE TABLE If Not Exists lab_rpki_rss_rrdp_delta_log (	
-	id int(10) unsigned not null primary key auto_increment,
-	rssRrdpNotifyId int(10) unsigned not null comment 'rss rrdp notify id',
-	deltaUrl varchar(512) not null comment 'delta url',
-	serial int(10) unsigned not null comment 'serial',
-	updateTime datetime not null comment 'start update time',
-	saveTime datetime not null comment 'save time',
-	deltaFiles mediumtext not null comment 'delta files:[{url:****,deltaStyle:publis/withdraw},{}]',
-	key updateTime (updateTime),
-	foreign key (rssRrdpNotifyId) references lab_rpki_rss_rrdp_notify(id)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='rss rrdp delta log'
-`,
-	`
-# 1 rsync :: n rsync_file_log
-CREATE TABLE If Not Exists lab_rpki_rss_rsync (
-	id int(10) unsigned not null primary key auto_increment,
-	rsyncUrl varchar(512) not null comment 'rysnc url',
-	updateTime datetime not null comment 'start update time',
-	unique rsyncUrl(rsyncUrl)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='rss rsync'
-`,
-	`
-CREATE TABLE If Not Exists lab_rpki_rss_rsync_file_log (
-	id int(10) unsigned not null primary key auto_increment,
-	rssRsyncId int(10) unsigned not null comment 'rss rsync id',
-	fileUrl varchar(512) not null comment 'file url',
-	filePath varchar(1024) not null comment 'file path',
-	fileName varchar(512) not null comment 'file name',
-	fileHash varchar(512) not null comment 'file hash',
-	style varchar(16) not null comment 'add/del/update',
-	updateTime datetime not null comment 'start update time',
-	saveTime datetime not null comment 'save time',
-	key updateTime (updateTime),
-	foreign key (rssRsyncId) references lab_rpki_rss_rsync(id)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='rss rsync file log'
-`,
-
-	`
 ################################
 ## SLURM: init not drop
 ################################
@@ -642,89 +558,6 @@ CREATE TABLE If Not Exists lab_rpki_slurm_audit (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='audit to slurm_log'
 `,
 
-	`
-#####################
-#### statistic
-#####################
-CREATE TABLE If Not Exists lab_rpki_statistic_rir (
-	id int(10) unsigned not null primary key auto_increment,
-	rir varchar(64) not null comment 'which nic',
-	cerFileCount json not null comment 'cer Count',
-	crlFileCount json not null comment 'crl Count',
-	mftFileCount json not null comment 'mft Count',
-	roaFileCount json not null comment 'roa Count',
-	asaFileCount json not null comment 'asa Count',
-	repos json not null comment 'repos, big json',
-	syncLogId int(10) unsigned not null comment 'foreign key references lab_rpki_sync_log(id)'
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='statis, update after every sync'
-`,
-	`
-CREATE TABLE If Not Exists lab_rpki_statistic_count (
-	id int(10) unsigned not null primary key auto_increment,
-	cerCount int(10) not null comment 'cerCount',
-	crlCount int(10) not null comment 'crlCount',
-	mftCount int(10) not null comment 'mftCount',
-	roaCount int(10) not null comment 'roaCount',
-	asaCount int(10) not null comment 'asaCount',
-	rtrCount int(10) not null comment 'rtrCount',
-	slurmCount int(10) not null comment 'slurmCount',
-	roaValidCount int(10) not null comment 'roaValidCount',
-	roaWarningCount int(10) not null comment 'roaWarningCount',
-	roaInvalidCount int(10) not null comment 'roaInvalidCount',
-	syncLogId int(10) unsigned not null comment 'foreign key references lab_rpki_sync_log(id)',
-	countTime datetime not null comment 'count time'
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='statis, update after every sync'
-`,
-	`
-CREATE TABLE If Not Exists lab_rpki_statistic_state (
-	id int(10) unsigned not null primary key auto_increment,
-	failInStateMsg varchar(1024) not null comment 'fail in stateMsg',
-	fileNamesCount int(10) unsigned not null comment 'fileNamesCount',
-	fileNames text not null comment 'file names',
-	syncLogId int(10) unsigned not null comment 'foreign key references lab_rpki_sync_log(id)' 	
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='statis, update after every sync'
-`,
-	`
-#####################
-#### analyse
-#####################
-CREATE TABLE If Not Exists lab_rpki_analyse_roa_history (
-	id int(10) unsigned not null primary key auto_increment,
-	syncLogId int(10) unsigned not null comment 'foreign key references lab_rpki_sync_log(id)',
-	roas json,
-	updateTime datetime NOT NULL
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='roa history info'
-`,
-	/*
-		   	`
-		   ### python old version
-		   #CREATE TABLE If Not Exists lab_rpki_analyse_roa_compete_py (
-		   #	id int(10) unsigned not null primary key auto_increment,
-		   #	fileName varchar(128) not null comment 'roa file name',
-		   #	asn bigint(20) signed not null comment 'roa asn',
-		   #	addressPrefixes json not null comment 'roa all prefix: [203.147.108.0/23,..,]',
-		   #	competeResult json not null comment 'roa compete result, big json',
-		   #	slurm json comment 'slurm',
-		   #	updateTime datetime not null comment 'update time'
-		   #) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='roa compete'
-
-		`,
-	*/
-	` 
-CREATE TABLE If Not Exists lab_rpki_analyse_roa_compete (
-	id int(10) unsigned not null primary key auto_increment,
-	curFileName varchar(128) not null comment 'cur roa file name',
-	curAsn bigint(20) signed not null comment 'cur roa asn',
-	curAddressPrefix varchar(128) not null comment 'cur compete prefix',
-	curMaxLength bigint(20) not null comment 'cur compete maxlength',
-	compFileName varchar(128) not null comment 'comp roa file name',
-	compAsn bigint(20) signed not null comment 'comp roa asn',
-	compAddressPrefix varchar(128) not null comment 'comp compete prefix',
-	compMaxLength bigint(20) not null comment 'comp compete maxlength',
-	competeDetail json not null comment 'comp roa compete detail json',
-	updateTime datetime not null comment 'update time'
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='roa compete'  
-`,
 	` 
 #####################
 #### conf
@@ -944,131 +777,44 @@ CREATE TABLE If Not Exists lab_rpki_rtr_asa_incremental (
 `,
 
 	`
-#####################
-#### rush: init not drop
-#####################
-### one rush_node --> one rush_node_log --> many rush_node_audit
-### create, insert rush_node_log/rush_node_audit,
-### when pass, insert rush_node,update rush_node_log/rush_node_audit
-### when unpass, update rush_node_log/rush_node_audit
-### when del, del rush_node, update rush_node_log, insert rush_node_audit( set del)
-	
-CREATE TABLE If Not Exists lab_rpki_rush_node (
+CREATE TABLE If Not Exists lab_rpki_rtr_moa_full (
 	id int(10) unsigned not null primary key auto_increment,
-	nodeName varchar(256) not null comment 'node name',
-	parentNodeId int(10) unsigned comment 'if it is root, will be null',
-	url varchar(256) not null comment 'interface url: https://1.1.1.1:8080',
-	isSelfUrl varchar(8) comment 'true/null: vc to identify itself. rp do not need this',
-	note varchar(256) comment 'comments, copy from lab_rpki_rush_node_log.note, auditUser can change',
-	updateTime datetime not null comment 'update time',
-	unique nodeName(nodeName),
-	unique url(url),
-	key parentNodeId(parentNodeId) 
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='rush node conf'
-`,
-	`
-CREATE TABLE If Not Exists lab_rpki_rush_node_log (
-	id int(10) unsigned not null primary key auto_increment,
-	url varchar(256) not null comment 'interface url: https://1.1.1.1:8080',
-	note varchar(256) comment 'comments',
-	state json not null comment '{state:unknown/valid/invalid}',
-	createTime datetime not null comment 'create time',
-	createUserId int(10) not null comment 'create user',
-	rushNodeId int(10) unsigned comment 'lab_rpki_rush_node id',
-	key url(url)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='rush node conf'
-`,
-	` 
-CREATE TABLE If Not Exists lab_rpki_rush_node_audit (
-	id int(10) unsigned not null primary key auto_increment,
-	auditTime datetime comment 'audit time',
-	auditUserId int(10) comment 'audit user',
-	state json not null comment '{state:unaudit/pass/unpass/del}',
-	rushNodeId int(10) unsigned comment 'lab_rpki_rush_node id,',
-	rushNodeLogId int(10) unsigned not null comment 'lab_rpki_rush_node_log id',	
-	key rushNodeId(rushNodeId),
-	key rushNodeLogId(rushNodeLogId)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='rush node conf'
-`,
-	`
-CREATE TABLE If Not Exists lab_rpki_rush_transfer_log (
-	id int(10) unsigned not null primary key auto_increment,
-	uuid varchar(64) not null comment 'used to uniquely identify every rush transfer',
-	sequence json not null comment 'identify transfer sequence, {seq:1, index:1}, to order',
-	nodeName varchar(256) not null comment 'node name, to idengity node',
-	nodeUrl varchar(256) not null comment 'node url: https://1.1.1.1:8080, to idengity node, not use nodeid',
-	receiveRequestTime datetime comment 'receive request time, it is start time of process' ,
-	sendResponseTime datetime comment 'send response time, it is end time of process' ,
-	updateType varchar(64) not null comment 'requestfull/pushfull/pushincr',
-	dataContent json comment 'some thing save, not use file to save',
-	dataNumber int(10) unsigned comment 'the number of rpki data, will save in file',
-	dataSha256 varchar(256) comment 'data sha256',
-	filePath varchar(1024) comment 'saved file path',
-	fileName varchar(256) comment 'saved file name',
-	result varchar(16) comment 'ok/fail',
-	errMsg varchar(256) comment 'fail reason',
-	key uuid (uuid)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='rush transfer log'
-`,
-}
-var createLicenseSqls []string = []string{
-	`
-#####################
-#### license: when init, not drop
-#####################
-CREATE TABLE If Not Exists lab_rpki_license_user (
-	id int(10) unsigned not null primary key auto_increment,
-	userName varchar(128) not null comment 'user name',
-	state json not null comment '{state:valid/invalid}',
-	licenseNumber int(10) unsigned not null comment 'allow license number',
-	defaultDevicePeriod varchar(128) comment 'device period: 1Y,1M,1D',
-	createTime datetime not null comment 'create time',
-	unique userName (userName)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4  COLLATE=utf8mb4_bin COMMENT='user table'
+	serialNumber bigint(20) unsigned not null,
+	ipv6MappingPrefix varchar(128) not null comment 'IPv6 mapping prefix, e.g. 2001:db8::/32',
+	ipv4Prefixes json not null comment 'IPv4 prefix entries: ["192.0.2.0/12",...]',
+	sourceFrom json not null comment 'come from : {source:sync/slurm/rush,syncLogId/syncLogFileId/slurmId/slurmFileId/rushDataLogId}',
+	key serialNumber(serialNumber),
+	key ipv6MappingPrefix(ipv6MappingPrefix),
+	unique rtrMoaFull(serialNumber,ipv6MappingPrefixLength,ipv6MappingPrefix)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='full rtr moa'
 `,
 
 	`
-CREATE TABLE If Not Exists lab_rpki_license_device (
+CREATE TABLE If Not Exists lab_rpki_rtr_moa_full_log (
 	id int(10) unsigned not null primary key auto_increment,
-	userId int(10) unsigned not null comment 'user id',
-	keyId int(10) unsigned not null comment 'key id',
-	deviceUuid varchar(128) not null comment 'device uuid, if info is empty, then use for encrypt',
-	deviceName varchar(218) not null comment 'device name',
-
-	rpVersion varchar(128) comment 'rp version',
-	systemInfo varchar(512) comment 'system info',
-  
-	installTime datetime comment 'install time',
-	licenseStartTime datetime comment 'start time',
-	licenseEndTime datetime comment 'end time',
-	state json not null comment '{state:valid/invalid}',
-
-	unique deviceUuid (deviceUuid),
-	unique userIdDeviceName(userId,deviceName)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4  COLLATE=utf8mb4_bin COMMENT='user table' 
+	serialNumber bigint(20) unsigned not null,
+	ipv6MappingPrefixLength int(10) unsigned not null comment 'IPv6 mapping prefix length (0-128)',
+	ipv6MappingPrefix varchar(39) not null comment 'IPv6 mapping prefix, e.g. 2001:db8::/32',
+	ipv4Prefixes json not null comment 'IPv4 prefix entries: ["192.0.2.0/12",...]',
+	sourceFrom json not null comment 'come from : {source:sync/slurm/rush,syncLogId/syncLogFileId/slurmId/slurmFileId/rushDataLogId}',
+	key serialNumber(serialNumber),
+	key ipv6MappingPrefix(ipv6MappingPrefix)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='full rtr moa log history'
 `,
 
 	`
-CREATE TABLE If Not Exists lab_rpki_license_authorize_log (
+CREATE TABLE If Not Exists lab_rpki_rtr_moa_incremental (
 	id int(10) unsigned not null primary key auto_increment,
-	keyId int(10) unsigned not null comment 'key id',
-	userName varchar(128) not null comment 'user name',
-	deviceUuid varchar(128) null comment 'device uuid',
-	
-	decryptedInfo text comment 'decrypted info',
-	authorizeTime  datetime not null comment 'create time',
-	authorizeResult json not null comment '{verify:pass/unpass}'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4  COLLATE=utf8mb4_bin COMMENT='user table' 
-`,
-
-	`
-CREATE TABLE If Not Exists lab_rpki_license_key (
-	id int(10) unsigned not null primary key auto_increment,
-	privateKey text not null comment 'private key',
-	publicKey text not null comment 'public key',
-	state varchar(64) not null comment '{state:valid/invalid}',
-	createTime datetime not null comment 'create time'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4  COLLATE=utf8mb4_bin COMMENT='key table' 
+	serialNumber bigint(20) unsigned not null,
+	style varchar(16) not null comment 'announce/withdraw, is 1/0 in protocol',
+	ipv6MappingPrefixLength int(10) unsigned not null comment 'IPv6 mapping prefix length (0-128)',
+	ipv6MappingPrefix varchar(39) not null comment 'IPv6 mapping prefix, e.g. 2001:db8::/32',
+	ipv4Prefixes json not null comment 'IPv4 prefix entries: ["192.0.2.0/12",...]',
+	sourceFrom json not null comment 'come from : {source:sync/slurm/rush,syncLogId/syncLogFileId/slurmId/slurmFileId/rushDataLogId}',
+	key serialNumber(serialNumber),
+	key ipv6MappingPrefix(ipv6MappingPrefix),
+	unique rtrMoaIncremental(serialNumber,ipv6MappingPrefixLength,ipv6MappingPrefix)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='incremental rtr moa'
 `,
 }
 
@@ -1076,8 +822,6 @@ CREATE TABLE If Not Exists lab_rpki_license_key (
 // drop
 // //////////////////////////////
 var dropRpSqls []string = []string{
-	`drop table if exists lab_rpki_analyse_roa_compete`,
-	`drop table if exists lab_rpki_analyse_roa_history`,
 	`drop table if exists lab_rpki_conf`,
 	`drop table if exists lab_rpki_cer_aia`,
 	`drop table if exists lab_rpki_cer_asn`,
@@ -1104,21 +848,12 @@ var dropRpSqls []string = []string{
 	`drop table if exists lab_rpki_slurm_log`,
 	`drop table if exists lab_rpki_slurm_log_file`,
 	`drop table if exists lab_rpki_slurm_audit`,
-	`drop table if exists lab_rpki_rss_rrdp_delta_log`,
-	`drop table if exists lab_rpki_rss_rrdp_notify`,
-	`drop table if exists lab_rpki_rss_rsync_file_log`,
-	`drop table if exists lab_rpki_rss_rsync`,
-	`drop table if exists lab_rpki_statistic_rir`,
-	`drop table if exists lab_rpki_statistic_count`,
-	`drop table if exists lab_rpki_statistic_state`,
 	`drop table if exists lab_rpki_sync_log_file`,
 	`drop table if exists lab_rpki_sync_log`,
 	`drop table if exists lab_rpki_sync_rrdp_log`,
 	`drop table if exists lab_rpki_sync_url`,
 	`drop table if exists lab_rpki_sync_rrdp_notify`,
 	`drop table if exists lab_rpki_sync_rrdp_delta`,
-	`drop table if exists lab_rpki_distributed_node`,
-	`drop table if exists lab_rpki_distributed_select_detail`,
 	`drop view if exists lab_rpki_crl_revoked_cert_view`,
 	`drop view if exists lab_rpki_mft_file_hash_view`,
 	`drop view if exists lab_rpki_roa_ipaddress_count_view`,
@@ -1137,7 +872,6 @@ var dropVcSqls []string = []string{
 	`drop table if exists lab_rpki_rtr_serial_number`,
 	`drop table if exists lab_rpki_rtr_session`,
 }
-var dropLicenseSqls []string = []string{}
 
 // //////////////////////////////
 // truncate
@@ -1174,18 +908,7 @@ var truncateRpSqls []string = []string{
 	`truncate  table  lab_rpki_sync_url`,
 	`truncate  table  lab_rpki_sync_rrdp_notify`,
 	`truncate  table  lab_rpki_sync_rrdp_delta`,
-	`truncate  table  lab_rpki_distributed_node`,
-	`truncate  table  lab_rpki_distributed_select_detail`,
 	`truncate  table  lab_rpki_conf`,
-	`truncate  table  lab_rpki_statistic_rir`,
-	`truncate  table  lab_rpki_statistic_count`,
-	`truncate  table  lab_rpki_statistic_state`,
-	`truncate  table  lab_rpki_rss_rrdp_notify`,
-	`truncate  table  lab_rpki_rss_rrdp_delta_log`,
-	`truncate  table  lab_rpki_rss_rsync`,
-	`truncate  table  lab_rpki_rss_rsync_file_log`,
-	`truncate  table  lab_rpki_analyse_roa_history`,
-	`truncate  table  lab_rpki_analyse_roa_compete`,
 }
 var truncateVcSqls []string = []string{
 	`truncate  table  lab_rpki_rtr_session`,
@@ -1197,7 +920,6 @@ var truncateVcSqls []string = []string{
 	`truncate  table  lab_rpki_rtr_asa_full_log`,
 	`truncate  table  lab_rpki_rtr_asa_incremental`,
 }
-var truncateLicenseSqls []string = []string{}
 
 // //////////////////////////////
 // truncate
@@ -1234,17 +956,6 @@ var optimizeRpSqls []string = []string{
 	`optimize  table  lab_rpki_sync_url`,
 	`optimize  table  lab_rpki_sync_rrdp_notify`,
 	`optimize  table  lab_rpki_sync_rrdp_delta`,
-	`optimize  table  lab_rpki_distributed_node`,
-	`optimize  table  lab_rpki_distributed_select_detail`,
-	`optimize  table  lab_rpki_rss_rrdp_notify`,
-	`optimize  table  lab_rpki_rss_rrdp_delta_log`,
-	`optimize  table  lab_rpki_rss_rsync`,
-	`optimize  table  lab_rpki_rss_rsync_file_log`,
-	`optimize  table  lab_rpki_statistic_rir`,
-	`optimize  table  lab_rpki_statistic_count`,
-	`optimize  table  lab_rpki_statistic_state`,
-	`optimize  table  lab_rpki_analyse_roa_history`,
-	`optimize  table  lab_rpki_analyse_roa_compete`,
 }
 
 var optimizeVcSqls []string = []string{
@@ -1260,11 +971,4 @@ var optimizeVcSqls []string = []string{
 	`optimize  table  lab_rpki_rush_node_audit`,
 	`optimize  table  lab_rpki_rush_node_log`,
 	`optimize  table  lab_rpki_rush_transfer_log`,
-}
-
-var optimizeLicenseSqls []string = []string{
-	`optimize  table  lab_rpki_license_user`,
-	`optimize  table  lab_rpki_license_device`,
-	`optimize  table  lab_rpki_license_authorize_log`,
-	`optimize  table  lab_rpki_license_key`,
 }

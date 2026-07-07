@@ -5,6 +5,7 @@ import (
 
 	rtrasa "github.com/bgpsecurity/rpstir2/rtr-producer/asa"
 	rtrcommon "github.com/bgpsecurity/rpstir2/rtr-producer/common"
+	rtrmoa "github.com/bgpsecurity/rpstir2/rtr-producer/moa"
 	rtrroa "github.com/bgpsecurity/rpstir2/rtr-producer/roa"
 	"github.com/cpusoft/goutil/belogs"
 	"github.com/cpusoft/goutil/jsonutil"
@@ -58,6 +59,19 @@ func RtrUpdateFromSync() (nextStep string, err error) {
 			return err1
 		}
 		belogs.Info("RtrUpdateFromSync(): RtrUpdateByAsaFromSync pass, curSerialNumberModel:", jsonutil.MarshalJson(curSerialNumberModel),
+			"    newSerialNumberModel:", jsonutil.MarshalJson(newSerialNumberModel), "  time(s):", time.Since(start))
+
+		return nil
+	})
+
+	// moa --> rtrmoafull/rtrmoafulllog/rtrmoaincr
+	g.Go(func() error {
+		err1 := rtrmoa.RtrUpdateByMoaFromSync(curSerialNumberModel, newSerialNumberModel)
+		if err1 != nil {
+			belogs.Error("RtrUpdateFromSync(): RtrUpdateByMoaFromSync fail:", err, "  time(s):", time.Since(start))
+			return err1
+		}
+		belogs.Info("RtrUpdateFromSync(): RtrUpdateByMoaFromSync pass, curSerialNumberModel:", jsonutil.MarshalJson(curSerialNumberModel),
 			"    newSerialNumberModel:", jsonutil.MarshalJson(newSerialNumberModel), "  time(s):", time.Since(start))
 
 		return nil

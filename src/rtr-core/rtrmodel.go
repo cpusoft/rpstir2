@@ -14,7 +14,6 @@ const (
 	PDU_PROTOCOL_VERSION_0 = 0
 	PDU_PROTOCOL_VERSION_1 = 1
 	PDU_PROTOCOL_VERSION_2 = 2
-	PDU_PROTOCOL_VERSION_3 = 3
 
 	PDU_TYPE_SERIAL_NOTIFY  = 0
 	PDU_TYPE_SERIAL_QUERY   = 1
@@ -28,7 +27,7 @@ const (
 	PDU_TYPE_ROUTER_KEY   = 9
 	PDU_TYPE_ERROR_REPORT = 10
 	PDU_TYPE_ASA          = 11
-
+	PDU_TYPE_MOA          = 12
 	// extend
 
 	// min pdu type length is reset query
@@ -74,9 +73,10 @@ type RtrPduModel interface {
 
 // withdraw-->0, announce-->1
 func getModelFlagsFromStyle(style string) uint8 {
-	if style == "withdraw" {
+	switch style {
+	case "withdraw":
 		return PDU_FLAG_WITHDRAW
-	} else if style == "announce" {
+	case "announce":
 		return PDU_FLAG_ANNOUNCE
 	}
 	return 0
@@ -148,6 +148,12 @@ func ParseToRtrPduModel(buf *bytes.Reader) (rtrPduModel RtrPduModel, err error) 
 			protocolVersion == PDU_PROTOCOL_VERSION_2 {
 			return ParseToAsa(buf, protocolVersion)
 		}
+	case PDU_TYPE_MOA:
+		if protocolVersion == PDU_PROTOCOL_VERSION_0 ||
+			protocolVersion == PDU_PROTOCOL_VERSION_1 ||
+			protocolVersion == PDU_PROTOCOL_VERSION_2 {
+			return ParseToMoa(buf, protocolVersion)
+		}
 	}
 
 	belogs.Error("parseToRtrPduModel():received bytes cannot be parse to rtr's pdu,  pduType:", pduType)
@@ -174,8 +180,7 @@ func parseProtocolVersionAndPduType(buf *bytes.Reader) (protocolVersion, pduType
 
 	if protocolVersion != PDU_PROTOCOL_VERSION_0 &&
 		protocolVersion != PDU_PROTOCOL_VERSION_1 &&
-		protocolVersion != PDU_PROTOCOL_VERSION_2 &&
-		protocolVersion != PDU_PROTOCOL_VERSION_3 {
+		protocolVersion != PDU_PROTOCOL_VERSION_2 {
 		belogs.Error("parseToPduModel(): protocolVersion is illegal, buf:", buf, protocolVersion)
 		rtrError := NewRtrError(
 			errors.New("protocolVersion is illegal, "+strconv.Itoa(int(protocolVersion))),
