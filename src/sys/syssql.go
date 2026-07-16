@@ -3,7 +3,7 @@ package sys
 // //////////////////////////////
 // create
 // //////////////////////////////
-var createRpSqls []string = []string{
+var createSqls []string = []string{
 	`
 #################################
 ## main table for cer/crl/roa/mft
@@ -648,8 +648,7 @@ FROM lab_rpki_asa_customer_provider_asn cpa
 	left join lab_rpki_asa a on a.id = cpa.asaId
 GROUP BY cpa.asaId, cpa.customerAsn;
 `,
-}
-var createVcSqls []string = []string{
+
 	`
 ##################
 ## RTR
@@ -821,7 +820,7 @@ CREATE TABLE If Not Exists lab_rpki_rtr_moa_incremental (
 // //////////////////////////////
 // drop
 // //////////////////////////////
-var dropRpSqls []string = []string{
+var dropSqls []string = []string{
 	`drop table if exists lab_rpki_conf`,
 	`drop table if exists lab_rpki_cer_aia`,
 	`drop table if exists lab_rpki_cer_asn`,
@@ -860,9 +859,7 @@ var dropRpSqls []string = []string{
 	`drop view if exists lab_rpki_roa_ipaddress_view`,
 	`drop view if exists lab_rpki_sync_rrdp_log_maxid_view`,
 	`drop view if exists lab_rpki_asa_customer_provider_asns_view`,
-}
 
-var dropVcSqls []string = []string{
 	`drop table if exists lab_rpki_rtr_full_log`,
 	`drop table if exists lab_rpki_rtr_full`,
 	`drop table if exists lab_rpki_rtr_incremental`,
@@ -876,7 +873,7 @@ var dropVcSqls []string = []string{
 // //////////////////////////////
 // truncate
 // //////////////////////////////
-var truncateRpSqls []string = []string{
+var truncateSqls []string = []string{
 	`truncate  table  lab_rpki_cer`,
 	`truncate  table  lab_rpki_cer_sia`,
 	`truncate  table  lab_rpki_cer_aia`,
@@ -909,8 +906,7 @@ var truncateRpSqls []string = []string{
 	`truncate  table  lab_rpki_sync_rrdp_notify`,
 	`truncate  table  lab_rpki_sync_rrdp_delta`,
 	`truncate  table  lab_rpki_conf`,
-}
-var truncateVcSqls []string = []string{
+
 	`truncate  table  lab_rpki_rtr_session`,
 	`truncate  table  lab_rpki_rtr_serial_number`,
 	`truncate  table  lab_rpki_rtr_full`,
@@ -924,7 +920,7 @@ var truncateVcSqls []string = []string{
 // //////////////////////////////
 // truncate
 // //////////////////////////////
-var optimizeRpSqls []string = []string{
+var optimizeSqls []string = []string{
 	`optimize  table  lab_rpki_cer`,
 	`optimize  table  lab_rpki_cer_sia`,
 	`optimize  table  lab_rpki_cer_aia`,
@@ -956,9 +952,7 @@ var optimizeRpSqls []string = []string{
 	`optimize  table  lab_rpki_sync_url`,
 	`optimize  table  lab_rpki_sync_rrdp_notify`,
 	`optimize  table  lab_rpki_sync_rrdp_delta`,
-}
 
-var optimizeVcSqls []string = []string{
 	`optimize  table  lab_rpki_rtr_session`,
 	`optimize  table  lab_rpki_rtr_serial_number`,
 	`optimize  table  lab_rpki_rtr_full`,

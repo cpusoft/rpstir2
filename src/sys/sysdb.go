@@ -12,13 +12,6 @@ import (
 	"xorm.io/xorm"
 )
 
-var sysCompileParam *model.CompileParam
-
-func SetSysCompileParam(compileParam *model.CompileParam) {
-	belogs.Info("SetSysCompileParam(): compileParam:", jsonutil.MarshalJson(compileParam))
-	sysCompileParam = compileParam
-}
-
 // initResetDb 初始化数据库
 //
 //	@param sysStyle  初始化类型
@@ -32,7 +25,7 @@ func initResetDb(sysStyle SysStyle) error {
 	defer session.Close()
 
 	//truncate all table
-	err = initResetImplDb(session, sysStyle, sysCompileParam)
+	err = initResetImplDb(session, sysStyle)
 	if err != nil {
 		return xormdb.RollbackAndLogError(session, "initResetDb(): initResetImplDb fail", err)
 	}
@@ -48,9 +41,8 @@ func initResetDb(sysStyle SysStyle) error {
 //
 //	@param session
 //	@param sysStyle
-//	@param sysCompileParam
 //	@return error
-func initResetImplDb(session *xorm.Session, sysStyle SysStyle, sysCompileParam *model.CompileParam) error {
+func initResetImplDb(session *xorm.Session, sysStyle SysStyle) error {
 	defer func(session1 *xorm.Session) {
 		sql := `set foreign_key_checks=1;`
 		if _, err := session1.Exec(sql); err != nil {
@@ -71,31 +63,11 @@ func initResetImplDb(session *xorm.Session, sysStyle SysStyle, sysCompileParam *
 	sqls := make([]string, 0, 200)
 	switch sysStyle.SysStyle {
 	case "init":
-		if model.FoundProgram(sysCompileParam, "rp") {
-			sqls = append(sqls, dropRpSqls...)
-			sqls = append(sqls, dropVcSqls...)
-		} else if model.FoundProgram(sysCompileParam, "vc") {
-			sqls = append(sqls, dropVcSqls...)
-		}
-
-		if model.FoundProgram(sysCompileParam, "rp") {
-			sqls = append(sqls, createRpSqls...)
-			sqls = append(sqls, createVcSqls...)
-		} else if model.FoundProgram(sysCompileParam, "vc") {
-			sqls = append(sqls, createVcSqls...)
-		}
-
+		sqls = append(sqls, dropSqls...)
+		sqls = append(sqls, createSqls...)
 	case "fullsync":
-		if model.FoundProgram(sysCompileParam, "rp") {
-			sqls = append(sqls, truncateRpSqls...)
-		} else if model.FoundProgram(sysCompileParam, "vc") {
-			sqls = append(sqls, truncateVcSqls...)
-		}
-		if model.FoundProgram(sysCompileParam, "rp") {
-			sqls = append(sqls, optimizeRpSqls...)
-		} else if model.FoundProgram(sysCompileParam, "vc") {
-			sqls = append(sqls, optimizeVcSqls...)
-		}
+		sqls = append(sqls, truncateSqls...)
+		sqls = append(sqls, optimizeSqls...)
 	}
 	//belogs.Debug("initResetImplDb():will Exec sqls:", jsonutil.MarshalJson(sqls))
 	belogs.Debug("initResetImplDb():will Exec len(sqls):", len(sqls))
@@ -107,29 +79,25 @@ func initResetImplDb(session *xorm.Session, sysStyle SysStyle, sysCompileParam *
 	}
 	belogs.Info("initResetImplDb(): len(sqls):", len(sqls), "  time(s):", time.Since(start))
 
-	// when vc,
-	if model.FoundProgram(sysCompileParam, "vc") {
-		// generate new session random, insert lab_rpki_rtr_session
-		rtrSession := model.LabRpkiRtrSession{}
-		rtrSession.SessionId = uint64(randutil.IntRange(99, 999))
-		rtrSession.CreateTime = time.Now()
-		belogs.Info("initResetImplDb():insert rtr_session, rtrSession:", jsonutil.MarshalJson(rtrSession))
-		if _, err := session.Insert(&rtrSession); err != nil {
-			belogs.Error("initResetImplDb():insert rtr_session fail", err)
-			return xormdb.RollbackAndLogError(session, "initResetImplDb():insert rtr_session fail", err)
-		}
+	// generate new session random, insert lab_rpki_rtr_session
+	rtrSession := model.LabRpkiRtrSession{}
+	rtrSession.SessionId = uint64(randutil.IntRange(99, 999))
+	rtrSession.CreateTime = time.Now()
+	belogs.Info("initResetImplDb():insert rtr_session, rtrSession:", jsonutil.MarshalJson(rtrSession))
+	if _, err := session.Insert(&rtrSession); err != nil {
+		belogs.Error("initResetImplDb():insert rtr_session fail", err)
+		return xormdb.RollbackAndLogError(session, "initResetImplDb():insert rtr_session fail", err)
 	}
 
-	if model.FoundProgram(sysCompileParam, "rp") {
-		// insert _conf
-		sql = `insert lab_rpki_conf ( section, myKey, myValue, defaultMyValue, updateTime) 
+	// insert _conf
+	sql = `insert lab_rpki_conf ( section, myKey, myValue, defaultMyValue, updateTime) 
 			values(?,?,?,?,?) `
-		_, err := session.Exec(sql, "rpOperate", "cacheUpdateType", "manual", "manual", time.Now())
-		if err != nil {
-			belogs.Error("initResetImplDb(): insert lab_rpki_conf fail", err)
-			return xormdb.RollbackAndLogError(session, "initResetImplDb():insert lab_rpki_conf fail", err)
-		}
+	_, err := session.Exec(sql, "rpOperate", "cacheUpdateType", "manual", "manual", time.Now())
+	if err != nil {
+		belogs.Error("initResetImplDb(): insert lab_rpki_conf fail", err)
+		return xormdb.RollbackAndLogError(session, "initResetImplDb():insert lab_rpki_conf fail", err)
 	}
+
 	belogs.Info("initResetImplDb(): all are done, len(sqls):", len(sqls), "  time(s):", time.Since(start))
 	return nil
 }
