@@ -783,9 +783,7 @@ CREATE TABLE If Not Exists lab_rpki_rtr_moa_full (
 	ipv4Prefixes json not null comment 'IPv4 prefix entries: ["192.0.2.0/12",...]',
 	sourceFrom json not null comment 'come from : {source:sync/slurm/rush,syncLogId/syncLogFileId/slurmId/slurmFileId/rushDataLogId}',
 	key serialNumber(serialNumber),
-	key ipv6MappingPrefix(ipv6MappingPrefix),
-	key ipv4Prefixes(ipv4Prefixes),
-	unique rtrMoaFull(serialNumber,ipv4Prefixes,ipv6MappingPrefix)
+	key ipv6MappingPrefix(ipv6MappingPrefix)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='full rtr moa'
 `,
 
@@ -797,8 +795,7 @@ CREATE TABLE If Not Exists lab_rpki_rtr_moa_full_log (
 	ipv4Prefixes json not null comment 'IPv4 prefix entries: ["192.0.2.0/12",...]',
 	sourceFrom json not null comment 'come from : {source:sync/slurm/rush,syncLogId/syncLogFileId/slurmId/slurmFileId/rushDataLogId}',
 	key serialNumber(serialNumber),
-	key ipv6MappingPrefix(ipv6MappingPrefix),
-	key ipv4Prefixes(ipv4Prefixes)
+	key ipv6MappingPrefix(ipv6MappingPrefix)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='full rtr moa log history'
 `,
 
@@ -811,9 +808,7 @@ CREATE TABLE If Not Exists lab_rpki_rtr_moa_incremental (
 	ipv4Prefixes json not null comment 'IPv4 prefix entries: ["192.0.2.0/12",...]',
 	sourceFrom json not null comment 'come from : {source:sync/slurm/rush,syncLogId/syncLogFileId/slurmId/slurmFileId/rushDataLogId}',
 	key serialNumber(serialNumber),
-	key ipv6MappingPrefix(ipv6MappingPrefix),
-	key ipv4Prefixes(ipv4Prefixes),
-	unique rtrMoaIncremental(serialNumber,ipv4Prefixes,ipv6MappingPrefix)
+	key ipv6MappingPrefix(ipv6MappingPrefix)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='incremental rtr moa'
 `,
 }
