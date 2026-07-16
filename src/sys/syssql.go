@@ -784,7 +784,8 @@ CREATE TABLE If Not Exists lab_rpki_rtr_moa_full (
 	sourceFrom json not null comment 'come from : {source:sync/slurm/rush,syncLogId/syncLogFileId/slurmId/slurmFileId/rushDataLogId}',
 	key serialNumber(serialNumber),
 	key ipv6MappingPrefix(ipv6MappingPrefix),
-	unique rtrMoaFull(serialNumber,ipv6MappingPrefixLength,ipv6MappingPrefix)
+	key ipv4Prefixes(ipv4Prefixes),
+	unique rtrMoaFull(serialNumber,ipv4Prefixes,ipv6MappingPrefix)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='full rtr moa'
 `,
 
@@ -792,12 +793,12 @@ CREATE TABLE If Not Exists lab_rpki_rtr_moa_full (
 CREATE TABLE If Not Exists lab_rpki_rtr_moa_full_log (
 	id int(10) unsigned not null primary key auto_increment,
 	serialNumber bigint(20) unsigned not null,
-	ipv6MappingPrefixLength int(10) unsigned not null comment 'IPv6 mapping prefix length (0-128)',
 	ipv6MappingPrefix varchar(39) not null comment 'IPv6 mapping prefix, e.g. 2001:db8::/32',
 	ipv4Prefixes json not null comment 'IPv4 prefix entries: ["192.0.2.0/12",...]',
 	sourceFrom json not null comment 'come from : {source:sync/slurm/rush,syncLogId/syncLogFileId/slurmId/slurmFileId/rushDataLogId}',
 	key serialNumber(serialNumber),
-	key ipv6MappingPrefix(ipv6MappingPrefix)
+	key ipv6MappingPrefix(ipv6MappingPrefix),
+	key ipv4Prefixes(ipv4Prefixes)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='full rtr moa log history'
 `,
 
@@ -806,13 +807,13 @@ CREATE TABLE If Not Exists lab_rpki_rtr_moa_incremental (
 	id int(10) unsigned not null primary key auto_increment,
 	serialNumber bigint(20) unsigned not null,
 	style varchar(16) not null comment 'announce/withdraw, is 1/0 in protocol',
-	ipv6MappingPrefixLength int(10) unsigned not null comment 'IPv6 mapping prefix length (0-128)',
 	ipv6MappingPrefix varchar(39) not null comment 'IPv6 mapping prefix, e.g. 2001:db8::/32',
 	ipv4Prefixes json not null comment 'IPv4 prefix entries: ["192.0.2.0/12",...]',
 	sourceFrom json not null comment 'come from : {source:sync/slurm/rush,syncLogId/syncLogFileId/slurmId/slurmFileId/rushDataLogId}',
 	key serialNumber(serialNumber),
 	key ipv6MappingPrefix(ipv6MappingPrefix),
-	unique rtrMoaIncremental(serialNumber,ipv6MappingPrefixLength,ipv6MappingPrefix)
+	key ipv4Prefixes(ipv4Prefixes),
+	unique rtrMoaIncremental(serialNumber,ipv4Prefixes,ipv6MappingPrefix)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='incremental rtr moa'
 `,
 }
