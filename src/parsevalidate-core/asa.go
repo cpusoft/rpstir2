@@ -214,6 +214,47 @@ func parseAsaModel(fileModel *model.FileModel, asaModel *model.AsaModel, stateMo
 }
 
 func validateAsaModel(asaModel *model.AsaModel, stateModel *model.StateModel) (err error) {
+	if asaModel.Version != 0 {
+		stateMsg := model.StateMsg{Stage: "parsevalidate",
+			Fail:   "Wrong Version number",
+			Detail: ""}
+		stateModel.AddError(&stateMsg)
+	}
+
+	if len(asaModel.CustomerAsns) == 0 {
+		stateMsg := model.StateMsg{Stage: "parsevalidate",
+			Fail:   "CustomerAsns is empty",
+			Detail: ""}
+		stateModel.AddError(&stateMsg)
+	}
+
+	// ski aki
+	if len(asaModel.Ski) == 0 {
+		stateMsg := model.StateMsg{Stage: "parsevalidate",
+			Fail:   "SKI is empty",
+			Detail: ""}
+		stateModel.AddError(&stateMsg)
+	}
+	// hash is 160bit --> 20Byte --> 40Str
+	if len(asaModel.Ski) != 40 {
+		stateMsg := model.StateMsg{Stage: "parsevalidate",
+			Fail:   "SKI length is wrong",
+			Detail: ""}
+		stateModel.AddError(&stateMsg)
+	}
+	if len(asaModel.Aki) == 0 {
+		stateMsg := model.StateMsg{Stage: "parsevalidate",
+			Fail:   "AKI is empty",
+			Detail: ""}
+		stateModel.AddError(&stateMsg)
+	}
+	// hash is 160bit --> 20Byte --> 40Str
+	if len(asaModel.Aki) != 40 {
+		stateMsg := model.StateMsg{Stage: "parsevalidate",
+			Fail:   "AKI length is wrong",
+			Detail: ""}
+		stateModel.AddError(&stateMsg)
+	}
 	return
 }
 func getAsnOwners(asaModel *model.AsaModel) error {
