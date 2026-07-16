@@ -59,7 +59,7 @@ func callAddRoaToChain(chains *Chains, syncLogId uint64, chainRoaDatasCh chan []
 func addRoaToChain(chains *Chains, chainRoaDatas []*ChainCertData, syncLogId uint64, roaWg *sync.WaitGroup) {
 	defer func() {
 		roaWg.Done()
-		belogs.Debug("cen(chainRoaSqls):", len(chainRoaDatas))
+		belogs.Debug("len(chainRoaSqls):", len(chainRoaDatas))
 	}()
 
 	start := time.Now()
@@ -82,7 +82,6 @@ func addRoaToChain(chains *Chains, chainRoaDatas []*ChainCertData, syncLogId uin
 	belogs.Info("addRoaToChain(): all added, len(chainRoaSqls):", len(chainRoaDatas), "  time(s):", time.Since(start))
 	return
 }
-
 
 func validateRoas(chains *Chains, wg *sync.WaitGroup) {
 	defer wg.Done()
