@@ -36,6 +36,15 @@ func delAsaDb(session *xorm.Session, filePathPrefix string) (err error) {
 	}
 	belogs.Debug("delAsaDb(): len(customerProviderAsnIds):", len(customerProviderAsnIds), "   filePathPrefix:", filePathPrefix)
 
+	// get customerAsnIds
+	customerAsnIds, err := getIdsByParamIdsDb("lab_rpki_asa_customer_asn", "asaId", asaIdsStr)
+	if err != nil {
+		belogs.Error("delAsaDb(): get customerAsnIds fail, filePathPrefix:", filePathPrefix,
+			"   asaIdsStr:", asaIdsStr, err)
+		return err
+	}
+	belogs.Debug("delAsaDb(): len(customerAsnIds):", len(customerAsnIds), "   filePathPrefix:", filePathPrefix)
+
 	// get siaIds
 	siaIds, err := getIdsByParamIdsDb("lab_rpki_asa_sia", "asaId", asaIdsStr)
 	if err != nil {
@@ -61,6 +70,18 @@ func delAsaDb(session *xorm.Session, filePathPrefix string) (err error) {
 		_, err := session.Exec("delete from lab_rpki_asa_customer_provider_asn  where id in " + customerProviderAsnIdsStr)
 		if err != nil {
 			belogs.Error("delAsaDb():delete  from lab_rpki_asa_customer_provider_asn fail: customerProviderAsnIdsStr:", customerProviderAsnIdsStr,
+				"   filePathPrefix:", filePathPrefix, "   err:", err)
+			return err
+		}
+	}
+
+	// del customerAsnIds
+	customerAsnIdsStr := stringutil.Int64sToInString(customerAsnIds)
+	if len(customerAsnIdsStr) > 0 {
+		belogs.Debug("delAsaDb(): delete lab_rpki_asa_customer_asn, customerAsnIdsStr:", customerAsnIdsStr)
+		_, err = session.Exec("delete from lab_rpki_asa_customer_asn where id in " + customerAsnIdsStr)
+		if err != nil {
+			belogs.Error("delAsaDb():delete from lab_rpki_asa_customer_asn fail: customerAsnIdsStr:", customerAsnIdsStr,
 				"   filePathPrefix:", filePathPrefix, "   err:", err)
 			return err
 		}
