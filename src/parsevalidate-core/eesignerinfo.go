@@ -116,7 +116,8 @@ func ValidateEeCertModel(stateModel *model.StateModel, eeCertModel *model.EeCert
 		stateMsg := model.StateMsg{Stage: "parsevalidate",
 			Fail:   "BasicConstraintsValid of EE is not true",
 			Detail: ""}
-		stateModel.AddError(&stateMsg)
+		//	stateModel.AddError(&stateMsg)
+		stateModel.AddWarning(&stateMsg)
 	}
 
 	// rescert_key_usage_chk myssl.c P2359  TODO
