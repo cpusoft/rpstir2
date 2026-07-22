@@ -8,7 +8,6 @@ import (
 	"github.com/bgpsecurity/rpstir2/model"
 	asn1 "github.com/bgpsecurity/rpstir2/parsevalidate-asn1"
 	openssl "github.com/bgpsecurity/rpstir2/parsevalidate-openssl"
-	"github.com/cpusoft/goutil/asnutil"
 	"github.com/cpusoft/goutil/belogs"
 	"github.com/cpusoft/goutil/fileutil"
 	"github.com/cpusoft/goutil/hashutil"
@@ -34,12 +33,6 @@ func parseValidateAsa(fileModel *model.FileModel) (asaModel model.AsaModel, stat
 	}
 	if len(stateModel.Errors) > 0 || len(stateModel.Warnings) > 0 {
 		belogs.Info("parseValidateAsa():stateModel have errors or warnings, fileModel:", jsonutil.MarshalJson(fileModel), "     stateModel:", jsonutil.MarshalJson(stateModel))
-	}
-
-	err = getAsnOwners(&asaModel)
-	if err != nil {
-		belogs.Error("parseValidateAsa():getAsnOwners fail, fileModel:", jsonutil.MarshalJson(fileModel), err)
-		return asaModel, stateModel, err
 	}
 
 	stateModel.JudgeState()
@@ -256,30 +249,4 @@ func validateAsaModel(asaModel *model.AsaModel, stateModel *model.StateModel) (e
 		stateModel.AddError(&stateMsg)
 	}
 	return
-}
-func getAsnOwners(asaModel *model.AsaModel) error {
-
-	for i := range asaModel.CustomerAsns {
-		c := asaModel.CustomerAsns[i]
-		owner, err := asnutil.GetAsnOwnerByCymru(int(c.CustomerAsn))
-		if err != nil {
-			belogs.Error("getAsnOwners(): GetAsnOwnerByCymru c.CustomerAsn, fail, asn:", c.CustomerAsn)
-			continue
-		}
-		c.CustomerAsnOwner = owner
-		belogs.Debug("getAsnOwners(): c.CustomerAsnOwner:", c.CustomerAsnOwner)
-
-		c.ProviderAsnOwners = make([]string, 0)
-		for j := range c.ProviderAsns {
-			owner, err := asnutil.GetAsnOwnerByCymru(int(c.ProviderAsns[j]))
-			// maybe ""
-			c.ProviderAsnOwners = append(c.ProviderAsnOwners, owner)
-			if err != nil {
-				belogs.Error("getAsnOwners(): GetAsnOwnerByCymru c.ProviderAsns fail, asn:", c.ProviderAsns[j])
-				continue
-			}
-		}
-	}
-	belogs.Debug("getAsnOwners(): asaModel.CustomerAsns:", jsonutil.MarshalJson(asaModel.CustomerAsns))
-	return nil
 }
