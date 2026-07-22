@@ -735,10 +735,11 @@ CREATE TABLE If Not Exists lab_rpki_rtr_asa_full (
 	customerAsn int(10) unsigned not null comment 'customer asn',
 	providerAsns json not null comment 'provider asns',
 	sourceFrom json not null comment 'come from : {souce:sync/slurm/rush,syncLogId/syncLogFileId/slurmId/slurmFileId/rushDataLogId}',
+	providerAsns_key VARCHAR(255) AS (JSON_UNQUOTE(JSON_SORT(providerAsns))) VIRTUAL,
 	key serialNumber(serialNumber),
 	key customerAsn(customerAsn),
-	key providerAsns(providerAsns),
-	unique rtrAsaFull(serialNumber,customerAsn,providerAsns)
+	key providerAsns(providerAsns_key),
+	unique rtrAsaFull(serialNumber,customerAsn,providerAsns_key)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='full rtr asa'
 `,
 
@@ -749,9 +750,10 @@ CREATE TABLE If Not Exists lab_rpki_rtr_asa_full_log (
 	customerAsn int(10) unsigned not null comment 'customer asn',
 	providerAsns json not null comment 'provider asns',
 	sourceFrom json not null comment 'come from : {souce:sync/slurm/rush,syncLogId/syncLogFileId/slurmId/slurmFileId/rushDataLogId}',
+	providerAsns_key VARCHAR(255) AS (JSON_UNQUOTE(JSON_SORT(providerAsns))) VIRTUAL,
 	key serialNumber(serialNumber),
 	key customerAsn(customerAsn),
-	key providerAsns(providerAsns)
+	key providerAsns(providerAsns_key)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='full rtr asa log history'
 `,
 
@@ -763,10 +765,11 @@ CREATE TABLE If Not Exists lab_rpki_rtr_asa_incremental (
 	customerAsn int(10) unsigned not null comment 'customer asn',
 	providerAsns json not null comment 'provider asns',
 	sourceFrom json not null comment 'come from : {souce:sync/slurm/rush,syncLogId/syncLogFileId/slurmId/slurmFileId/rushDataLogId}',
+	providerAsns_key VARCHAR(255) AS (JSON_UNQUOTE(JSON_SORT(providerAsns))) VIRTUAL,
 	key serialNumber(serialNumber),
 	key customerAsn(customerAsn),
-	key providerAsns(providerAsns),
-	unique rtrAsaIncremental(serialNumber,customerAsn,providerAsns)
+	key providerAsns(providerAsns_key),
+	unique rtrAsaIncremental(serialNumber,customerAsn,providerAsns_key)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='incremental rtr asa'
 `,
 
