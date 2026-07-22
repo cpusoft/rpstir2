@@ -487,7 +487,6 @@ CREATE TABLE If Not Exists lab_rpki_slurm (
 
 	customerAsn int(10) unsigned comment 'asa customerAsn',
 	providerAsn  int(10) unsigned comment 'asa providerAsn',
-	addressFamily varchar(16) comment 'asa addressFamily',
 
 	comment varchar(256),
 	slurmLogId int(10) unsigned not null comment 'lab_rpki_slurm_log.id',
@@ -498,7 +497,7 @@ CREATE TABLE If Not Exists lab_rpki_slurm (
 	key addressPrefix(addressPrefix),
 	key customerAsn(customerAsn),
 	key providerAsn(providerAsn),
-	unique slurmPrefixAsa (asn,addressPrefix,maxLength,customerAsn,providerAsn,addressFamily)
+	unique slurmPrefixAsa (asn,addressPrefix,maxLength,customerAsn,providerAsn)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='valid slurms'
 `,
 
@@ -518,7 +517,6 @@ CREATE TABLE If Not Exists lab_rpki_slurm_log (
 
 	customerAsn int(10) unsigned comment 'asa customerAsn',
 	providerAsn  int(10) unsigned comment 'asa providerAsn',
-	addressFamily varchar(16) comment 'asa addressFamily',
 
 	comment varchar(256),
 	state json not null comment '[state:unknown/valid/invalid]',
@@ -739,8 +737,8 @@ CREATE TABLE If Not Exists lab_rpki_rtr_asa_full (
 	sourceFrom json not null comment 'come from : {souce:sync/slurm/rush,syncLogId/syncLogFileId/slurmId/slurmFileId/rushDataLogId}',
 	key serialNumber(serialNumber),
 	key customerAsn(customerAsn),
-	key providerAsn(providerAsn),
-	unique rtrAsaFull(serialNumber,customerAsn,providerAsn,addressFamily)
+	key providerAsns(providerAsns),
+	unique rtrAsaFull(serialNumber,customerAsn,providerAsns)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='full rtr asa'
 `,
 
@@ -753,7 +751,7 @@ CREATE TABLE If Not Exists lab_rpki_rtr_asa_full_log (
 	sourceFrom json not null comment 'come from : {souce:sync/slurm/rush,syncLogId/syncLogFileId/slurmId/slurmFileId/rushDataLogId}',
 	key serialNumber(serialNumber),
 	key customerAsn(customerAsn),
-	key providerAsn(providerAsn)
+	key providerAsns(providerAsns)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='full rtr asa log history'
 `,
 
@@ -767,8 +765,8 @@ CREATE TABLE If Not Exists lab_rpki_rtr_asa_incremental (
 	sourceFrom json not null comment 'come from : {souce:sync/slurm/rush,syncLogId/syncLogFileId/slurmId/slurmFileId/rushDataLogId}',
 	key serialNumber(serialNumber),
 	key customerAsn(customerAsn),
-	key providerAsn(providerAsn),
-	unique rtrAsaIncremental(serialNumber,customerAsn,providerAsn,addressFamily)
+	key providerAsns(providerAsns),
+	unique rtrAsaIncremental(serialNumber,customerAsn,providerAsns)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='incremental rtr asa'
 `,
 
