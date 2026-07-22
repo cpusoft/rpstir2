@@ -319,30 +319,27 @@ type LabRpkiRtrIncremental struct {
 // /////////////////////////////////////
 // lab_rpki_rtr_asa_full
 type LabRpkiRtrAsaFull struct {
-	Id            uint64   `json:"id" xorm:"id int"`
-	SerialNumber  uint64   `json:"serialNumber" xorm:"serialNumber int"`
-	CustomerAsn   uint64   `json:"customerAsn" xorm:"customerAsn int"`
-	ProviderAsn   uint64   `json:"providerAsn" xorm:"providerAsn int"`
-	AddressFamily null.Int `json:"addressFamily" xorm:"addressFamily int"`
-	SourceFrom    string   `json:"sourceFrom" xorm:"sourceFrom json"`
+	Id           uint64 `json:"id" xorm:"id int"`
+	SerialNumber uint64 `json:"serialNumber" xorm:"serialNumber int"`
+	CustomerAsn  uint64 `json:"customerAsn" xorm:"customerAsn int"`
+	ProviderAsns string `json:"providerAsns" xorm:"providerAsns json"`
+	SourceFrom   string `json:"sourceFrom" xorm:"sourceFrom json"`
 }
 
 type LabRpkiRtrAsaFullLog struct {
-	Id            uint64   `json:"id" xorm:"id int"`
-	SerialNumber  uint64   `json:"serialNumber" xorm:"serialNumber int"`
-	CustomerAsn   uint64   `json:"customerAsn" xorm:"customerAsn int"`
-	ProviderAsn   uint64   `json:"providerAsn" xorm:"providerAsn int"`
-	AddressFamily null.Int `json:"addressFamily" xorm:"addressFamily int"`
-	SourceFrom    string   `json:"sourceFrom" xorm:"sourceFrom json"`
+	Id           uint64 `json:"id" xorm:"id int"`
+	SerialNumber uint64 `json:"serialNumber" xorm:"serialNumber int"`
+	CustomerAsn  uint64 `json:"customerAsn" xorm:"customerAsn int"`
+	ProviderAsns string `json:"providerAsns" xorm:"providerAsns json"`
+	SourceFrom   string `json:"sourceFrom" xorm:"sourceFrom json"`
 }
 
 type AsaToRtrFullLog struct {
-	AsaId         uint64   `json:"roaId" xorm:"roaId int"`
-	CustomerAsn   uint64   `json:"customerAsn" xorm:"customerAsn int"`
-	ProviderAsn   uint64   `json:"providerAsn" xorm:"providerAsn int"`
-	AddressFamily null.Int `json:"addressFamily" xorm:"addressFamily int"`
-	SyncLogId     uint64   `json:"syncLogId" xorm:"syncLogId int"`
-	SyncLogFileId uint64   `json:"syncLogFileId" xorm:"syncLogFileId int"`
+	AsaId         uint64 `json:"asaId" xorm:"asaId int"`
+	CustomerAsn   uint64 `json:"customerAsn" xorm:"customerAsn int"`
+	ProviderAsns  string `json:"providerAsns" xorm:"providerAsn json"`
+	SyncLogId     uint64 `json:"syncLogId" xorm:"syncLogId int"`
+	SyncLogFileId uint64 `json:"syncLogFileId" xorm:"syncLogFileId int"`
 }
 
 // lab_rpki_rtr_asa_incremental
@@ -350,10 +347,9 @@ type LabRpkiRtrAsaIncremental struct {
 	Id           uint64 `json:"id" xorm:"id int"`
 	SerialNumber uint64 `json:"serialNumber" xorm:"serialNumber bigint"`
 	//announce/withdraw, is 1/0 in protocol
-	Style         string   `json:"style" xorm:"style varchar(16)"`
-	CustomerAsn   uint64   `json:"customerAsn" xorm:"customerAsn int"`
-	ProviderAsn   uint64   `json:"providerAsn" xorm:"providerAsn int"`
-	AddressFamily null.Int `json:"addressFamily" xorm:"addressFamily int"`
+	Style        string `json:"style" xorm:"style varchar(16)"`
+	CustomerAsn  uint64 `json:"customerAsn" xorm:"customerAsn int"`
+	ProviderAsns string `json:"providerAsns" xorm:"providerAsns json"`
 	//'come from : {souce:sync/slurm/transfer,syncLogId/syncLogFileId/slurmId/slurmFileId/transferLogId}',
 	SourceFrom string `json:"sourceFrom" xorm:"sourceFrom json"`
 }

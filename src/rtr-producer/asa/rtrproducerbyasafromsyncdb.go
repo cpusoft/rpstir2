@@ -1,6 +1,7 @@
 package asa
 
 import (
+	"slices"
 	"time"
 
 	"github.com/bgpsecurity/rpstir2/model"
@@ -33,17 +34,17 @@ func getAllAsasDb() ([]model.AsaToRtrFullLog, error) {
 		}
 		belogs.Debug("getAllAsasDb(): customerAsns:", jsonutil.MarshalJson(customerAsns))
 		for j := range customerAsns {
-			for k := range customerAsns[j].ProviderAsns {
-				asaToRtrFullLog := model.AsaToRtrFullLog{
-					AsaId:         asaStrToRtrFullLogs[i].AsaId,
-					CustomerAsn:   customerAsns[j].CustomerAsn,
-					ProviderAsn:   customerAsns[j].ProviderAsns[k],
-					SyncLogId:     asaStrToRtrFullLogs[i].SyncLogId,
-					SyncLogFileId: asaStrToRtrFullLogs[i].SyncLogFileId,
-				}
-				belogs.Debug("getAllAsasDb(): asaToRtrFullLog:", jsonutil.MarshalJson(asaToRtrFullLog))
-				asaToRtrFullLogs = append(asaToRtrFullLogs, asaToRtrFullLog)
+			providerAsns := customerAsns[j].ProviderAsns
+			slices.Sort(providerAsns) // sort ProviderAsns
+			asaToRtrFullLog := model.AsaToRtrFullLog{
+				AsaId:         asaStrToRtrFullLogs[i].AsaId,
+				CustomerAsn:   customerAsns[j].CustomerAsn,
+				ProviderAsns:  jsonutil.MarshalJson(providerAsns),
+				SyncLogId:     asaStrToRtrFullLogs[i].SyncLogId,
+				SyncLogFileId: asaStrToRtrFullLogs[i].SyncLogFileId,
 			}
+			belogs.Debug("getAllAsasDb(): asaToRtrFullLog:", jsonutil.MarshalJson(asaToRtrFullLog))
+			asaToRtrFullLogs = append(asaToRtrFullLogs, asaToRtrFullLog)
 		}
 
 	}
@@ -56,7 +57,7 @@ func getRtrAsaFullFromRtrFullLogDb(serialNumber uint64) (rtrAsaFulls map[string]
 	belogs.Debug("getRtrAsaFullFromRtrFullLogDb():serialNumber:", serialNumber)
 	rtrAsaFs := make([]model.LabRpkiRtrAsaFull, 0)
 	sql :=
-		`select serialNumber,customerAsn,providerAsn,addressFamily,sourceFrom 
+		`select serialNumber,customerAsn,providerAsns,sourceFrom 
 	    from lab_rpki_rtr_asa_full_log 
 	    where serialNumber = ? 
 		order by id `
@@ -73,8 +74,7 @@ func getRtrAsaFullFromRtrFullLogDb(serialNumber uint64) (rtrAsaFulls map[string]
 
 	rtrAsaFulls = make(map[string]model.LabRpkiRtrAsaFull, len(rtrAsaFs)+50)
 	for i := range rtrAsaFs {
-		key := convert.ToString(rtrAsaFs[i].CustomerAsn) + "_" +
-			convert.ToString(rtrAsaFs[i].ProviderAsn) + "_" + convert.ToString(rtrAsaFs[i].AddressFamily.ValueOrZero())
+		key := convert.ToString(rtrAsaFs[i].CustomerAsn) + "_" + rtrAsaFs[i].ProviderAsns
 		rtrAsaFulls[key] = rtrAsaFs[i]
 	}
 	belogs.Info("getRtrAsaFullFromRtrFullLogDb():map LabRpkiRtrAsaFull, serialNumber:",
@@ -94,9 +94,9 @@ func insertRtrAsaFullLogFromAsaDb(newSerialNumber uint64, asaToRtrFullLogs []mod
 
 	// insert asa into rtr_asa_full_log
 	sql := `insert  into lab_rpki_rtr_asa_full_log
-				(serialNumber,customerAsn,providerAsn,
-					addressFamily,sourceFrom) values
-				(?,?,?,    ?,?)`
+				(serialNumber,customerAsn,providerAsns,
+					sourceFrom) values
+				(?,?,?,   ?)`
 	sourceFrom := model.LabRpkiRtrSourceFrom{
 		Source: "sync",
 	}
@@ -105,34 +105,15 @@ func insertRtrAsaFullLogFromAsaDb(newSerialNumber uint64, asaToRtrFullLogs []mod
 		sourceFrom.SyncLogId = asaToRtrFullLogs[i].SyncLogId
 		sourceFrom.SyncLogFileId = asaToRtrFullLogs[i].SyncLogFileId
 		sourceFromJson := jsonutil.MarshalJson(sourceFrom)
-		addressFamilyIpv4, addressFamilyIpv6, err := rtrcommon.ConvertAsaAddressFamilyToRtr(asaToRtrFullLogs[i].AddressFamily)
+		_, err = session.Exec(sql,
+			newSerialNumber, asaToRtrFullLogs[i].CustomerAsn, asaToRtrFullLogs[i].ProviderAsns,
+			sourceFromJson)
 		if err != nil {
-			belogs.Error("insertRtrAsaFullLogFromAsaDb():ConvertAsaAddressFamilyToRtr fail:",
+			belogs.Error("insertRtrAsaFullLogFromAsaDb():insert into lab_rpki_rtr_asa_full_log from asa fail:",
 				jsonutil.MarshalJson(asaToRtrFullLogs[i]), err)
-			return xormdb.RollbackAndLogError(session, "insertRtrAsaFullLogFromAsaDb(): ConvertAsaAddressFamilyToRtr fail: ", err)
+			return xormdb.RollbackAndLogError(session, "insertRtrAsaFullLogFromAsaDb(): insert into lab_rpki_rtr_asa_full_log fail: ", err)
 		}
-		belogs.Debug("insertRtrAsaFullLogFromAsaDb(): AddressFamily:", asaToRtrFullLogs[i].AddressFamily,
-			"   addressFamilyIpv4:", addressFamilyIpv4, "   addressFamilyIpv6:", addressFamilyIpv6)
-		if addressFamilyIpv4.Valid {
-			_, err = session.Exec(sql,
-				newSerialNumber, asaToRtrFullLogs[i].CustomerAsn, asaToRtrFullLogs[i].ProviderAsn,
-				addressFamilyIpv4, sourceFromJson)
-			if err != nil {
-				belogs.Error("insertRtrAsaFullLogFromAsaDb():insert into lab_rpki_rtr_asa_full_log ipv4 from asa fail:",
-					jsonutil.MarshalJson(asaToRtrFullLogs[i]), err)
-				return xormdb.RollbackAndLogError(session, "insertRtrAsaFullLogFromAsaDb(): insert into lab_rpki_rtr_asa_full_log ipv4 fail: ", err)
-			}
-		}
-		if addressFamilyIpv6.Valid {
-			_, err = session.Exec(sql,
-				newSerialNumber, asaToRtrFullLogs[i].CustomerAsn, asaToRtrFullLogs[i].ProviderAsn,
-				addressFamilyIpv6, sourceFromJson)
-			if err != nil {
-				belogs.Error("insertRtrAsaFullLogFromAsaDb():insert into lab_rpki_rtr_asa_full_log ipv6 from asa fail:",
-					jsonutil.MarshalJson(asaToRtrFullLogs[i]), err)
-				return xormdb.RollbackAndLogError(session, "insertRtrAsaFullLogFromAsaDb(): insert into lab_rpki_rtr_asa_full_log ipv6 fail: ", err)
-			}
-		}
+
 	}
 
 	// commit
@@ -171,7 +152,7 @@ func updateSerialNumberAndRtrAsaFullAndRtrAsaIncrementalDb(newSerialNumberModel 
 	sql := `delete from lab_rpki_rtr_asa_full`
 	_, err = session.Exec(sql)
 	if err != nil {
-		belogs.Error("updateRtrFullAndIncrementalAndRsyncLogRtrStateEndDb():delete lab_rpki_rtr_asa_full fail:", err)
+		belogs.Error("updateSerialNumberAndRtrAsaFullAndRtrAsaIncrementalDb():delete lab_rpki_rtr_asa_full fail:", err)
 		return xormdb.RollbackAndLogError(session, "updateSerialNumberAndRtrAsaFullAndRtrAsaIncrementalDb():delete lab_rpki_rtr_asa_full fail:", err)
 	}
 	belogs.Debug("updateSerialNumberAndRtrAsaFullAndRtrAsaIncrementalDb():delete lab_rpki_rtr_asa_full, time(s):", time.Since(start))
@@ -179,10 +160,10 @@ func updateSerialNumberAndRtrAsaFullAndRtrAsaIncrementalDb(newSerialNumberModel 
 	// insert rtr_asa_full from rtr_full_asa_log
 	sql = `
 	insert ignore into lab_rpki_rtr_asa_full 
-		  (serialNumber, customerAsn, providerAsn, 
-		   addressFamily,sourceFrom ) 
-	select serialNumber, customerAsn, providerAsn, 
-	       addressFamily, sourceFrom 
+		  (serialNumber, customerAsn, providerAsns, 
+		   sourceFrom ) 
+	select serialNumber, customerAsn, providerAsns, 
+	       sourceFrom 
 	from lab_rpki_rtr_asa_full_log where serialNumber=? order by id`
 	_, err = session.Exec(sql, newSerialNumberModel.SerialNumber)
 	if err != nil {
@@ -194,12 +175,13 @@ func updateSerialNumberAndRtrAsaFullAndRtrAsaIncrementalDb(newSerialNumberModel 
 
 	// insert into lab_rpki_rtr_asa_incremental
 	sql = `insert ignore into lab_rpki_rtr_asa_incremental
-		(serialNumber,style,customerAsn,providerAsn,   addressFamily,sourceFrom) values
-		(?,?,?,?,  ?,?)`
+		(serialNumber,style,customerAsn,providerAsns,   sourceFrom) values
+		(?,?,?,?,  ?)`
 	for i := range rtrAsaIncrementals {
 		_, err = session.Exec(sql,
-			newSerialNumberModel.SerialNumber, rtrAsaIncrementals[i].Style, rtrAsaIncrementals[i].CustomerAsn, rtrAsaIncrementals[i].ProviderAsn,
-			rtrAsaIncrementals[i].AddressFamily, rtrAsaIncrementals[i].SourceFrom)
+			newSerialNumberModel.SerialNumber, rtrAsaIncrementals[i].Style,
+			rtrAsaIncrementals[i].CustomerAsn, rtrAsaIncrementals[i].ProviderAsns,
+			rtrAsaIncrementals[i].SourceFrom)
 		if err != nil {
 			belogs.Error("updateSerialNumberAndRtrAsaFullAndRtrAsaIncrementalDb():insert into lab_rpki_rtr_asa_incremental fail: newSerialNumber:",
 				jsonutil.MarshalJson(newSerialNumberModel), jsonutil.MarshalJson(rtrAsaIncrementals[i]), err)

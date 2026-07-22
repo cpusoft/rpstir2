@@ -217,24 +217,21 @@ func convertRtrAsaFullsToRtrPduModels(rtrAsaFulls []model.LabRpkiRtrAsaFull,
 	belogs.Debug("convertRtrAsaFullsToRtrPduModels(): len(rtrAsaFulls):", len(rtrAsaFulls), "  protocolVersion:", protocolVersion)
 
 	start := time.Now()
-	sameCustomerAsnAfi := make(map[string]*RtrAsaModel)
 	rtrAsaPduModels = make([]RtrPduModel, 0)
 	for i := range rtrAsaFulls {
-		rtrPduModel := NewRtrAsaModelFromDb(protocolVersion, PDU_FLAG_ANNOUNCE,
-			rtrAsaFulls[i].AddressFamily, uint32(rtrAsaFulls[i].CustomerAsn))
-		key := rtrPduModel.GetKey()
-		belogs.Debug("convertRtrAsaFullsToRtrPduModels(): will add key:", key)
-		if v, ok := sameCustomerAsnAfi[key]; ok {
-			v.AddProviderAsn(uint32(rtrAsaFulls[i].ProviderAsn))
-			sameCustomerAsnAfi[key] = v
-		} else {
-			rtrPduModel.AddProviderAsn(uint32(rtrAsaFulls[i].ProviderAsn))
-			sameCustomerAsnAfi[key] = rtrPduModel
+
+		providerAsns := make([]uint32, 0)
+		err := jsonutil.UnmarshalJson(rtrAsaFulls[i].ProviderAsns, &providerAsns)
+		if err != nil {
+			belogs.Error("convertRtrAsaFullsToRtrPduModels(): UnmarshalJson ProviderAsns fail,rtrAsaFulls[i].ProviderAsns",
+				rtrAsaFulls[i].ProviderAsns, err)
+			return nil, err
 		}
-	}
-	for _, v := range sameCustomerAsnAfi {
-		rtrAsaPduModels = append(rtrAsaPduModels, v)
-		belogs.Debug("convertRtrAsaFullsToRtrPduModels(): v: ", jsonutil.MarshalJson(v))
+		rtrPduModel := NewRtrAsaModel(protocolVersion, PDU_FLAG_ANNOUNCE,
+			uint32(rtrAsaFulls[i].CustomerAsn), providerAsns)
+
+		rtrAsaPduModels = append(rtrAsaPduModels, rtrPduModel)
+		belogs.Debug("convertRtrAsaFullsToRtrPduModels(): rtrPduModel: ", jsonutil.MarshalJson(rtrPduModel))
 	}
 	belogs.Info("convertRtrAsaFullsToRtrPduModels(): len(rtrAsaFulls):", len(rtrAsaFulls),
 		" len(rtrAsaPduModels):", len(rtrAsaPduModels), "  time(s):", time.Since(start))

@@ -234,24 +234,20 @@ func convertRtrAsaIncrementalsToRtrPduModels(rtrAsaIncrementals []model.LabRpkiR
 	belogs.Debug("convertRtrAsaIncrementalsToRtrPduModels(): len(rtrAsaIncrementals):", len(rtrAsaIncrementals), "  protocolVersion:", protocolVersion)
 
 	start := time.Now()
-	sameCustomerAsnAfi := make(map[string]*RtrAsaModel)
 	rtrAsaPduModels = make([]RtrPduModel, 0)
 	for i := range rtrAsaIncrementals {
-		rtrPduModel := NewRtrAsaModelFromDb(protocolVersion, getModelFlagsFromStyle(rtrAsaIncrementals[i].Style),
-			rtrAsaIncrementals[i].AddressFamily, uint32(rtrAsaIncrementals[i].CustomerAsn))
-		key := rtrPduModel.GetKey()
-		belogs.Debug("convertRtrAsaIncrementalsToRtrPduModels(): will add key:", key)
-		if v, ok := sameCustomerAsnAfi[key]; ok {
-			v.AddProviderAsn(uint32(rtrAsaIncrementals[i].ProviderAsn))
-			sameCustomerAsnAfi[key] = v
-		} else {
-			rtrPduModel.AddProviderAsn(uint32(rtrAsaIncrementals[i].ProviderAsn))
-			sameCustomerAsnAfi[key] = rtrPduModel
+		providerAsns := make([]uint32, 0)
+		err := jsonutil.UnmarshalJson(rtrAsaIncrementals[i].ProviderAsns, &providerAsns)
+		if err != nil {
+			belogs.Error("convertRtrAsaIncrementalsToRtrPduModels(): UnmarshalJson ProviderAsns fail,rtrAsaIncrementals[i].ProviderAsns",
+				rtrAsaIncrementals[i].ProviderAsns, err)
+			return nil, err
 		}
-	}
-	for _, v := range sameCustomerAsnAfi {
-		rtrAsaPduModels = append(rtrAsaPduModels, v)
-		belogs.Debug("convertRtrAsaIncrementalsToRtrPduModels(): v: ", jsonutil.MarshalJson(v))
+
+		rtrPduModel := NewRtrAsaModel(protocolVersion, getModelFlagsFromStyle(rtrAsaIncrementals[i].Style),
+			uint32(rtrAsaIncrementals[i].CustomerAsn), providerAsns)
+		rtrAsaPduModels = append(rtrAsaPduModels, rtrPduModel)
+		belogs.Debug("convertRtrAsaIncrementalsToRtrPduModels(): rtrPduModel: ", jsonutil.MarshalJson(rtrPduModel))
 	}
 	belogs.Info("convertRtrAsaIncrementalsToRtrPduModels(): len(rtrAsaIncrementals):", len(rtrAsaIncrementals),
 		" len(rtrAsaPduModels):", len(rtrAsaPduModels), "  time(s):", time.Since(start))

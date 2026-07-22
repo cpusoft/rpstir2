@@ -125,7 +125,7 @@ func updateSerialNumberAndRtrMoaFullAndRtrMoaIncrementalDb(newSerialNumberModel 
 	sql := `delete from lab_rpki_rtr_moa_full`
 	_, err = session.Exec(sql)
 	if err != nil {
-		belogs.Error("updateRtrFullAndIncrementalAndRsyncLogRtrStateEndDb():delete lab_rpki_rtr_moa_full fail:", err)
+		belogs.Error("updateSerialNumberAndRtrMoaFullAndRtrMoaIncrementalDb():delete lab_rpki_rtr_moa_full fail:", err)
 		return xormdb.RollbackAndLogError(session, "updateSerialNumberAndRtrMoaFullAndRtrMoaIncrementalDb():delete lab_rpki_rtr_moa_full fail:", err)
 	}
 	belogs.Debug("updateSerialNumberAndRtrMoaFullAndRtrMoaIncrementalDb():delete lab_rpki_rtr_moa_full, time(s):", time.Since(start))

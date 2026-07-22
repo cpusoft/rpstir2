@@ -121,12 +121,11 @@ func diffRtrAsaFullToRtrAsaIncremental(rtrAsaFullCurs, rtrAsaFullNews map[string
 		} else {
 			// new is not exist in cur, then this is announce
 			rtrAsaIncremental := model.LabRpkiRtrAsaIncremental{
-				Style:         "announce",
-				CustomerAsn:   valueNew.CustomerAsn,
-				ProviderAsn:   valueNew.ProviderAsn,
-				AddressFamily: valueNew.AddressFamily,
-				SerialNumber:  uint64(newSerialNumber),
-				SourceFrom:    valueNew.SourceFrom,
+				Style:        "announce",
+				CustomerAsn:  valueNew.CustomerAsn,
+				ProviderAsns: valueNew.ProviderAsns,
+				SerialNumber: uint64(newSerialNumber),
+				SourceFrom:   valueNew.SourceFrom,
 			}
 			belogs.Debug("diffRtrAsaFullToRtrAsaIncremental():keyNew not found in rtrAsaFullCurs, valueNew:", jsonutil.MarshalJson(valueNew),
 				"   will set as announce incremental:", jsonutil.MarshalJson(rtrAsaIncremental))
@@ -138,12 +137,11 @@ func diffRtrAsaFullToRtrAsaIncremental(rtrAsaFullCurs, rtrAsaFullNews map[string
 	// remain in cur, is not show in new, so this is withdraw
 	for _, valueCur := range rtrAsaFullCurs {
 		rtrAsaIncremental := model.LabRpkiRtrAsaIncremental{
-			Style:         "withdraw",
-			CustomerAsn:   valueCur.CustomerAsn,
-			ProviderAsn:   valueCur.ProviderAsn,
-			AddressFamily: valueCur.AddressFamily,
-			SerialNumber:  uint64(newSerialNumber),
-			SourceFrom:    valueCur.SourceFrom,
+			Style:        "withdraw",
+			CustomerAsn:  valueCur.CustomerAsn,
+			ProviderAsns: valueCur.ProviderAsns,
+			SerialNumber: uint64(newSerialNumber),
+			SourceFrom:   valueCur.SourceFrom,
 		}
 		belogs.Debug("diffRtrAsaFullToRtrAsaIncremental(): withdraw incremental:",
 			jsonutil.MarshalJson(rtrAsaIncremental))
