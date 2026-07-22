@@ -862,6 +862,9 @@ var dropSqls []string = []string{
 	`drop table if exists lab_rpki_rtr_asa_full_log`,
 	`drop table if exists lab_rpki_rtr_asa_full`,
 	`drop table if exists lab_rpki_rtr_asa_incremental`,
+	`drop table if exists lab_rpki_rtr_moa_full`,
+	`drop table if exists lab_rpki_rtr_moa_full_log`,
+	`drop table if exists lab_rpki_rtr_moa_incremental`,
 	`drop table if exists lab_rpki_rtr_serial_number`,
 	`drop table if exists lab_rpki_rtr_session`,
 }
@@ -911,6 +914,9 @@ var truncateSqls []string = []string{
 	`truncate  table  lab_rpki_rtr_asa_full`,
 	`truncate  table  lab_rpki_rtr_asa_full_log`,
 	`truncate  table  lab_rpki_rtr_asa_incremental`,
+	`truncate  table  lab_rpki_rtr_moa_full`,
+	`truncate  table  lab_rpki_rtr_moa_full_log`,
+	`truncate  table  lab_rpki_rtr_moa_incremental`,
 }
 
 // //////////////////////////////
@@ -957,8 +963,7 @@ var optimizeSqls []string = []string{
 	`optimize  table  lab_rpki_rtr_asa_full`,
 	`optimize  table  lab_rpki_rtr_asa_full_log`,
 	`optimize  table  lab_rpki_rtr_asa_incremental`,
-	`optimize  table  lab_rpki_rush_node`,
-	`optimize  table  lab_rpki_rush_node_audit`,
-	`optimize  table  lab_rpki_rush_node_log`,
-	`optimize  table  lab_rpki_rush_transfer_log`,
+	`optimize  table  lab_rpki_rtr_moa_full`,
+	`optimize  table  lab_rpki_rtr_moa_full_log`,
+	`optimize  table  lab_rpki_rtr_moa_incremental`,
 }
