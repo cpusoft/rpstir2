@@ -239,7 +239,8 @@ func validateMft(chains *Chains, mftId uint64, wg *sync.WaitGroup, chainMftCh ch
 	noExistFiles = make([]string, 0)
 	// check all the file(cer/crl/roa) which have same aki ,should all in filehash
 	sameAkiCerRoaAsaCrlFiles, sameAkiCrls, sameAkiChainMfts, err := getSameAkiCerRoaCrlFilesChainMfts(chains, mftId)
-	belogs.Debug("validateMft():getSameAkiCerRoaCrlFilesChainMfts,mftId:", mftId, "  file:", chainMft.FilePath, chainMft.FileName, "   sameAkiCerRoaAsaCrlFiles:", sameAkiCerRoaAsaCrlFiles,
+	belogs.Debug("validateMft():getSameAkiCerRoaCrlFilesChainMfts,mftId:", mftId, "  file:", chainMft.FilePath, chainMft.FileName,
+		"   sameAkiCerRoaAsaCrlFiles:", sameAkiCerRoaAsaCrlFiles,
 		"   sameAkiCrls:", sameAkiCrls, "   sameAkiChainMfts:", sameAkiChainMfts, err, "  time(s):", time.Since(start))
 	if err != nil {
 		belogs.Debug("validateMft():getSameAkiCerRoaCrlFilesChainMfts fail, aki:", chainMft.Aki)

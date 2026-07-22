@@ -329,9 +329,9 @@ func validateMftModel(mftModel *model.MftModel, stateModel *model.StateModel) (e
 		// no .mft
 		// https://www.iana.org/assignments/rpki/rpki.xhtml
 		if ext != ".cer" && ext != ".roa" && ext != ".crl" && ext != ".gbr" &&
-			ext != ".asa" && ext != ".sig" {
+			ext != ".asa" && ext != ".sig" && ext != ".moa" {
 			stateMsg := model.StateMsg{Stage: "parsevalidate",
-				Fail:   "The file in fileList is not one of the types of cer/roa/crl/gbr/asa/sig",
+				Fail:   "The file in fileList is not one of the types of cer/roa/crl/gbr/asa/sig/moa",
 				Detail: "The file is " + fileName}
 			stateModel.AddError(&stateMsg)
 		}

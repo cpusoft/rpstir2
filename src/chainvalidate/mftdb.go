@@ -12,7 +12,7 @@ import (
 	"xorm.io/xorm"
 )
 
-func   GetChainMftData(chainMftDataCh chan []*ChainCertData, mftWg *sync.WaitGroup) error {
+func GetChainMftData(chainMftDataCh chan []*ChainCertData, mftWg *sync.WaitGroup) error {
 
 	start := time.Now()
 	belogs.Debug("getChainMftSqlDb(): will select rpki_mft")
@@ -111,7 +111,7 @@ func getChainMftSqlsDb() (chainCertSqls []ChainCertSql, err error) {
 	return chainCertSqls, nil
 }
 
-func   GetChainFileHashs(chainMft ChainMft) (chainFileHashs []ChainFileHash, err error) {
+func GetChainFileHashs(chainMft ChainMft) (chainFileHashs []ChainFileHash, err error) {
 	start := time.Now()
 	mftId := chainMft.Id
 	belogs.Debug("SQLDataSource.GetChainFileHashs(): will select lab_rpki_mft_file_hash_view, mftId:", mftId)
@@ -191,13 +191,27 @@ func   GetChainFileHashs(chainMft ChainMft) (chainFileHashs []ChainFileHash, err
 		belogs.Debug("SQLDataSource.GetChainFileHashs():mft_file_hash and len(roaFs), mftId:", mftId, "    len(roaFs):", len(roaFs), "  time(s):", time.Since(start))
 	}
 
+	moaSql := `select  h.file, h.hash, c.filepath as path from lab_rpki_mft_file_hash h ,lab_rpki_mft m, lab_rpki_moa c 
+			where  m.id = h.mftId and c.aki = m.aki  and c.filename = h.file and m.id = ? 
+			order by m.id,h.file`
+	moaFs := make([]ChainFileHash, 0)
+	err = xormdb.XormEngine.SQL(moaSql, mftId).Find(&moaFs)
+	if err != nil {
+		belogs.Error("SQLDataSource.GetChainFileHashs(): mft_file_hash and moa fail, mftId:", mftId, err, "  time(s):", time.Since(start))
+		return nil, err
+	}
+	belogs.Debug("SQLDataSource.GetChainFileHashs():mft_file_hash and moa, mftId:", mftId, "    len(moaFs):", len(moaFs), "  time(s):", time.Since(start))
+	if len(moaFs) > 0 {
+		chainFileHashs = append(chainFileHashs, moaFs...)
+		belogs.Debug("SQLDataSource.GetChainFileHashs():mft_file_hash and len(moaFs), mftId:", mftId, "    len(moaFs):", len(moaFs), "  time(s):", time.Since(start))
+	}
 	belogs.Info("SQLDataSource.GetChainFileHashs():get from mftId:", mftId,
 		"    chainFileHashs:", chainFileHashs, "  time(s):", time.Since(start))
 
 	return chainFileHashs, nil
 }
 
-func   GetPreviousMft(chainMft ChainMft) (previousMft PreviousMft, err error) {
+func GetPreviousMft(chainMft ChainMft) (previousMft PreviousMft, err error) {
 	start := time.Now()
 	mftId := chainMft.Id
 	/* // because using json directly, it will cause ' Out of sort memory, consider increasing server sort buffer size'
@@ -267,7 +281,7 @@ func updateMftDb(session *xorm.Session, chains *Chains, mftId uint64,
 	return nil
 }
 
-func   UpdateMfts(chains *Chains) error {
+func UpdateMfts(chains *Chains) error {
 	start := time.Now()
 	session, err := xormdb.NewSession()
 	if err != nil {
