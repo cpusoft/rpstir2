@@ -180,8 +180,8 @@ func UpdateRtrAsaFullOrFullLogFromSlurmDb(tableName string, newSerialNumber uint
 
 	// insert ignore into rtr_asa_full_log
 	sqlInsertSlurm := `insert   into ` + tableName + `
-				(serialNumber,customerAsn,providerAsn,addressFamily,sourceFrom) values
-				(?,?,?,  ?,?)`
+				(serialNumber,customerAsn,providerAsn,sourceFrom) values
+				(?,?,?,  ?)`
 
 	belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): will insert/del lab_rpki_rtr_asa_full_log/lab_rpki_rtr_asa_full from slurmToRtrFullLogs,sqlInsertSlurm:", sqlInsertSlurm,
 		" newSerialNumber:", newSerialNumber, "    len(slurmToRtrFullLogs):", len(slurmToRtrFullLogs))
@@ -513,7 +513,6 @@ func GetAllSlurmsDb(style string) (slurmToRtrFullLogs []model.SlurmToRtrFullLog,
 		sql = `select id as slurmId, style,  
 			customerAsn,
 			providerAsn, 
-			addressFamily,
 			slurmLogId,
 		    slurmLogFileId 
 	    from lab_rpki_slurm  where style in ('aspaFilters','aspaAssertions') 
