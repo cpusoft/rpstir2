@@ -81,7 +81,7 @@ func getRtrXIncrementalDb(clientSerialNumber uint32) (
 }
 
 func getRtrXFullDb() (rtrFulls []model.LabRpkiRtrFull,
-	rtrAsaFulls []model.LabRpkiRtrAsaFull,
+	rtrAsaFulls []model.LabRpkiRtrAsaFull, rtrMoaFulls []model.LabRpkiRtrMoaFull,
 	sessionId uint16, serialNumber uint32, err error) {
 	start := time.Now()
 	/*
@@ -93,37 +93,47 @@ func getRtrXFullDb() (rtrFulls []model.LabRpkiRtrFull,
 		OrderBy("id").Find(&rtrFulls)
 	if err != nil {
 		belogs.Error("getRtrXFullDb():select  lab_rpki_rtr_full fail:", err)
-		return nil, nil, sessionId, serialNumber, err
+		return nil, nil, nil, 0, 0, err
 	}
 	belogs.Debug("getRtrXFullDb():select lab_rpki_rtr_full, len :", len(rtrFulls))
 
 	rtrAsaFulls = make([]model.LabRpkiRtrAsaFull, 0)
-	err = xormdb.XormEngine.Table("lab_rpki_rtr_asa_full").Cols("id, serialNumber, customerAsn, providerAsn, addressFamily").
+	err = xormdb.XormEngine.Table("lab_rpki_rtr_asa_full").Cols("id, serialNumber, customerAsn, providerAsns").
 		OrderBy("id").Find(&rtrAsaFulls)
 	if err != nil {
 		belogs.Error("getRtrXFullDb():select  lab_rpki_rtr_asa_full fail:", err)
-		return nil, nil, sessionId, serialNumber, err
+		return nil, nil, nil, 0, 0, err
 	}
 	belogs.Debug("getRtrXFullDb():select lab_rpki_rtr_asa_full, len :", len(rtrAsaFulls))
+
+	rtrMoaFulls = make([]model.LabRpkiRtrMoaFull, 0)
+	err = xormdb.XormEngine.Table("lab_rpki_rtr_moa_full").Cols("id, serialNumber, ipv6MappingPrefix, ipv4Prefixes").
+		OrderBy("id").Find(&rtrMoaFulls)
+	if err != nil {
+		belogs.Error("getRtrXFullDb():select  lab_rpki_rtr_moa_full fail:", err)
+		return nil, nil, nil, 0, 0, err
+	}
+	belogs.Debug("getRtrXFullDb():select lab_rpki_rtr_moa_full, len :", len(rtrMoaFulls))
 
 	// lab_rpki_rtr_serial_number, get serialNumber
 	serialNumber, err = getMaxSerialNumberDb()
 	if err != nil {
 		belogs.Error("getRtrXFullDb():getMaxSerialNumberDb fail:", err)
-		return nil, nil, sessionId, serialNumber, err
+		return nil, nil, nil, 0, 0, err
 	}
 
 	sessionId, err = getSessionIdDb()
 	if err != nil {
 		belogs.Error("getRtrXFullDb():getSessionIdDb fail:", err)
-		return nil, nil, sessionId, serialNumber, err
+		return nil, nil, nil, 0, 0, err
 	}
 	belogs.Info("getRtrXFullDb():len(rtrFulls):", len(rtrFulls),
-		"   len(rtrAsaFulls):", len(rtrAsaFulls),
+		"   len(rtrAsaFulls):", len(rtrAsaFulls), " len(rtrMoaFulls):", len(rtrMoaFulls),
 		"   sessionId:", sessionId, "  serialNumber:", serialNumber,
 		"   time(s):", time.Since(start))
-	return rtrFulls, rtrAsaFulls, sessionId, serialNumber, nil
+	return rtrFulls, rtrAsaFulls, rtrMoaFulls, sessionId, serialNumber, nil
 }
+
 func getSessionIdAndSerialNumberDb() (sessionId uint16, serialNumber uint32, err error) {
 
 	// lab_rpki_rtr_serial_number, get serialNumber

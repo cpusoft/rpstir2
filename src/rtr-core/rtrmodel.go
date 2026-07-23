@@ -8,6 +8,7 @@ import (
 
 	"github.com/cpusoft/goutil/belogs"
 	"github.com/cpusoft/goutil/conf"
+	"github.com/cpusoft/goutil/iputil"
 )
 
 const (
@@ -229,4 +230,35 @@ func parseProtocolVersionAndPduType(buf *bytes.Reader) (protocolVersion, pduType
 	}
 	belogs.Debug("parseToPduModel():protocolVersion is ", protocolVersion, "  pduType is ", pduType)
 	return protocolVersion, pduType, nil
+}
+
+func convertAddressPrefixToRtrFormatBytes(addressPrefix string) (rtrFormatBytes []byte, prefixLength uint64, err error) {
+	belogs.Debug("convertAddressPrefixToRtrFormatBytes(): addressPrefix",
+		addressPrefix)
+	prefixStr, prefixLength, err := iputil.SplitAddressAndPrefix(addressPrefix)
+	if err != nil {
+		belogs.Error("convertAddressPrefixToRtrFormatBytes(): SplitAddressAndPrefix fail, addressPrefix:",
+			addressPrefix, err)
+		return nil, 0, err
+	}
+
+	ipHex, ipType, err := iputil.AddressToRtrFormatByte(prefixStr)
+	if err != nil {
+		belogs.Error("convertAddressPrefixToRtrFormatBytes(): AddressToRtrFormatByte fail, prefixStr:",
+			prefixStr, err)
+		return nil, 0, err
+	}
+	belogs.Debug("convertAddressPrefixToRtrFormatBytes(): AddressToRtrFormatByte ok, addressPrefix",
+		addressPrefix, "ipHex", ipHex, "ipType", ipType)
+	return ipHex, prefixLength, nil
+	/*
+		if ipType == iputil.Ipv4Type {
+			ipv4 := [4]byte{0x00}
+			copy(ipv4[:], ipHex[:])
+		} else {
+			ipv6 := [16]byte{0x00}
+			copy(ipv6[:], ipHex[:])
+		}
+	*/
+
 }

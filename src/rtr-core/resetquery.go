@@ -88,11 +88,11 @@ func ParseToResetQuery(buf *bytes.Reader, protocolVersion uint8) (rtrPduModel Rt
 
 // when len(rtrFull)==0, it is an error with no_data_available
 func AssembleResetResponses(rtrFulls []model.LabRpkiRtrFull,
-	rtrAsaFulls []model.LabRpkiRtrAsaFull,
+	rtrAsaFulls []model.LabRpkiRtrAsaFull, rtrMoaFulls []model.LabRpkiRtrMoaFull,
 	protocolVersion uint8, sessionId uint16, serialNumber uint32) (rtrPduModels []RtrPduModel, err error) {
 	start := time.Now()
 	belogs.Info("AssembleResetResponses(): len(rtrFulls):", len(rtrFulls),
-		"   len(rtrAsaFulls):", len(rtrAsaFulls),
+		"   len(rtrAsaFulls):", len(rtrAsaFulls), " len(rtrMoaFulls):", len(rtrMoaFulls),
 		"   protocolVersion:", protocolVersion, "   sessionId:", sessionId, "   serialNumber:", serialNumber)
 	if protocolVersion != PDU_PROTOCOL_VERSION_0 &&
 		protocolVersion != PDU_PROTOCOL_VERSION_1 &&
@@ -106,11 +106,9 @@ func AssembleResetResponses(rtrFulls []model.LabRpkiRtrFull,
 	// start response
 	cacheResponseModel := NewRtrCacheResponseModel(protocolVersion, sessionId)
 	rtrPduModels = append(rtrPduModels, cacheResponseModel)
-	prefixAsaVersion := protocolVersion
 
 	belogs.Debug("AssembleResetResponses(): cacheResponseModel:", jsonutil.MarshalJson(cacheResponseModel),
-		"   protocolVersion:", protocolVersion,
-		"   prefixAsaVersion:", prefixAsaVersion)
+		"   protocolVersion:", protocolVersion)
 	// rtr full from roa rtr
 	if protocolVersion == PDU_PROTOCOL_VERSION_0 ||
 		protocolVersion == PDU_PROTOCOL_VERSION_1 ||
@@ -118,11 +116,11 @@ func AssembleResetResponses(rtrFulls []model.LabRpkiRtrFull,
 		if len(rtrFulls) > 0 {
 
 			belogs.Debug("AssembleResetResponses(): will get rtrFullPduModels, len(rtrFulls)>0, len(rtrFulls):", len(rtrFulls),
-				"   prefixAsaVersion:", prefixAsaVersion,
+				"   protocolVersion:", protocolVersion,
 				"   sessionId:", sessionId, "   serialNumber:", serialNumber)
 
 			// rtr full to response
-			rtrFullPduModels, err := convertRtrFullsToRtrPduModels(rtrFulls, prefixAsaVersion)
+			rtrFullPduModels, err := convertRtrFullsToRtrPduModels(rtrFulls, protocolVersion)
 			if err != nil {
 				belogs.Error("AssembleResetResponses(): convertRtrIncrementalsToRtrPduModels fail: ", err)
 				return nil, err
@@ -137,11 +135,11 @@ func AssembleResetResponses(rtrFulls []model.LabRpkiRtrFull,
 		//rtr full from asa rtr
 		if len(rtrAsaFulls) > 0 {
 			belogs.Debug("AssembleResetResponses(): will get rtrAsaFullPduModels, len(rtrAsaFulls):", len(rtrAsaFulls),
-				"   prefixAsaVersion:", prefixAsaVersion,
+				"   protocolVersion:", protocolVersion,
 				"   sessionId:", sessionId, "   serialNumber:", serialNumber)
 
 			// rtr asa full to response
-			rtrAsaFullPduModels, err := convertRtrAsaFullsToRtrPduModels(rtrAsaFulls, prefixAsaVersion)
+			rtrAsaFullPduModels, err := convertRtrAsaFullsToRtrPduModels(rtrAsaFulls, protocolVersion)
 			if err != nil {
 				belogs.Error("AssembleResetResponses(): convertRtrAsaFullsToRtrPduModels fail: ", err)
 				return nil, err
@@ -149,6 +147,24 @@ func AssembleResetResponses(rtrFulls []model.LabRpkiRtrFull,
 			rtrPduModels = append(rtrPduModels, rtrAsaFullPduModels...)
 			dataAvailable = true
 			belogs.Info("AssembleResetResponses(): get rtrAsaFullPduModels, len(rtrAsaFullPduModels):", len(rtrAsaFullPduModels),
+				"  time(s):", time.Since(start))
+		}
+
+		//rtr full from moa rtr
+		if len(rtrMoaFulls) > 0 {
+			belogs.Debug("AssembleResetResponses(): will get rtrMoaFullPduModels, len(rtrMoaFulls):", len(rtrMoaFulls),
+				"   protocolVersion:", protocolVersion,
+				"   sessionId:", sessionId, "   serialNumber:", serialNumber)
+
+			// rtr moa full to response
+			rtrMoaFullPduModels, err := convertRtrMoaFullsToRtrPduModels(rtrMoaFulls, protocolVersion)
+			if err != nil {
+				belogs.Error("AssembleResetResponses(): convertRtrMoaFullsToRtrPduModels fail: ", err)
+				return nil, err
+			}
+			rtrPduModels = append(rtrPduModels, rtrMoaFullPduModels...)
+			dataAvailable = true
+			belogs.Info("AssembleResetResponses(): get rtrMoaFullPduModels, len(rtrMoaFullPduModels):", len(rtrMoaFullPduModels),
 				"  time(s):", time.Since(start))
 		}
 	}
@@ -167,7 +183,6 @@ func AssembleResetResponses(rtrFulls []model.LabRpkiRtrFull,
 
 		belogs.Info("AssembleResetResponses(): will send Cache Response of all rtr,",
 			"   protocolVersion:", protocolVersion,
-			"   prefixAsaVersion:", prefixAsaVersion,
 			"   sessionId:", sessionId, "  serialNumber:", serialNumber,
 			"   len(rtrFulls):", len(rtrFulls),
 			"   len(rtrAsaFulls):", len(rtrAsaFulls),
@@ -236,4 +251,59 @@ func convertRtrAsaFullsToRtrPduModels(rtrAsaFulls []model.LabRpkiRtrAsaFull,
 	belogs.Info("convertRtrAsaFullsToRtrPduModels(): len(rtrAsaFulls):", len(rtrAsaFulls),
 		" len(rtrAsaPduModels):", len(rtrAsaPduModels), "  time(s):", time.Since(start))
 	return rtrAsaPduModels, nil
+}
+
+func convertRtrMoaFullsToRtrPduModels(rtrMoaFulls []model.LabRpkiRtrMoaFull,
+	protocolVersion uint8) (rtrMoaPduModels []RtrPduModel, err error) {
+	belogs.Debug("convertRtrMoaFullsToRtrPduModels(): len(rtrMoaFulls):", len(rtrMoaFulls), "  protocolVersion:", protocolVersion)
+
+	start := time.Now()
+	rtrMoaPduModels = make([]RtrPduModel, 0)
+	for i := range rtrMoaFulls {
+
+		rtrFormatBytes, prefixLength, err := convertAddressPrefixToRtrFormatBytes(rtrMoaFulls[i].Ipv6MappingPrefix)
+		if err != nil {
+			belogs.Error("convertRtrMoaFullsToRtrPduModels(): convertAddressPrefixToRtrFormatBytes fail,rtrMoaFulls[i].Ipv6MappingPrefix",
+				rtrMoaFulls[i].Ipv6MappingPrefix, err)
+			return nil, err
+		}
+		ipv6 := [16]byte{0x00}
+		copy(ipv6[:], rtrFormatBytes[:])
+		rtrPduModel := NewRtrMoaModelFromDb(protocolVersion, PDU_FLAG_ANNOUNCE, uint8(prefixLength), ipv6)
+		belogs.Debug("convertRtrMoaFullsToRtrPduModels(): convertAddressPrefixToRtrFormatBytes ipv6 ok",
+			"  rtrMoaFulls[i].Ipv6MappingPrefix", rtrMoaFulls[i].Ipv6MappingPrefix,
+			"ipv6", convert.PrintBytesOneLine(rtrFormatBytes), "prefixLength", prefixLength)
+
+		ipv4Prefixs := make([]string, 0)
+		err = jsonutil.UnmarshalJson(rtrMoaFulls[i].Ipv4Prefixes, &ipv4Prefixs)
+		if err != nil {
+			belogs.Error("convertRtrMoaFullsToRtrPduModels(): UnmarshalJson ProviderAsns fail, rtrMoaFulls[i].Ipv4Prefixes",
+				rtrMoaFulls[i].Ipv4Prefixes, err)
+			return nil, err
+		}
+		for _, ipv4Prefix := range ipv4Prefixs {
+			rtrFormatBytes, prefixLength, err := convertAddressPrefixToRtrFormatBytes(ipv4Prefix)
+			if err != nil {
+				belogs.Error("convertRtrMoaFullsToRtrPduModels(): convertAddressPrefixToRtrFormatBytes fail,ipv4Prefix",
+					ipv4Prefix, err)
+				return nil, err
+			}
+			ipv4 := [4]byte{0x00}
+			copy(ipv6[:], rtrFormatBytes[:])
+			ipv4Prefix := IPv4Prefix{
+				IPv4PrefixLength: uint8(prefixLength),
+				IPv4Prefix:       ipv4,
+			}
+			belogs.Debug("convertRtrMoaFullsToRtrPduModels(): convertAddressPrefixToRtrFormatBytes ipv4 ok",
+				"  ipv4Prefix", ipv4Prefix, "ipv4", convert.PrintBytesOneLine(rtrFormatBytes), "prefixLength", prefixLength)
+
+			rtrPduModel.AddIPv4Prefix(ipv4Prefix)
+		}
+
+		rtrMoaPduModels = append(rtrMoaPduModels, rtrPduModel)
+		belogs.Debug("convertRtrMoaFullsToRtrPduModels(): rtrPduModel: ", jsonutil.MarshalJson(rtrPduModel))
+	}
+	belogs.Info("convertRtrMoaFullsToRtrPduModels(): len(rtrMoaFulls):", len(rtrMoaFulls),
+		" len(rtrMoaPduModels):", len(rtrMoaPduModels), "  time(s):", time.Since(start))
+	return rtrMoaPduModels, nil
 }
