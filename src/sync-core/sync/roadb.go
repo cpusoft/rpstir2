@@ -76,10 +76,10 @@ func delRoaDb(session *xorm.Session, filePathPrefix string) (err error) {
 
 	// del eeIpIds
 	eeIpIdsStr := stringutil.Int64sToInString(eeIpIds)
-	if len(ipIdsStr) > 0 {
+	if len(eeIpIdsStr) > 0 {
 		_, err = session.Exec("delete from lab_rpki_roa_ee_ipaddress  where id in " + eeIpIdsStr)
 		if err != nil {
-			belogs.Error("delRoaDb():delete  from lab_rpki_roa_ee_ipaddress fail: eeIpIds:", eeIpIds,
+			belogs.Error("delRoaDb():delete  from lab_rpki_roa_ee_ipaddress fail: eeIpIdsStr:", eeIpIdsStr,
 				"   filePathPrefix:", filePathPrefix, "   err:", err)
 			return err
 		}
@@ -87,7 +87,7 @@ func delRoaDb(session *xorm.Session, filePathPrefix string) (err error) {
 
 	// del siaIds
 	siaIdsStr := stringutil.Int64sToInString(siaIds)
-	if len(ipIdsStr) > 0 {
+	if len(siaIdsStr) > 0 {
 		_, err = session.Exec("delete from  lab_rpki_roa_sia  where id in " + siaIdsStr)
 		if err != nil {
 			belogs.Error("delRoaDb():delete  from lab_rpki_roa_sia fail: siaIdsStr:", siaIdsStr,

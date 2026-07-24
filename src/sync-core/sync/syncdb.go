@@ -27,48 +27,48 @@ func DelByFilePathDb(filePath string) (err error) {
 	if err != nil {
 		belogs.Error("DelByFilePathDb(): delCerDb fail, filePath: ",
 			filePath, err)
-		return err
+		return xormdb.RollbackAndLogError(session, "DelByFilePathDb(): delCerDb fail:", err)
 	}
 
 	err = delCrlDb(session, filePath)
 	if err != nil {
 		belogs.Error("DelByFilePathDb(): delCrlDb fail, filePath: ",
 			filePath, err)
-		return err
+		return xormdb.RollbackAndLogError(session, "DelByFilePathDb(): delCrlDb fail:", err)
 	}
 
 	err = delMftDb(session, filePath)
 	if err != nil {
 		belogs.Error("DelByFilePathDb(): delMftDb fail, filePath: ",
 			filePath, err)
-		return err
+		return xormdb.RollbackAndLogError(session, "DelByFilePathDb(): delMftDb fail:", err)
 	}
 
 	err = delRoaDb(session, filePath)
 	if err != nil {
 		belogs.Error("DelByFilePathDb(): delRoaDb fail, filePath: ",
 			filePath, err)
-		return err
+		return xormdb.RollbackAndLogError(session, "DelByFilePathDb(): delRoaDb fail:", err)
 	}
 
 	err = delAsaDb(session, filePath)
 	if err != nil {
 		belogs.Error("DelByFilePathDb(): delAsaDb fail, filePath: ",
 			filePath, err)
-		return err
+		return xormdb.RollbackAndLogError(session, "DelByFilePathDb(): delAsaDb fail:", err)
 	}
 	err = delMoaDb(session, filePath)
 	if err != nil {
 		belogs.Error("DelByFilePathDb(): delMoaDb fail, filePath: ",
 			filePath, err)
-		return err
+		return xormdb.RollbackAndLogError(session, "DelByFilePathDb(): delMoaDb fail:", err)
 	}
 
 	err = xormdb.CommitSession(session)
 	if err != nil {
-		return xormdb.RollbackAndLogError(session, "DelByFilePathsDb(): CommitSession fail:", err)
+		return xormdb.RollbackAndLogError(session, "DelByFilePathDb(): CommitSession fail:", err)
 	}
-	belogs.Info("DelByFilePathsDb(): filePath:", filePath, "  time(s):", time.Since(start))
+	belogs.Info("DelByFilePathDb(): filePath:", filePath, "  time(s):", time.Since(start))
 
 	return nil
 }

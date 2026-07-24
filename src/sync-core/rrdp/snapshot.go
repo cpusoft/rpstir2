@@ -66,10 +66,12 @@ func processRrdpSnapshot(syncLogId uint64, notificationModel *rrdputil.Notificat
 	err = os.RemoveAll(repoHostPath)
 	if err != nil {
 		belogs.Error("processRrdpSnapshot(): RemoveAll, repoHostPath: ", repoHostPath, err)
+		return err
 	}
 	err = os.MkdirAll(repoHostPath, os.ModePerm)
 	if err != nil {
 		belogs.Error("processRrdpSnapshot(): MkdirAll, repoHostPath: ", repoHostPath, err)
+		return err
 	}
 
 	// download snapshot files

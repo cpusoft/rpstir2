@@ -29,7 +29,7 @@ func getFilesHashFromDb(destPath string) (files map[string]rsyncutil.RsyncFileHa
 	err = xormdb.XormEngine.SQL(sql, param).Find(&cerFileHashs)
 	if err != nil {
 		belogs.Error("getFilesHashFromDb(): get lab_rpki_cer fail:", sql, param, err)
-		return nil, nil
+		return nil, err
 	}
 	belogs.Debug("getFilesHashFromDb(): len(cerrsyncmodel.RsyncFileHashs):", sql, param, len(cerFileHashs))
 
@@ -43,7 +43,7 @@ func getFilesHashFromDb(destPath string) (files map[string]rsyncutil.RsyncFileHa
 	err = xormdb.XormEngine.SQL(sql, param).Find(&crlFileHashs)
 	if err != nil {
 		belogs.Error("getFilesHashFromDb(): get lab_rpki_crl fail:", sql, param, err)
-		return nil, nil
+		return nil, err
 	}
 	belogs.Debug("getFilesHashFromDb(): len(crlrsyncmodel.RsyncFileHashs):", sql, param, len(crlFileHashs))
 
@@ -57,7 +57,7 @@ func getFilesHashFromDb(destPath string) (files map[string]rsyncutil.RsyncFileHa
 	err = xormdb.XormEngine.SQL(sql, param).Find(&mftFileHashs)
 	if err != nil {
 		belogs.Error("getFilesHashFromDb(): get lab_rpki_mft fail:", sql, param, err)
-		return nil, nil
+		return nil, err
 	}
 	belogs.Debug("getFilesHashFromDb(): len(mftrsyncmodel.RsyncFileHashs):", sql, param, len(mftFileHashs))
 
@@ -71,7 +71,7 @@ func getFilesHashFromDb(destPath string) (files map[string]rsyncutil.RsyncFileHa
 	err = xormdb.XormEngine.SQL(sql, param).Find(&roaFileHashs)
 	if err != nil {
 		belogs.Error("getFilesHashFromDb(): get lab_rpki_roa fail:", sql, param, err)
-		return nil, nil
+		return nil, err
 	}
 	belogs.Debug("getFilesHashFromDb(): len(roarsyncmodel.RsyncFileHashs):", sql, param, len(roaFileHashs))
 
@@ -85,7 +85,7 @@ func getFilesHashFromDb(destPath string) (files map[string]rsyncutil.RsyncFileHa
 	err = xormdb.XormEngine.SQL(sql, param).Find(&asaFileHashs)
 	if err != nil {
 		belogs.Error("getFilesHashFromDb(): get lab_rpki_asa fail:", sql, param, err)
-		return nil, nil
+		return nil, err
 	}
 	belogs.Debug("getFilesHashFromDb(): len(asarsyncmodel.RsyncFileHashs):", sql, param, len(asaFileHashs))
 
@@ -99,7 +99,7 @@ func getFilesHashFromDb(destPath string) (files map[string]rsyncutil.RsyncFileHa
 	err = xormdb.XormEngine.SQL(sql, param).Find(&moaFileHashs)
 	if err != nil {
 		belogs.Error("getFilesHashFromDb(): get lab_rpki_moa fail:", sql, param, err)
-		return nil, nil
+		return nil, err
 	}
 	belogs.Debug("getFilesHashFromDb(): len(moarsyncmodel.RsyncFileHashs):", sql, param, len(moaFileHashs))
 
