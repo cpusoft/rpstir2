@@ -39,6 +39,7 @@ func getSpanSerialNumbersDb(clientSerialNumber uint32) (serialNumbers []uint32, 
 func getRtrXIncrementalDb(clientSerialNumber uint32) (
 	rtrIncrementals []model.LabRpkiRtrIncremental,
 	rtrAsaIncrementals []model.LabRpkiRtrAsaIncremental,
+	rtrMoaIncrementals []model.LabRpkiRtrMoaIncremental,
 	sessionId uint16, serialNumber uint32, err error) {
 
 	start := time.Now()
@@ -46,7 +47,7 @@ func getRtrXIncrementalDb(clientSerialNumber uint32) (
 	err = xormdb.XormEngine.Where("serialNumber > ?", clientSerialNumber).OrderBy("serialNumber").Find(&rtrIncrementals)
 	if err != nil {
 		belogs.Error("getRtrXIncrementalDb():get rtrIncrementals fail:  clientSerialNumber is ", clientSerialNumber, err)
-		return nil, nil, sessionId, serialNumber, err
+		return nil, nil, nil, sessionId, serialNumber, err
 	}
 	belogs.Debug("getRtrXIncrementalDb():select lab_rpki_rtr_incremental, clientSerialNumber:", clientSerialNumber,
 		"  len(rtrIncrementals):", len(rtrIncrementals))
@@ -55,29 +56,38 @@ func getRtrXIncrementalDb(clientSerialNumber uint32) (
 	err = xormdb.XormEngine.Where("serialNumber > ?", clientSerialNumber).OrderBy("serialNumber").Find(&rtrAsaIncrementals)
 	if err != nil {
 		belogs.Error("getRtrXIncrementalDb():get rtrAsaIncrementals fail:  clientSerialNumber is ", clientSerialNumber, err)
-		return nil, nil, sessionId, serialNumber, err
+		return nil, nil, nil, sessionId, serialNumber, err
 	}
 	belogs.Debug("getRtrXIncrementalDb():select lab_rpki_rtr_asa_incremental, clientSerialNumber:", clientSerialNumber,
 		" len(rtrAsaIncrementals):", len(rtrAsaIncrementals))
 
+	rtrMoaIncrementals = make([]model.LabRpkiRtrMoaIncremental, 0)
+	err = xormdb.XormEngine.Where("serialNumber > ?", clientSerialNumber).OrderBy("serialNumber").Find(&rtrMoaIncrementals)
+	if err != nil {
+		belogs.Error("getRtrXIncrementalDb():get rtrMoaIncrementals fail:  clientSerialNumber is ", clientSerialNumber, err)
+		return nil, nil, nil, sessionId, serialNumber, err
+	}
+	belogs.Debug("getRtrXIncrementalDb():select lab_rpki_rtr_asa_incremental, clientSerialNumber:", clientSerialNumber,
+		" len(rtrMoaIncrementals):", len(rtrMoaIncrementals))
+
 	sessionId, err = getSessionIdDb()
 	if err != nil {
 		belogs.Error("getRtrXIncrementalDb():getSessionIdDb fail:", err)
-		return nil, nil, sessionId, serialNumber, err
+		return nil, nil, nil, sessionId, serialNumber, err
 	}
 
 	// lab_rpki_rtr_serial_number, get serialNumber
 	serialNumber, err = getMaxSerialNumberDb()
 	if err != nil {
 		belogs.Error("getRtrXIncrementalDb():getMaxSerialNumberDb fail:", err)
-		return nil, nil, sessionId, serialNumber, err
+		return nil, nil, nil, sessionId, serialNumber, err
 	}
 
 	belogs.Info("getRtrXIncrementalDb():len(rtrIncrementals):", len(rtrIncrementals),
 		"   len(rtrAsaIncrementals):", len(rtrAsaIncrementals),
 		"   sessionId:", sessionId, "  serialNumber:", serialNumber,
 		"   clientSerialNumber:", clientSerialNumber, "  time(s):", time.Since(start))
-	return rtrIncrementals, rtrAsaIncrementals, sessionId, serialNumber, nil
+	return rtrIncrementals, rtrAsaIncrementals, rtrMoaIncrementals, sessionId, serialNumber, nil
 }
 
 func getRtrXFullDb() (rtrFulls []model.LabRpkiRtrFull,

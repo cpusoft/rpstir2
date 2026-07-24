@@ -58,17 +58,17 @@ func processSerialQuery(rtrPduModel rtrcore.RtrPduModel) (serialResponses []rtrc
 		belogs.Debug("processSerialQuery():server get  len(serialNumbers) >0 && <=2 , will send Cache Response of rtr incremental,",
 			" clientSessionId: ", clientSessionId, ", clientSerialNumber:", clientSerialNumber,
 			", len(serialNumbers): ", len(serialNumbers))
-		rtrIncrementals, rtrAsaIncrementals,
+		rtrIncrementals, rtrAsaIncrementals, rtrMoaIncrementals,
 			sessionId, serialNumber, err := getRtrXIncrementalDb(clientSerialNumber)
 		if err != nil {
 			belogs.Error("processSerialQuery(): len(serialNumbers) >0 && <=2,  getRtrXIncrementalDb fail: ", clientSerialNumber, err)
 			return nil, err
 		}
 		belogs.Debug("processSerialQuery(): len(rtrIncrementals):", len(rtrIncrementals),
-			"  len(rtrAsaIncrementals):", len(rtrAsaIncrementals),
+			"  len(rtrAsaIncrementals):", len(rtrAsaIncrementals), "  len(rtrMoaIncrementals):", len(rtrMoaIncrementals),
 			"  sessionId:", sessionId, "  serialNumber:", serialNumber)
 
-		rtrPduModels, err := rtrcore.AssembleSerialResponses(rtrIncrementals, rtrAsaIncrementals,
+		rtrPduModels, err := rtrcore.AssembleSerialResponses(rtrIncrementals, rtrAsaIncrementals, rtrMoaIncrementals,
 			rtrSerialQueryModel.GetProtocolVersion(), sessionId, serialNumber)
 		if err != nil {
 			belogs.Error("processSerialQuery():server get len(serialNumbers) >0 && <=2 , AssembleSerialResponses fail: ", err)
