@@ -261,18 +261,19 @@ func convertRtrMoaFullsToRtrPduModels(rtrMoaFulls []model.LabRpkiRtrMoaFull,
 	rtrMoaPduModels = make([]RtrPduModel, 0)
 	for i := range rtrMoaFulls {
 
-		rtrFormatBytes, prefixLength, err := convertAddressPrefixToRtrFormatBytes(rtrMoaFulls[i].Ipv6MappingPrefix)
+		rtrFormatV6Bytes, prefixLength, err := convertAddressPrefixToRtrFormatBytes(rtrMoaFulls[i].Ipv6MappingPrefix)
 		if err != nil {
 			belogs.Error("convertRtrMoaFullsToRtrPduModels(): convertAddressPrefixToRtrFormatBytes fail,rtrMoaFulls[i].Ipv6MappingPrefix",
 				rtrMoaFulls[i].Ipv6MappingPrefix, err)
 			return nil, err
 		}
 		ipv6 := [16]byte{0x00}
-		copy(ipv6[:], rtrFormatBytes[:])
+		copy(ipv6[:], rtrFormatV6Bytes[:])
 		rtrPduModel := NewRtrMoaModelFromDb(protocolVersion, PDU_FLAG_ANNOUNCE, uint8(prefixLength), ipv6)
 		belogs.Debug("convertRtrMoaFullsToRtrPduModels(): convertAddressPrefixToRtrFormatBytes ipv6 ok",
 			"  rtrMoaFulls[i].Ipv6MappingPrefix", rtrMoaFulls[i].Ipv6MappingPrefix,
-			"ipv6", convert.PrintBytesOneLine(rtrFormatBytes), "prefixLength", prefixLength)
+			"rtrFormatV6Bytes", convert.PrintBytesOneLine(rtrFormatV6Bytes),
+			"ipv6", ipv6, "prefixLength", prefixLength)
 
 		ipv4Prefixs := make([]string, 0)
 		err = jsonutil.UnmarshalJson(rtrMoaFulls[i].Ipv4Prefixes, &ipv4Prefixs)
@@ -282,20 +283,21 @@ func convertRtrMoaFullsToRtrPduModels(rtrMoaFulls []model.LabRpkiRtrMoaFull,
 			return nil, err
 		}
 		for _, ipv4Prefix := range ipv4Prefixs {
-			rtrFormatBytes, prefixLength, err := convertAddressPrefixToRtrFormatBytes(ipv4Prefix)
+			rtrFormatV4Bytes, prefixLength, err := convertAddressPrefixToRtrFormatBytes(ipv4Prefix)
 			if err != nil {
 				belogs.Error("convertRtrMoaFullsToRtrPduModels(): convertAddressPrefixToRtrFormatBytes fail,ipv4Prefix",
 					ipv4Prefix, err)
 				return nil, err
 			}
 			ipv4 := [4]byte{0x00}
-			copy(ipv6[:], rtrFormatBytes[:])
+			copy(ipv4[:], rtrFormatV4Bytes[:])
 			ipv4Prefix := IPv4Prefix{
 				IPv4PrefixLength: uint8(prefixLength),
 				IPv4Prefix:       ipv4,
 			}
 			belogs.Debug("convertRtrMoaFullsToRtrPduModels(): convertAddressPrefixToRtrFormatBytes ipv4 ok",
-				"  ipv4Prefix", ipv4Prefix, "ipv4", convert.PrintBytesOneLine(rtrFormatBytes), "prefixLength", prefixLength)
+				"  ipv4Prefix", ipv4Prefix, "rtrFormatV4Bytes", convert.PrintBytesOneLine(rtrFormatV4Bytes),
+				"ipv4", ipv4, "prefixLength", prefixLength)
 
 			rtrPduModel.AddIPv4Prefix(ipv4Prefix)
 		}
