@@ -58,7 +58,8 @@ func parseRoaModel(fileModel *model.FileModel, roaModel *model.RoaModel, stateMo
 	belogs.Debug("parseRoaModel(): fileLength:", fileLength, " tempFile:", fileModel.TempFilePathName)
 
 	if fileLength == 0 {
-		belogs.Error("parseRoaModel(): GetFileLength fail, fileLenght is empty, fileModel:", jsonutil.MarshalJson(fileModel), err)
+		belogs.Error("parseRoaModel(): GetFileLength fail, fileLenght is empty, fileModel:",
+		 jsonutil.MarshalJson(fileModel))
 		stateMsg := model.StateMsg{Stage: "parsevalidate",
 			Fail:   "File is empty",
 			Detail: ""}

@@ -52,7 +52,7 @@ func ParseEeCertModel(eeCertFile string, fileByte []byte, start int, end int) (e
 
 // https://datatracker.ietf.org/doc/rfc6488/?include_text=1  Signed Object Template for the Resource Public Key Infrastructure (RPKI)
 // roa_validate.c P509
-func ValidateEeCertModel(stateModel *model.StateModel, eeCertModel *model.EeCertModel) error {
+func ValidateEeCertModel(stateModel *model.StateModel, eeCertModel *model.EeCertModel) {
 	if eeCertModel.Version != 3 {
 		stateMsg := model.StateMsg{Stage: "parsevalidate",
 			Fail:   "Wrong Version number",
@@ -108,13 +108,13 @@ func ValidateEeCertModel(stateModel *model.StateModel, eeCertModel *model.EeCert
 	//Basic constraints in EE cert"
 	if eeCertModel.IsCa {
 		stateMsg := model.StateMsg{Stage: "parsevalidate",
-			Fail:   "IsCA of EE is not true",
+			Fail:   "IsCA of EE is true",
 			Detail: ""}
 		stateModel.AddError(&stateMsg)
 	}
 	if eeCertModel.BasicConstraintsValid {
 		stateMsg := model.StateMsg{Stage: "parsevalidate",
-			Fail:   "BasicConstraintsValid of EE is not true",
+			Fail:   "BasicConstraintsValid of EE is true",
 			Detail: ""}
 		stateModel.AddError(&stateMsg)
 	}
@@ -170,11 +170,10 @@ func ValidateEeCertModel(stateModel *model.StateModel, eeCertModel *model.EeCert
 		stateModel.AddError(&stateMsg)
 	}
 	belogs.Debug("ValidateEeCertModel(): stateModel:", jsonutil.MarshalJson(stateModel))
-	return nil
 }
 
 // https://datatracker.ietf.org/doc/rfc6488/?include_text=1  Signed Object Template for the Resource Public Key Infrastructure (RPKI)
-func ValidateSignerInfoModel(stateModel *model.StateModel, signerInfoModel *model.SignerInfoModel) error {
+func ValidateSignerInfoModel(stateModel *model.StateModel, signerInfoModel *model.SignerInfoModel)  {
 
 	if signerInfoModel.DigestAlgorithm != "sha256" {
 		stateMsg := model.StateMsg{Stage: "parsevalidate",
@@ -195,6 +194,5 @@ func ValidateSignerInfoModel(stateModel *model.StateModel, signerInfoModel *mode
 			Detail: ""}
 		stateModel.AddError(&stateMsg)
 	}
-	return nil
 
 }

@@ -57,7 +57,8 @@ func parseAsaModel(fileModel *model.FileModel, asaModel *model.AsaModel, stateMo
 	belogs.Debug("parseAsaModel(): fileLength:", fileLength, " tempFile:", fileModel.TempFilePathName)
 
 	if fileLength == 0 {
-		belogs.Error("parseAsaModel(): GetFileLength fail, fileLenght is empty, fileModel:", jsonutil.MarshalJson(fileModel))
+		belogs.Error("parseAsaModel(): GetFileLength fail, fileLenght is empty, fileModel:",
+			jsonutil.MarshalJson(fileModel))
 		stateMsg := model.StateMsg{Stage: "parsevalidate",
 			Fail:   "File is empty",
 			Detail: ""}

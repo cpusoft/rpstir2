@@ -63,7 +63,8 @@ func parseCerModel(fileModel *model.FileModel, cerModel *model.CerModel, stateMo
 	belogs.Debug("parseCerModel(): fileLength:", fileLength, " tempFile:", fileModel.TempFilePathName)
 
 	if fileLength == 0 {
-		belogs.Error("parseCerModel(): GetFileLength, fileLenght is empty, fail, fileModel:", jsonutil.MarshalJson(fileModel), err)
+		belogs.Error("parseCerModel(): GetFileLength, fileLenght is empty, fail, fileModel:",
+			jsonutil.MarshalJson(fileModel))
 		stateMsg := model.StateMsg{Stage: "parsevalidate",
 			Fail:   "File is empty",
 			Detail: ""}
@@ -419,7 +420,7 @@ func validateCerModel(cerModel *model.CerModel, stateModel *model.StateModel) (e
 		foundCN := false
 		foundOther := false
 		for _, one := range split {
-
+			one = strings.TrimSpace(one)
 			if strings.HasPrefix(one, "CN=") {
 				foundCN = true
 			}
@@ -451,6 +452,7 @@ func validateCerModel(cerModel *model.CerModel, stateModel *model.StateModel) (e
 		foundCN := false
 		foundOther := false
 		for _, one := range split {
+			one = strings.TrimSpace(one)
 			belogs.Debug("validateCerModel(): IssuerAll: one:", one)
 			if strings.HasPrefix(one, "CN=") {
 				foundCN = true

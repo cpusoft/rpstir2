@@ -60,7 +60,8 @@ func parseMftModel(fileModel *model.FileModel, mftModel *model.MftModel, stateMo
 	belogs.Debug("parseMftModel(): fileLength:", fileLength, " tempFile:", fileModel.TempFilePathName)
 
 	if fileLength == 0 {
-		belogs.Error("parseMftModel(): GetFileLength fail, fileLenght is empty, fileModel:", jsonutil.MarshalJson(fileModel))
+		belogs.Error("parseMftModel(): GetFileLength fail, fileLenght is empty, fileModel:",
+			jsonutil.MarshalJson(fileModel))
 		stateMsg := model.StateMsg{Stage: "parsevalidate",
 			Fail:   "File is empty",
 			Detail: ""}
@@ -459,8 +460,8 @@ func validateMftModel(mftModel *model.MftModel, stateModel *model.StateModel) (e
 	}
 
 	//TODO, todo,Manifest's EE certificate has RFC3779 resources that are not marked inherit, in roa_vildate.c P1009
-	err = ValidateEeCertModel(stateModel, &mftModel.EeCertModel)
-	err = ValidateSignerInfoModel(stateModel, &mftModel.SignerInfoModel)
+	ValidateEeCertModel(stateModel, &mftModel.EeCertModel)
+	ValidateSignerInfoModel(stateModel, &mftModel.SignerInfoModel)
 
 	belogs.Debug("validateMftModel():filePath, fileName,stateModel:",
 		mftModel.FilePath, mftModel.FileName, jsonutil.MarshalJson(stateModel))

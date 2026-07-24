@@ -64,7 +64,7 @@ func parseMoaModel(fileModel *model.FileModel, moaModel *model.MoaModel, stateMo
 
 	if fileLength == 0 {
 		belogs.Error("parseMoaModel(): GetFileLength fail, fileLength is empty",
-			"fileModel", jsonutil.MarshalJson(fileModel), "err", err)
+			"fileModel", jsonutil.MarshalJson(fileModel))
 		stateMsg := model.StateMsg{Stage: "parsevalidate",
 			Fail:   "File is empty",
 			Detail: ""}
@@ -157,19 +157,9 @@ func validateMoaModel(moaModel *model.MoaModel, stateModel *model.StateModel) (e
 	}
 	/*
 		// check time
-		err = ValidateEeCertModel(stateModel, &moaModel.EeModel)
-		if err != nil {
-			belogs.Error("validateMoaModel(): ValidateEeModel fail",
-				"moaModel.EeModel", jsonutil.MarshalJson(moaModel.EeModel), "err", err)
-			// no add stateModel, because ee validate has added stateModel
-		}
+		 ValidateEeCertModel(stateModel, &moaModel.EeModel)
+		 ValidateSignerInfoModel(stateModel, &moaModel.SignerInfoModel)
 
-		err = ValidateSignerInfoModel(stateModel, &moaModel.SignerInfoModel)
-		if err != nil {
-			belogs.Error("validateMoaModel(): ValidateSignerInfoModel fail",
-				"moaModel.SignerInfoModel", jsonutil.MarshalJson(moaModel.SignerInfoModel), "err", err)
-			// no add stateModel, because singerInfo validate has added stateModel
-		}
 	*/
 	belogs.Info("validateMoaModel(): ok stateModel",
 		"moaModel.FilePath", moaModel.FilePath, "moaModel.FileName", moaModel.FileName,

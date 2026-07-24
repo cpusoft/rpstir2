@@ -101,7 +101,7 @@ func ParseValidateFileModel(fileModel *model.FileModel) (certType string, certMo
 		return "asa", asaModel, stateModel, originModel, fileHash, err
 	} else if strings.HasSuffix(fileModel.FilePathName, ".moa") {
 		moaModel, stateModel, err := parseValidateMoa(fileModel)
-		belogs.Debug("ParseValidateFileModel(): after parseValidateAsa(): fileModel:", jsonutil.MarshalJson(fileModel), "  moaModel:", moaModel.String(),
+		belogs.Debug("ParseValidateFileModel(): after parseValidateMoa(): fileModel:", jsonutil.MarshalJson(fileModel), "  moaModel:", moaModel.String(),
 			"  stateModel:", jsonutil.MarshalJson(stateModel), "  err:", err, "  time(s):", time.Since(start))
 		return "moa", moaModel, stateModel, originModel, fileHash, err
 	} else if strings.HasSuffix(fileModel.FilePathName, ".gbr") {

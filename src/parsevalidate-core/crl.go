@@ -60,7 +60,8 @@ func parseCrlModel(fileModel *model.FileModel, crlModel *model.CrlModel, stateMo
 	belogs.Debug("parseCrlModel(): fileLength:", fileLength, " tempFile:", fileModel.TempFilePathName)
 
 	if fileLength == 0 {
-		belogs.Error("parseCrlModel(): GetFileLength fail, fileLenght is empty, fileModel:", jsonutil.MarshalJson(fileModel))
+		belogs.Error("parseCrlModel(): GetFileLength fail, fileLenght is empty, fileModel:",
+			jsonutil.MarshalJson(fileModel))
 		stateMsg := model.StateMsg{Stage: "parsevalidate",
 			Fail:   "File is empty",
 			Detail: ""}
