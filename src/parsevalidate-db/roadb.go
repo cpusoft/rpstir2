@@ -205,6 +205,7 @@ func DelRoaDbWithSession(session *xorm.Session, syncLogFileModel *model.SyncLogF
 		if err != nil {
 			belogs.Error("DelRoaDbWithSession(): UpdateSyncLogFileJsonAllAndStateDbWithSession fail, syncLogFileModel:", syncLogFileModel.String(), err)
 			return err
+		}
 	}
 
 	belogs.Info("DelRoaDbWithSession(): roa file:", syncLogFileModel.FilePath, syncLogFileModel.FileName, "  time(s):", time.Since(start))
