@@ -47,6 +47,11 @@ func InsertAsaDb(syncLogFileModel *model.SyncLogFileModel) (err error) {
 func InsertAsaDbWithSession(session *xorm.Session,
 	syncLogFileModel *model.SyncLogFileModel, now time.Time) error {
 
+	if syncLogFileModel.CertModel == nil {
+		belogs.Error("InsertAsaDbWithSession(): CertModel is nil, syncLogFileModel:", syncLogFileModel.String())
+		return errors.New("CertModel is nil")
+	}
+
 	var asaModel model.AsaModel
 	json := jsonutil.MarshalJson(syncLogFileModel.CertModel)
 	belogs.Debug("InsertAsaDbWithSession():asaModel json:", json)
@@ -60,7 +65,7 @@ func InsertAsaDbWithSession(session *xorm.Session,
 	belogs.Debug("InsertAsaDbWithSession():asaModel filePath,fileName:", asaModel.FilePath, asaModel.FileName, "  orginModel:", orginModelJson, "  now ", now)
 
 	//lab_rpki_asa
-	sqlStr := `INSERT lab_rpki_asa(
+	sqlStr := `INSERT INTO lab_rpki_asa(
 	                ski, aki, filePath, fileName, 
 	                fileHash, jsonAll, syncLogId, syncLogFileId, updateTime,
 	                state, origin)
@@ -73,7 +78,7 @@ func InsertAsaDbWithSession(session *xorm.Session,
 		xormdb.SqlNullString(jsonutil.MarshalJson(syncLogFileModel.StateModel)),
 		xormdb.SqlNullString(orginModelJson))
 	if err != nil {
-		belogs.Error("InsertAsaDbWithSession(): INSERT lab_rpki_asa Exec fail,",
+		belogs.Error("InsertAsaDbWithSession(): INSERT INTO lab_rpki_asa Exec fail,",
 			"  asaModel:", asaModel.String(), " syncLogFileModel:", syncLogFileModel.String(), err)
 		return err
 	}
@@ -87,11 +92,11 @@ func InsertAsaDbWithSession(session *xorm.Session,
 	//lab_rpki_asa_aia
 	belogs.Debug("InsertAsaDbWithSession(): asaId:", asaId, " asaModel.Aia.CaIssuers:", asaModel.AiaModel.CaIssuers)
 	if len(asaModel.AiaModel.CaIssuers) > 0 {
-		sqlStr = `INSERT lab_rpki_asa_aia(asaId, caIssuers)
+		sqlStr = `INSERT INTO lab_rpki_asa_aia(asaId, caIssuers)
 				VALUES(?,?)`
 		_, err = session.Exec(sqlStr, asaId, asaModel.AiaModel.CaIssuers)
 		if err != nil {
-			belogs.Error("InsertAsaDbWithSession(): INSERT lab_rpki_asa_aia fail, asaId:", asaId, "  CaIssuers:", asaModel.AiaModel.CaIssuers, err)
+			belogs.Error("InsertAsaDbWithSession(): INSERT INTO lab_rpki_asa_aia fail, asaId:", asaId, "  CaIssuers:", asaModel.AiaModel.CaIssuers, err)
 			return err
 		}
 	}
@@ -102,20 +107,20 @@ func InsertAsaDbWithSession(session *xorm.Session,
 		len(asaModel.SiaModel.RpkiManifest) > 0 ||
 		len(asaModel.SiaModel.RpkiNotify) > 0 ||
 		len(asaModel.SiaModel.SignedObject) > 0 {
-		sqlStr = `INSERT lab_rpki_asa_sia(asaId, rpkiManifest,rpkiNotify,caRepository,signedObject)
+		sqlStr = `INSERT INTO lab_rpki_asa_sia(asaId, rpkiManifest,rpkiNotify,caRepository,signedObject)
 				VALUES(?,?,?,?,?)`
 		_, err = session.Exec(sqlStr, asaId, asaModel.SiaModel.RpkiManifest,
 			asaModel.SiaModel.RpkiNotify, asaModel.SiaModel.CaRepository,
 			asaModel.SiaModel.SignedObject)
 		if err != nil {
-			belogs.Error("InsertAsaDbWithSession(): INSERT lab_rpki_asa_sia fail, SiaModel:", jsonutil.MarshalJson(asaModel.SiaModel), err)
+			belogs.Error("InsertAsaDbWithSession(): INSERT INTO lab_rpki_asa_sia fail, SiaModel:", jsonutil.MarshalJson(asaModel.SiaModel), err)
 			return err
 		}
 	}
 
 	//lab_rpki_asa_customer_provider_asn
 	belogs.Debug("InsertAsaDbWithSession(): asaModel:", asaModel.String())
-	customerAndProviderSqlStr := `INSERT lab_rpki_asa_customer_provider_asn(
+	customerAndProviderSqlStr := `INSERT INTO lab_rpki_asa_customer_provider_asn(
 				asaId,customerAsn, providerAsn, providerAsnOrder) 
 				VALUES(?,?,?,?)`
 	if asaModel.CustomerAsns != nil && len(asaModel.CustomerAsns) > 0 {
@@ -126,7 +131,7 @@ func InsertAsaDbWithSession(session *xorm.Session,
 				_, err = session.Exec(customerAndProviderSqlStr,
 					asaId, cAsn, pAsn, i)
 				if err != nil {
-					belogs.Error("InsertAsaDbWithSession(): INSERT lab_rpki_asa_customer_provider_asn fail:",
+					belogs.Error("InsertAsaDbWithSession(): INSERT INTO lab_rpki_asa_customer_provider_asn fail:",
 						"  asaId:", asaId, "  customerAsn:", cAsn, "  providerAsn:", pAsn, "  providerAsnOrder:", i, err)
 					return err
 				}
@@ -168,7 +173,7 @@ func DelAsaDbWithSession(session *xorm.Session, syncLogFileModel *model.SyncLogF
 		if err != nil {
 			belogs.Error("DelAsaDbWithSession(): getCertIdByFilePathNameWithSession fail, filePath:", syncLogFileModel.FilePath,
 				"  fileName:", syncLogFileModel.FileName, err)
-			return xormdb.RollbackAndLogError(session, "DelAsaDb(): getCertIdByFilePathNameWithSession fail, syncLogFileModel:"+syncLogFileModel.String(), err)
+			return err
 		}
 		if certId == 0 {
 			belogs.Info("DelAsaDbWithSession(): file not exist in db, just return, filePath:", syncLogFileModel.FilePath,
@@ -182,7 +187,7 @@ func DelAsaDbWithSession(session *xorm.Session, syncLogFileModel *model.SyncLogF
 	err = DelAsaByIdDbWithSession(session, syncLogFileModel.CertId)
 	if err != nil {
 		belogs.Error("DelAsaDbWithSession(): DelAsaByIdDbWithSession fail, syncLogFileModel:", syncLogFileModel.String(), err)
-		return xormdb.RollbackAndLogError(session, "DelAsaDb(): DelAsaByIdDbWithSession fail, syncLogFileModel:"+syncLogFileModel.String(), err)
+		return err
 	}
 	// only del,will update syncLogFile.
 	// when is add/update, will update syncLogFile in InsertAsaDb()
@@ -190,7 +195,7 @@ func DelAsaDbWithSession(session *xorm.Session, syncLogFileModel *model.SyncLogF
 		err = UpdateSyncLogFileJsonAllAndStateDbWithSession(session, syncLogFileModel)
 		if err != nil {
 			belogs.Error("DelAsaDbWithSession(): UpdateSyncLogFileJsonAllAndStateDbWithSession fail, syncLogFileModel:", syncLogFileModel.String(), err)
-			return xormdb.RollbackAndLogError(session, "DelAsaDb(): UpdateSyncLogFileJsonAllAndStateDbWithSession fail, syncLogFileModel:"+syncLogFileModel.String(), err)
+			return err
 		}
 	}
 

@@ -227,6 +227,15 @@ func ParseToMoa(buf *bytes.Reader, protocolVersion uint8) (rtrPduModel RtrPduMod
 		return rtrPduModel, rtrError
 	}
 
+	if length != uint32(28+8*ipv4PrefixCount) {
+		belogs.Error("ParseToMoa(): PDU_TYPE_MOA length != uint32(28+8*ipv4PrefixCount) fail, buf:", buf, err)
+		rtrError := NewRtrError(
+			err,
+			true, protocolVersion, PDU_TYPE_ERROR_CODE_CORRUPT_DATA,
+			buf, "Fail to get length or ipv4PrefixCount")
+		return rtrPduModel, rtrError
+	}
+
 	// get zero1
 	err = binary.Read(buf, binary.BigEndian, &zero1)
 	if err != nil {

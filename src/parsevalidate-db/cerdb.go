@@ -46,6 +46,10 @@ func InsertCerDb(syncLogFileModel *model.SyncLogFileModel) (err error) {
 
 func InsertCerDbWithSession(session *xorm.Session,
 	syncLogFileModel *model.SyncLogFileModel, now time.Time) error {
+	if syncLogFileModel.CertModel == nil {
+		belogs.Error("InsertCerDbWithSession(): CertModel is nil, syncLogFileModel:", syncLogFileModel.String())
+		return errors.New("CertModel is nil")
+	}
 
 	var cerModel model.CerModel
 	json := jsonutil.MarshalJson(syncLogFileModel.CertModel)
@@ -62,7 +66,7 @@ func InsertCerDbWithSession(session *xorm.Session,
 		"  now ", now, "  notBefore:", notBefore, "  notAfter:", notAfter)
 
 	//lab_rpki_cer
-	sqlStr := `INSERT lab_rpki_cer(
+	sqlStr := `INSERT INTO lab_rpki_cer(
 	    sn, notBefore, notAfter, subject,
 	    issuer, ski, aki, filePath, fileName,
 	    fileHash, jsonAll, syncLogId, syncLogFileId, updateTime,
@@ -78,7 +82,7 @@ func InsertCerDbWithSession(session *xorm.Session,
 		xormdb.SqlNullString(jsonutil.MarshalJson(syncLogFileModel.StateModel)),
 		xormdb.SqlNullString(orginModelJson))
 	if err != nil {
-		belogs.Error("InsertCerDbWithSession(): INSERT lab_rpki_cer fail, ",
+		belogs.Error("InsertCerDbWithSession(): INSERT INTO lab_rpki_cer fail, ",
 			"  cerModel:", cerModel.String(), "     syncLogFileModel:", syncLogFileModel.String(), err)
 		return err
 	}
@@ -92,10 +96,10 @@ func InsertCerDbWithSession(session *xorm.Session,
 	//lab_rpki_cer_aia
 	belogs.Debug("InsertCerDbWithSession(): cerId:", cerId, " cerModel.Aia.CaIssuers:", cerModel.AiaModel.CaIssuers)
 	if len(cerModel.AiaModel.CaIssuers) > 0 {
-		sqlStr = `INSERT lab_rpki_cer_aia(cerId, caIssuers) VALUES(?,?)`
+		sqlStr = `INSERT INTO lab_rpki_cer_aia(cerId, caIssuers) VALUES(?,?)`
 		_, err = session.Exec(sqlStr, cerId, cerModel.AiaModel.CaIssuers)
 		if err != nil {
-			belogs.Error("InsertCerDbWithSession(): INSERT lab_rpki_cer_aia Exec:", syncLogFileModel.String(), err)
+			belogs.Error("InsertCerDbWithSession(): INSERT INTO lab_rpki_cer_aia Exec:", syncLogFileModel.String(), err)
 			return err
 		}
 	}
@@ -103,8 +107,8 @@ func InsertCerDbWithSession(session *xorm.Session,
 	//lab_rpki_cer_asn
 	belogs.Debug("InsertCerDbWithSession(): cerModel.Asn:", cerModel.AsnModel)
 	if len(cerModel.AsnModel.Asns) > 0 {
-		sqlAsnStr := `INSERT lab_rpki_cer_asn(cerId, asn) VALUES(?,?)`
-		sqlMinMaxStr := `INSERT lab_rpki_cer_asn(cerId, min,max) VALUES(?,?,?)`
+		sqlAsnStr := `INSERT INTO lab_rpki_cer_asn(cerId, asn) VALUES(?,?)`
+		sqlMinMaxStr := `INSERT INTO lab_rpki_cer_asn(cerId, min,max) VALUES(?,?,?)`
 		for _, asn := range cerModel.AsnModel.Asns {
 			// need  asNum >=0
 			if asn.Asn >= 0 {
@@ -120,8 +124,8 @@ func InsertCerDbWithSession(session *xorm.Session,
 					return err
 				}
 			} else {
-				belogs.Error("InsertCerDbWithSession(): INSERT lab_rpki_cer_asn asn/min/max all are zero, syncLogFileModel err:", syncLogFileModel.String())
-				return errors.New("insert lab_rpki_cer_asn fail, asn/min/max all are zero")
+				belogs.Error("InsertCerDbWithSession(): INSERT INTO lab_rpki_cer_asn asn/min/max all are zero, syncLogFileModel err:", syncLogFileModel.String())
+				return errors.New("INSERT INTO lab_rpki_cer_asn fail, asn/min/max all are zero")
 			}
 		}
 	}
@@ -129,11 +133,11 @@ func InsertCerDbWithSession(session *xorm.Session,
 	//lab_rpki_cer_crldp
 	belogs.Debug("InsertCerDbWithSession(): cerModel.CRLdp:", cerModel.CrldpModel.Crldps)
 	if len(cerModel.CrldpModel.Crldps) > 0 {
-		sqlStr = `INSERT lab_rpki_cer_crldp(cerId, crldp) VALUES(?,?)`
+		sqlStr = `INSERT INTO lab_rpki_cer_crldp(cerId, crldp) VALUES(?,?)`
 		for _, crldp := range cerModel.CrldpModel.Crldps {
 			_, err = session.Exec(sqlStr, cerId, crldp)
 			if err != nil {
-				belogs.Error("InsertCerDbWithSession(): INSERT lab_rpki_cer_crldp Exec:", syncLogFileModel.String(), err)
+				belogs.Error("InsertCerDbWithSession(): INSERT INTO lab_rpki_cer_crldp Exec:", syncLogFileModel.String(), err)
 				return err
 			}
 		}
@@ -141,7 +145,7 @@ func InsertCerDbWithSession(session *xorm.Session,
 
 	//lab_rpki_cer_ipaddress
 	belogs.Debug("InsertCerDbWithSession(): cerModel.CerIpAddressModel:", cerModel.CerIpAddressModel)
-	sqlStr = `INSERT lab_rpki_cer_ipaddress(cerId,addressFamily, addressPrefix,min,max,
+	sqlStr = `INSERT INTO lab_rpki_cer_ipaddress(cerId,addressFamily, addressPrefix,min,max,
 	                rangeStart,rangeEnd,addressPrefixRange) 
 	                 VALUES(?,?,?,?,?,
 	                 ?,?,?)`
@@ -150,7 +154,7 @@ func InsertCerDbWithSession(session *xorm.Session,
 			cerId, cerIpAddress.AddressFamily, cerIpAddress.AddressPrefix, cerIpAddress.Min, cerIpAddress.Max,
 			cerIpAddress.RangeStart, cerIpAddress.RangeEnd, cerIpAddress.AddressPrefixRange)
 		if err != nil {
-			belogs.Error("InsertCerDbWithSession(): INSERT lab_rpki_cer_ipaddress Exec:", syncLogFileModel.String(), err)
+			belogs.Error("InsertCerDbWithSession(): INSERT INTO lab_rpki_cer_ipaddress Exec:", syncLogFileModel.String(), err)
 			return err
 		}
 	}
@@ -161,12 +165,12 @@ func InsertCerDbWithSession(session *xorm.Session,
 		len(cerModel.SiaModel.RpkiManifest) > 0 ||
 		len(cerModel.SiaModel.RpkiNotify) > 0 ||
 		len(cerModel.SiaModel.SignedObject) > 0 {
-		sqlStr = `INSERT lab_rpki_cer_sia(cerId, rpkiManifest,rpkiNotify,caRepository,signedObject) VALUES(?,?,?,?,?)`
+		sqlStr = `INSERT INTO lab_rpki_cer_sia(cerId, rpkiManifest,rpkiNotify,caRepository,signedObject) VALUES(?,?,?,?,?)`
 		_, err = session.Exec(sqlStr, cerId, cerModel.SiaModel.RpkiManifest,
 			cerModel.SiaModel.RpkiNotify, cerModel.SiaModel.CaRepository,
 			cerModel.SiaModel.SignedObject)
 		if err != nil {
-			belogs.Error("InsertCerDbWithSession(): INSERT lab_rpki_cer_sia Exec:", syncLogFileModel.String(), err)
+			belogs.Error("InsertCerDbWithSession(): INSERT INTO lab_rpki_cer_sia Exec:", syncLogFileModel.String(), err)
 			return err
 		}
 	}
@@ -226,7 +230,7 @@ func DelCerDbWithSession(session *xorm.Session, syncLogFileModel *model.SyncLogF
 		err = UpdateSyncLogFileJsonAllAndStateDbWithSession(session, syncLogFileModel)
 		if err != nil {
 			belogs.Error("DelCerDbWithSession(): UpdateSyncLogFileJsonAllAndStateDbWithSession fail, syncLogFileModel:", syncLogFileModel.String(), err)
-			return xormdb.RollbackAndLogError(session, "DelCerDbWithSession(): UpdateSyncLogFileJsonAllAndStateDbWithSession fail, syncLogFileModel:"+syncLogFileModel.String(), err)
+			return err
 		}
 	}
 

@@ -33,9 +33,9 @@ func GetSyncLogFileModelBySyncLogIdDb(labRpkiSyncLogId uint64, syncLogFileModels
 	}
 	belogs.Debug("GetSyncLogFileModelBySyncLogIdDb(): will call rows.Next(), time(s):", time.Since(start))
 	defer rows.Close()
-	goupLimit := uint64(100)
+	groupLimit := uint64(100)
 	var index, groupIndex uint64
-	syncLogFileModels := make([]*model.SyncLogFileModel, 0, goupLimit+10)
+	syncLogFileModels := make([]*model.SyncLogFileModel, 0, groupLimit+10)
 	for rows.Next() {
 		// get new *syncLogFileModel every Scan
 		syncLogFileModel = new(model.SyncLogFileModel)
@@ -50,7 +50,7 @@ func GetSyncLogFileModelBySyncLogIdDb(labRpkiSyncLogId uint64, syncLogFileModels
 			"  , time(s):", time.Since(start))
 
 		index++
-		if groupIndex < goupLimit {
+		if groupIndex < groupLimit {
 			groupIndex++
 			syncLogFileModels = append(syncLogFileModels, syncLogFileModel)
 			belogs.Debug("GetSyncLogFileModelBySyncLogIdDb(): in Scan, groupIndex:", groupIndex, "  len(syncLogFileModels):", len(syncLogFileModels),

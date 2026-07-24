@@ -353,7 +353,7 @@ CREATE TABLE If Not Exists lab_rpki_moa (
 	fileName varchar(128) NOT NULL ,
 	state json comment 'state info in json',
 	ipv6MappingPrefix varchar(1024) NOT NULL,
-	ipv4Prefixes      json NOT NULL,
+	ipv4Prefixes      json,
 	jsonAll json NOT NULL,
 	chainCerts json comment 'chain certs(cer/crl/mft/roa) in json',
 	syncLogId int(10) unsigned not null comment 'foreign key references lab_rpki_sync_log(id)',

@@ -47,6 +47,11 @@ func InsertRoaDb(syncLogFileModel *model.SyncLogFileModel) (err error) {
 func InsertRoaDbWithSession(session *xorm.Session,
 	syncLogFileModel *model.SyncLogFileModel, now time.Time) error {
 
+	if syncLogFileModel.CertModel == nil {
+		belogs.Error("InsertRoaDbWithSession(): CertModel is nil, syncLogFileModel:", syncLogFileModel.String())
+		return errors.New("CertModel is nil")
+	}
+
 	var roaModel model.RoaModel
 	json := jsonutil.MarshalJson(syncLogFileModel.CertModel)
 	belogs.Debug("InsertRoaDbWithSession():roaModel json:", json)
@@ -59,7 +64,7 @@ func InsertRoaDbWithSession(session *xorm.Session,
 	belogs.Debug("InsertRoaDbWithSession(): roaModel filePath,fileName:", roaModel.FilePath, roaModel.FileName, " originModel:", originModelJson, " now ", now)
 
 	//lab_rpki_roa
-	sqlStr := `INSERT lab_rpki_roa(
+	sqlStr := `INSERT INTO lab_rpki_roa(
 	                asn, ski, aki, filePath, fileName, 
 	                fileHash, jsonAll, syncLogId, syncLogFileId, updateTime,
 	                state, origin)
@@ -72,7 +77,7 @@ func InsertRoaDbWithSession(session *xorm.Session,
 		xormdb.SqlNullString(jsonutil.MarshalJson(syncLogFileModel.StateModel)),
 		xormdb.SqlNullString(originModelJson))
 	if err != nil {
-		belogs.Error("InsertRoaDbWithSession(): INSERT lab_rpki_roa Exec fail:",
+		belogs.Error("InsertRoaDbWithSession(): INSERT INTO lab_rpki_roa Exec fail:",
 			"  roaModel:", roaModel.String(), "   syncLogFileModel:", syncLogFileModel.String(), err)
 		return err
 	}
@@ -86,11 +91,11 @@ func InsertRoaDbWithSession(session *xorm.Session,
 	//lab_rpki_roa_aia
 	belogs.Debug("InsertRoaDbWithSession(): roaId:", roaId, " roaModel.Aia.CaIssuers:", roaModel.AiaModel.CaIssuers)
 	if len(roaModel.AiaModel.CaIssuers) > 0 {
-		sqlStr = `INSERT lab_rpki_roa_aia(roaId, caIssuers)
+		sqlStr = `INSERT INTO lab_rpki_roa_aia(roaId, caIssuers)
 				VALUES(?,?)`
 		_, err = session.Exec(sqlStr, roaId, roaModel.AiaModel.CaIssuers)
 		if err != nil {
-			belogs.Error("InsertRoaDbWithSession(): INSERT lab_rpki_roa_aia Exec :", syncLogFileModel.String(), err)
+			belogs.Error("InsertRoaDbWithSession(): INSERT INTO lab_rpki_roa_aia Exec :", syncLogFileModel.String(), err)
 			return err
 		}
 	}
@@ -101,13 +106,13 @@ func InsertRoaDbWithSession(session *xorm.Session,
 		len(roaModel.SiaModel.RpkiManifest) > 0 ||
 		len(roaModel.SiaModel.RpkiNotify) > 0 ||
 		len(roaModel.SiaModel.SignedObject) > 0 {
-		sqlStr = `INSERT lab_rpki_roa_sia(roaId, rpkiManifest,rpkiNotify,caRepository,signedObject)
+		sqlStr = `INSERT INTO lab_rpki_roa_sia(roaId, rpkiManifest,rpkiNotify,caRepository,signedObject)
 				VALUES(?,?,?,?,?)`
 		_, err = session.Exec(sqlStr, roaId, roaModel.SiaModel.RpkiManifest,
 			roaModel.SiaModel.RpkiNotify, roaModel.SiaModel.CaRepository,
 			roaModel.SiaModel.SignedObject)
 		if err != nil {
-			belogs.Error("InsertRoaDbWithSession(): INSERT lab_rpki_roa_sia Exec :", syncLogFileModel.String(), err)
+			belogs.Error("InsertRoaDbWithSession(): INSERT INTO lab_rpki_roa_sia Exec :", syncLogFileModel.String(), err)
 			return err
 		}
 	}
@@ -115,14 +120,14 @@ func InsertRoaDbWithSession(session *xorm.Session,
 	//lab_rpki_roa_ipaddress
 	belogs.Debug("InsertRoaDbWithSession(): roaModel.IPAddrBlocks:", jsonutil.MarshalJson(roaModel.RoaIpAddressModels))
 	if roaModel.RoaIpAddressModels != nil && len(roaModel.RoaIpAddressModels) > 0 {
-		sqlStr = `INSERT lab_rpki_roa_ipaddress(roaId, addressFamily,addressPrefix,maxLength, rangeStart, rangeEnd,addressPrefixRange )
+		sqlStr = `INSERT INTO lab_rpki_roa_ipaddress(roaId, addressFamily,addressPrefix,maxLength, rangeStart, rangeEnd,addressPrefixRange )
 						VALUES(?,?,?,?,?,?,?)`
 		for _, roaIpAddressModel := range roaModel.RoaIpAddressModels {
 			_, err = session.Exec(sqlStr, roaId, roaIpAddressModel.AddressFamily,
 				roaIpAddressModel.AddressPrefix, roaIpAddressModel.MaxLength,
 				roaIpAddressModel.RangeStart, roaIpAddressModel.RangeEnd, roaIpAddressModel.AddressPrefixRange)
 			if err != nil {
-				belogs.Error("InsertRoaDbWithSession(): INSERT lab_rpki_roa_ipaddress Exec :", syncLogFileModel.String(), err)
+				belogs.Error("InsertRoaDbWithSession(): INSERT INTO lab_rpki_roa_ipaddress Exec :", syncLogFileModel.String(), err)
 				return err
 			}
 
@@ -131,7 +136,7 @@ func InsertRoaDbWithSession(session *xorm.Session,
 
 	//lab_rpki_roa_ee_ipaddress
 	belogs.Debug("InsertRoaDbWithSession(): roaModel.CerIpAddressModel:", roaModel.EeCertModel.CerIpAddressModel)
-	sqlStr = `INSERT lab_rpki_roa_ee_ipaddress(roaId,addressFamily, addressPrefix,min,max,
+	sqlStr = `INSERT INTO lab_rpki_roa_ee_ipaddress(roaId,addressFamily, addressPrefix,min,max,
 	                rangeStart,rangeEnd,addressPrefixRange) 
 	                 VALUES(?,?,?,?,?,
 	                 ?,?,?)`
@@ -140,7 +145,7 @@ func InsertRoaDbWithSession(session *xorm.Session,
 			roaId, cerIpAddress.AddressFamily, cerIpAddress.AddressPrefix, cerIpAddress.Min, cerIpAddress.Max,
 			cerIpAddress.RangeStart, cerIpAddress.RangeEnd, cerIpAddress.AddressPrefixRange)
 		if err != nil {
-			belogs.Error("InsertRoaDbWithSession(): INSERT lab_rpki_roa_ee_ipaddress Exec:", syncLogFileModel.String(), err)
+			belogs.Error("InsertRoaDbWithSession(): INSERT INTO lab_rpki_roa_ee_ipaddress Exec:", syncLogFileModel.String(), err)
 			return err
 		}
 	}
@@ -177,7 +182,7 @@ func DelRoaDbWithSession(session *xorm.Session, syncLogFileModel *model.SyncLogF
 		if err != nil {
 			belogs.Error("DelRoaDbWithSession(): getCertIdByFilePathNameWithSession fail, filePath:", syncLogFileModel.FilePath,
 				"  fileName:", syncLogFileModel.FileName, err)
-			return xormdb.RollbackAndLogError(session, "DelRoaDbWithSession(): getCertIdByFilePathNameWithSession fail, syncLogFileModel:"+syncLogFileModel.String(), err)
+			return err
 		}
 		if certId == 0 {
 			belogs.Info("DelRoaDbWithSession(): file not exist in db, just return, filePath:", syncLogFileModel.FilePath,
@@ -191,7 +196,7 @@ func DelRoaDbWithSession(session *xorm.Session, syncLogFileModel *model.SyncLogF
 	err = DelRoaByIdDbWithSession(session, syncLogFileModel.CertId)
 	if err != nil {
 		belogs.Error("DelRoaDbWithSession(): DelRoaByIdDbWithSession fail, syncLogFileModel:", syncLogFileModel.String(), err)
-		return xormdb.RollbackAndLogError(session, "DelRoaDbWithSession(): DelRoaByIdDbWithSession fail, syncLogFileModel:"+syncLogFileModel.String(), err)
+		return err
 	}
 	// only del,will update syncLogFile.
 	// when is add/update, will update syncLogFile in InsertRoaDbWithSession()
@@ -199,8 +204,7 @@ func DelRoaDbWithSession(session *xorm.Session, syncLogFileModel *model.SyncLogF
 		err = UpdateSyncLogFileJsonAllAndStateDbWithSession(session, syncLogFileModel)
 		if err != nil {
 			belogs.Error("DelRoaDbWithSession(): UpdateSyncLogFileJsonAllAndStateDbWithSession fail, syncLogFileModel:", syncLogFileModel.String(), err)
-			return xormdb.RollbackAndLogError(session, "DelRoaDbWithSession(): UpdateSyncLogFileJsonAllAndStateDbWithSession fail, syncLogFileModel:"+syncLogFileModel.String(), err)
-		}
+			return err
 	}
 
 	belogs.Info("DelRoaDbWithSession(): roa file:", syncLogFileModel.FilePath, syncLogFileModel.FileName, "  time(s):", time.Since(start))
@@ -243,7 +247,7 @@ func DelRoaByIdDbWithSession(session *xorm.Session, roaId uint64) (err error) {
 	count, _ = res.RowsAffected()
 	belogs.Debug("DelRoaByIdDbWithSession():delete lab_rpki_roa_sia by roaId:", roaId, "  count:", count)
 
-	//lab_rpki_roa_sia
+	//lab_rpki_roa_aia
 	res, err = session.Exec("delete from  lab_rpki_roa_aia  where roaId = ?", roaId)
 	if err != nil {
 		belogs.Error("DelRoaByIdDbWithSession():delete  from lab_rpki_roa_aia fail: roaId: ", roaId, err)

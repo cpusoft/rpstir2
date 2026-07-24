@@ -190,7 +190,7 @@ func ParseToErrorReport(buf *bytes.Reader, protocolVersion uint8) (rtrPduModel R
 	errorDiagnosticMessage := make([]byte, lengthOfErrorText)
 	err = binary.Read(buf, binary.BigEndian, &errorDiagnosticMessage)
 	if err != nil {
-		belogs.Error("ParseToErrorReport(): PDU_TYPE_ERROR_REPORT get erroneousPdu fail, buf:", buf, err)
+		belogs.Error("ParseToErrorReport(): PDU_TYPE_ERROR_REPORT get errorDiagnosticMessage fail, buf:", buf, err)
 		rtrError := NewRtrError(
 			err,
 			false, protocolVersion, PDU_TYPE_ERROR_CODE_CORRUPT_DATA,

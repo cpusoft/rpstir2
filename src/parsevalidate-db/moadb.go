@@ -47,6 +47,11 @@ func InsertMoaDb(syncLogFileModel *model.SyncLogFileModel) (err error) {
 func InsertMoaDbWithSession(session *xorm.Session,
 	syncLogFileModel *model.SyncLogFileModel, now time.Time) error {
 
+	if syncLogFileModel.CertModel == nil {
+		belogs.Error("InsertMoaDbWithSession(): CertModel is nil, syncLogFileModel:", syncLogFileModel.String())
+		return errors.New("CertModel is nil")
+	}
+
 	var moaModel model.MoaModel
 	json := jsonutil.MarshalJson(syncLogFileModel.CertModel)
 	belogs.Debug("InsertMoaDbWithSession():moaModel json:", json)
@@ -57,10 +62,16 @@ func InsertMoaDbWithSession(session *xorm.Session,
 	}
 
 	orginModelJson := jsonutil.MarshalJson(syncLogFileModel.OriginModel)
-	belogs.Debug("InsertMoaDbWithSession():moaModel filePath,fileName:", moaModel.FilePath, moaModel.FileName, "  orginModel:", orginModelJson, "  now ", now)
+	ipv4PrefixesStr := ""
+	if len(moaModel.Ipv4Prefixes) > 0 {
+		ipv4PrefixesStr = jsonutil.MarshalJson(moaModel.Ipv4Prefixes)
+	}
+	belogs.Debug("InsertMoaDbWithSession():moaModel filePath,fileName:",
+		moaModel.FilePath, moaModel.FileName, "  orginModel:", orginModelJson,
+		"ipv4PrefixesStr", ipv4PrefixesStr, " now ", now)
 
 	//lab_rpki_moa
-	sqlStr := `INSERT lab_rpki_moa(
+	sqlStr := `INSERT INTO lab_rpki_moa(
 	                ski, aki, filePath, fileName, 
 	                fileHash, jsonAll, syncLogId, syncLogFileId, updateTime,
 					ipv6MappingPrefix, ipv4Prefixes,
@@ -72,10 +83,10 @@ func InsertMoaDbWithSession(session *xorm.Session,
 	res, err := session.Exec(sqlStr,
 		xormdb.SqlNullString(moaModel.Ski), xormdb.SqlNullString(moaModel.Aki), moaModel.FilePath, moaModel.FileName,
 		moaModel.FileHash, xormdb.SqlNullString(jsonutil.MarshalJson(moaModel)), syncLogFileModel.SyncLogId, syncLogFileModel.Id, now,
-		moaModel.Ipv6MappingPrefix, jsonutil.MarshalJson(moaModel.Ipv4Prefixes),
+		moaModel.Ipv6MappingPrefix, xormdb.SqlNullString(ipv4PrefixesStr),
 		xormdb.SqlNullString(jsonutil.MarshalJson(syncLogFileModel.StateModel)), xormdb.SqlNullString(orginModelJson))
 	if err != nil {
-		belogs.Error("InsertMoaDbWithSession(): INSERT lab_rpki_moa Exec fail,",
+		belogs.Error("InsertMoaDbWithSession(): INSERT INTO lab_rpki_moa Exec fail,",
 			"  moaModel:", moaModel.String(), " syncLogFileModel:", syncLogFileModel.String(), err)
 		return err
 	}
@@ -121,7 +132,7 @@ func DelMoaDbWithSession(session *xorm.Session, syncLogFileModel *model.SyncLogF
 		if err != nil {
 			belogs.Error("DelMoaDbWithSession(): getCertIdByFilePathNameWithSession fail, filePath:", syncLogFileModel.FilePath,
 				"  fileName:", syncLogFileModel.FileName, err)
-			return xormdb.RollbackAndLogError(session, "DelMoaDb(): getCertIdByFilePathNameWithSession fail, syncLogFileModel:"+syncLogFileModel.String(), err)
+			return err
 		}
 		if certId == 0 {
 			belogs.Info("DelMoaDbWithSession(): file not exist in db, just return, filePath:", syncLogFileModel.FilePath,
@@ -135,7 +146,7 @@ func DelMoaDbWithSession(session *xorm.Session, syncLogFileModel *model.SyncLogF
 	err = DelMoaByIdDbWithSession(session, syncLogFileModel.CertId)
 	if err != nil {
 		belogs.Error("DelMoaDbWithSession(): DelMoaByIdDbWithSession fail, syncLogFileModel:", syncLogFileModel.String(), err)
-		return xormdb.RollbackAndLogError(session, "DelMoaDb(): DelMoaByIdDbWithSession fail, syncLogFileModel:"+syncLogFileModel.String(), err)
+		return err
 	}
 	// only del,will update syncLogFile.
 	// when is add/update, will update syncLogFile in InsertMoaDb()
@@ -143,7 +154,7 @@ func DelMoaDbWithSession(session *xorm.Session, syncLogFileModel *model.SyncLogF
 		err = UpdateSyncLogFileJsonAllAndStateDbWithSession(session, syncLogFileModel)
 		if err != nil {
 			belogs.Error("DelMoaDbWithSession(): UpdateSyncLogFileJsonAllAndStateDbWithSession fail, syncLogFileModel:", syncLogFileModel.String(), err)
-			return xormdb.RollbackAndLogError(session, "DelMoaDb(): UpdateSyncLogFileJsonAllAndStateDbWithSession fail, syncLogFileModel:"+syncLogFileModel.String(), err)
+			return err
 		}
 	}
 

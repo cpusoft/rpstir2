@@ -58,7 +58,7 @@ func (p *RtrEndOfDataModel) Bytes() []byte {
 
 	binary.Write(wr, binary.BigEndian, p.Length)
 	binary.Write(wr, binary.BigEndian, p.SerialNumber)
-	if p.ProtocolVersion == PDU_PROTOCOL_VERSION_1 {
+	if p.ProtocolVersion == PDU_PROTOCOL_VERSION_1 || p.ProtocolVersion == PDU_PROTOCOL_VERSION_2 {
 		binary.Write(wr, binary.BigEndian, p.RefreshInterval)
 		binary.Write(wr, binary.BigEndian, p.RetryInterval)
 		binary.Write(wr, binary.BigEndian, p.ExpireInterval)
@@ -134,7 +134,7 @@ func ParseToEndOfData(buf *bytes.Reader, protocolVersion uint8) (rtrPduModel Rtr
 	if protocolVersion == PDU_PROTOCOL_VERSION_0 && length != 12 {
 		belogs.Error("ParseToEndOfData():PDU_TYPE_END_OF_DATA, when version is 0, length must be 12, buf:", buf, "  length:", length)
 		rtrError := NewRtrError(
-			errors.New("pduType is CACHE RESPONSE, when version is 0, length must be 12"),
+			errors.New("pduType is END OF DATA, when version is 0, length must be 12"),
 			true, protocolVersion, PDU_TYPE_ERROR_CODE_CORRUPT_DATA,
 			buf, "Fail to get length")
 		return rtrPduModel, rtrError
@@ -143,7 +143,7 @@ func ParseToEndOfData(buf *bytes.Reader, protocolVersion uint8) (rtrPduModel Rtr
 		protocolVersion == PDU_PROTOCOL_VERSION_2) && length != 24 {
 		belogs.Error("ParseToEndOfData():PDU_TYPE_END_OF_DATA,   when version is 1, length must be 24, buf:", buf, "  length:", length)
 		rtrError := NewRtrError(
-			errors.New("pduType is CACHE RESPONSE, when version is 1, length must be 24"),
+			errors.New("pduType is END OF DATA, when version is 1, length must be 24"),
 			true, protocolVersion, PDU_TYPE_ERROR_CODE_CORRUPT_DATA,
 			buf, "Fail to get length")
 		return rtrPduModel, rtrError
@@ -160,7 +160,8 @@ func ParseToEndOfData(buf *bytes.Reader, protocolVersion uint8) (rtrPduModel Rtr
 		return rtrPduModel, rtrError
 	}
 
-	if protocolVersion == PDU_PROTOCOL_VERSION_1 {
+	if protocolVersion == PDU_PROTOCOL_VERSION_1 ||
+		protocolVersion == PDU_PROTOCOL_VERSION_2 {
 		// get refreshInterval
 		err = binary.Read(buf, binary.BigEndian, &refreshInterval)
 		if err != nil {

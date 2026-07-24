@@ -47,6 +47,11 @@ func InsertMftDb(syncLogFileModel *model.SyncLogFileModel) (err error) {
 func InsertMftDbWithSession(session *xorm.Session,
 	syncLogFileModel *model.SyncLogFileModel, now time.Time) error {
 
+	if syncLogFileModel.CertModel == nil {
+		belogs.Error("InsertMftDbWithSession(): CertModel is nil, syncLogFileModel:", syncLogFileModel.String())
+		return errors.New("CertModel is nil")
+	}
+
 	var mftModel model.MftModel
 	json := jsonutil.MarshalJson(syncLogFileModel.CertModel)
 	belogs.Debug("InsertMftDbWithSession():mftModel json:", json)
@@ -61,7 +66,7 @@ func InsertMftDbWithSession(session *xorm.Session,
 	belogs.Debug("InsertMftDbWithSession(): mftModel filePath,fileName:", mftModel.FilePath, mftModel.FileName, " originModel:", originModelJson, " now ", now, "  thisUpdate:", thisUpdate, "  nextUpdate:", nextUpdate)
 
 	//lab_rpki_manifest
-	sqlStr := `INSERT lab_rpki_mft(
+	sqlStr := `INSERT INTO lab_rpki_mft(
 	           mftNumber, thisUpdate, nextUpdate, ski, aki, 
 	           filePath, fileName, fileHash, jsonAll, syncLogId, 
 	           syncLogFileId, updateTime, state, origin)
@@ -76,7 +81,7 @@ func InsertMftDbWithSession(session *xorm.Session,
 		xormdb.SqlNullString(jsonutil.MarshalJson(syncLogFileModel.StateModel)),
 		xormdb.SqlNullString(originModelJson))
 	if err != nil {
-		belogs.Error("InsertMftDbWithSession(): INSERT lab_rpki_mft Exec fail, ",
+		belogs.Error("InsertMftDbWithSession(): INSERT INTO lab_rpki_mft Exec fail, ",
 			"  mftModel:", mftModel.String(), "  syncLogFileModel:", syncLogFileModel.String(), err)
 		return err
 	}
@@ -90,11 +95,11 @@ func InsertMftDbWithSession(session *xorm.Session,
 	//lab_rpki_mft_aia
 	belogs.Debug("InsertMftDbWithSession(): mftId:", mftId, "  mftModel.Aia.CaIssuers:", mftModel.AiaModel.CaIssuers)
 	if len(mftModel.AiaModel.CaIssuers) > 0 {
-		sqlStr = `INSERT lab_rpki_mft_aia(mftId, caIssuers) 
+		sqlStr = `INSERT INTO lab_rpki_mft_aia(mftId, caIssuers) 
 			VALUES(?,?)`
 		_, err = session.Exec(sqlStr, mftId, mftModel.AiaModel.CaIssuers)
 		if err != nil {
-			belogs.Error("InsertMftDbWithSession(): INSERT lab_rpki_mft_aia Exec :", syncLogFileModel.String(), err)
+			belogs.Error("InsertMftDbWithSession(): INSERT INTO lab_rpki_mft_aia Exec :", syncLogFileModel.String(), err)
 			return err
 		}
 	}
@@ -105,13 +110,13 @@ func InsertMftDbWithSession(session *xorm.Session,
 		len(mftModel.SiaModel.RpkiManifest) > 0 ||
 		len(mftModel.SiaModel.RpkiNotify) > 0 ||
 		len(mftModel.SiaModel.SignedObject) > 0 {
-		sqlStr = `INSERT lab_rpki_mft_sia(mftId, rpkiManifest,rpkiNotify,caRepository,signedObject) 
+		sqlStr = `INSERT INTO lab_rpki_mft_sia(mftId, rpkiManifest,rpkiNotify,caRepository,signedObject) 
 			VALUES(?,?,?,?,?)`
 		_, err = session.Exec(sqlStr, mftId, mftModel.SiaModel.RpkiManifest,
 			mftModel.SiaModel.RpkiNotify, mftModel.SiaModel.CaRepository,
 			mftModel.SiaModel.SignedObject)
 		if err != nil {
-			belogs.Error("InsertMftDbWithSession(): INSERT lab_rpki_mft_sia Exec :", syncLogFileModel.String(), err)
+			belogs.Error("InsertMftDbWithSession(): INSERT INTO lab_rpki_mft_sia Exec :", syncLogFileModel.String(), err)
 			return err
 		}
 	}
@@ -119,11 +124,11 @@ func InsertMftDbWithSession(session *xorm.Session,
 	//lab_rpki_mft_fileAndHashs
 	belogs.Debug("InsertMftDbWithSession(): len(mftModel.FileHashModels):", len(mftModel.FileHashModels))
 	if mftModel.FileHashModels != nil && len(mftModel.FileHashModels) > 0 {
-		sqlStr = `INSERT lab_rpki_mft_file_hash(mftId, file,hash) VALUES(?,?,?)`
+		sqlStr = `INSERT INTO lab_rpki_mft_file_hash(mftId, file,hash) VALUES(?,?,?)`
 		for _, fileHashModel := range mftModel.FileHashModels {
 			_, err = session.Exec(sqlStr, mftId, fileHashModel.File, fileHashModel.Hash)
 			if err != nil {
-				belogs.Error("InsertMftDbWithSession(): INSERT lab_rpki_mft_file_hash Exec :", syncLogFileModel.String(), err)
+				belogs.Error("InsertMftDbWithSession(): INSERT INTO lab_rpki_mft_file_hash Exec :", syncLogFileModel.String(), err)
 				return err
 			}
 		}
@@ -161,7 +166,7 @@ func DelMftDbWithSession(session *xorm.Session, syncLogFileModel *model.SyncLogF
 		if err != nil {
 			belogs.Error("DelMftDbWithSession(): getCertIdByFilePathNameWithSession fail, filePath:", syncLogFileModel.FilePath,
 				"  fileName:", syncLogFileModel.FileName, err)
-			return xormdb.RollbackAndLogError(session, "DelMftDbWithSession(): getCertIdByFilePathNameWithSession fail, syncLogFileModel:"+syncLogFileModel.String(), err)
+			return err
 		}
 		if certId == 0 {
 			belogs.Info("DelMftDbWithSession(): file not exist in db, just return, filePath:", syncLogFileModel.FilePath,
@@ -175,7 +180,7 @@ func DelMftDbWithSession(session *xorm.Session, syncLogFileModel *model.SyncLogF
 	err = DelMftByIdDbWithSession(session, syncLogFileModel.CertId)
 	if err != nil {
 		belogs.Error("DelMftDbWithSession(): DelMftByIdDbWithSession fail, syncLogFileModel:", syncLogFileModel.String(), err)
-		return xormdb.RollbackAndLogError(session, "DelMftDbWithSession(): DelMftByIdDbWithSession fail, syncLogFileModel:"+syncLogFileModel.String(), err)
+		return err
 	}
 	// only del,will update syncLogFile.
 	// when is add/update, will update syncLogFile in InsertMftDbWithSession()
@@ -183,7 +188,7 @@ func DelMftDbWithSession(session *xorm.Session, syncLogFileModel *model.SyncLogF
 		err = UpdateSyncLogFileJsonAllAndStateDbWithSession(session, syncLogFileModel)
 		if err != nil {
 			belogs.Error("DelMftDbWithSession(): UpdateSyncLogFileJsonAllAndStateDbWithSession fail, syncLogFileModel:", syncLogFileModel.String(), err)
-			return xormdb.RollbackAndLogError(session, "DelMftDbWithSession(): UpdateSyncLogFileJsonAllAndStateDbWithSession fail, syncLogFileModel:"+syncLogFileModel.String(), err)
+			return err
 		}
 	}
 

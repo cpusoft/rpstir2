@@ -93,11 +93,8 @@ func ParseToAsa(buf *bytes.Reader, protocolVersion uint8) (rtrPduModel RtrPduMod
 		return rtrPduModel, rtrError
 	}
 	/*
-		Bit     Bit Name
-		----    -------------------
-		0      AFI (IPv4 == 0, IPv6 == 1)
-		1      Announce == 1, Delete == 0
-		2-7    Reserved, must be zero
+		Bit 0: Announce=1/Withdraw=0;
+		Bits 1-7: Reserved
 	*/
 	if flags != 0 && flags != 1 {
 		belogs.Error("ParseToAsa():PDU_TYPE_ASA, flags is only use bits, buf:", buf, "  flags:", flags)
@@ -149,16 +146,31 @@ func ParseToAsa(buf *bytes.Reader, protocolVersion uint8) (rtrPduModel RtrPduMod
 			buf, "Fail to get customerAsn")
 		return rtrPduModel, rtrError
 	}
-	providerAsns = make([]uint32, 0)
-	err = binary.Read(buf, binary.BigEndian, &providerAsns)
-	if err != nil {
-		belogs.Error("ParseToAsa(): PDU_TYPE_ASA get providerAsn fail, buf:", buf, err)
-		rtrError := NewRtrError(
-			err,
+
+	// 在读取 customerAsn 之后
+	remaining := int(length) - 12 // 12 = 固定头部(8) + CustomerAsn(4)
+	if remaining%4 != 0 {
+		belogs.Error("ParseToAsa(): PDU_TYPE_ASA get providerAsns count,remaining%4 != 0 fail, buf:", buf)
+		// 协议错误，长度必须为 4 的倍数
+		rtrError := NewRtrError(err,
 			true, protocolVersion, PDU_TYPE_ERROR_CODE_CORRUPT_DATA,
-			buf, "Fail to get providerAsn")
+			buf, "Fail to get providerAsns count")
 		return rtrPduModel, rtrError
 	}
+	count := remaining / 4
+	providerAsns = make([]uint32, count)
+	if count > 0 {
+		err = binary.Read(buf, binary.BigEndian, &providerAsns)
+		if err != nil {
+			belogs.Error("ParseToAsa(): PDU_TYPE_ASA get providerAsn fail, buf:", buf, err)
+			rtrError := NewRtrError(
+				err,
+				true, protocolVersion, PDU_TYPE_ERROR_CODE_CORRUPT_DATA,
+				buf, "Fail to get providerAsn")
+			return rtrPduModel, rtrError
+		}
+	}
+	// count ==0  is ok, just continue
 
 	sq := NewRtrAsaModel(protocolVersion, flags, customerAsn, providerAsns)
 

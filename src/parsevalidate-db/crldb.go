@@ -49,6 +49,11 @@ func InsertCrlDbWithSession(session *xorm.Session,
 	belogs.Debug("InsertCrlDbWithSession(): file:", syncLogFileModel.FilePath, syncLogFileModel.FileName,
 		"  fileType:", syncLogFileModel.FileType)
 
+	if syncLogFileModel.CertModel == nil {
+		belogs.Error("InsertCrlDbWithSession(): CertModel is nil, syncLogFileModel:", syncLogFileModel.String())
+		return errors.New("CertModel is nil")
+	}
+
 	var crlModel model.CrlModel
 	json := jsonutil.MarshalJson(syncLogFileModel.CertModel)
 	belogs.Debug("InsertCrlDbWithSession():crlModel json:", json)
@@ -64,7 +69,7 @@ func InsertCrlDbWithSession(session *xorm.Session,
 		"  origin:", originModelJson, "  now ", now)
 
 	//lab_rpki_crl
-	sqlStr := `INSERT lab_rpki_crl(
+	sqlStr := `INSERT INTO lab_rpki_crl(
 	        crlNumber, thisUpdate, nextUpdate, hasExpired, aki, 
 	        filePath, fileName, fileHash, jsonAll, syncLogId, 
 	        syncLogFileId, updateTime, state, origin)
@@ -78,7 +83,7 @@ func InsertCrlDbWithSession(session *xorm.Session,
 		xormdb.SqlNullString(jsonutil.MarshalJson(syncLogFileModel.StateModel)),
 		xormdb.SqlNullString(originModelJson))
 	if err != nil {
-		belogs.Error("InsertCrlDbWithSession(): INSERT lab_rpki_crl Exec fail:",
+		belogs.Error("InsertCrlDbWithSession(): INSERT INTO lab_rpki_crl Exec fail:",
 			"  crlModel:", crlModel.String(), "  syncLogFileModel:", syncLogFileModel.String(), err)
 		return err
 	}
@@ -92,11 +97,11 @@ func InsertCrlDbWithSession(session *xorm.Session,
 	//lab_rpki_crl_crlrevokedcerts
 	belogs.Debug("InsertCrlDbWithSession(): crlId:", crlId, " len(crlModel.RevokedCertModels):", len(crlModel.RevokedCertModels))
 	if crlModel.RevokedCertModels != nil && len(crlModel.RevokedCertModels) > 0 {
-		sqlStr = `INSERT lab_rpki_crl_revoked_cert(crlId, sn, revocationTime) VALUES(?,?,?)`
+		sqlStr = `INSERT INTO lab_rpki_crl_revoked_cert(crlId, sn, revocationTime) VALUES(?,?,?)`
 		for _, revokedCertModel := range crlModel.RevokedCertModels {
 			_, err = session.Exec(sqlStr, crlId, revokedCertModel.Sn, revokedCertModel.RevocationTime)
 			if err != nil {
-				belogs.Error("InsertCrlDbWithSession(): INSERT lab_rpki_crl_revoked_cert Exec :",
+				belogs.Error("InsertCrlDbWithSession(): INSERT INTO lab_rpki_crl_revoked_cert Exec :",
 					syncLogFileModel.String(), err)
 				return err
 			}
@@ -135,7 +140,7 @@ func DelCrlDbWithSession(session *xorm.Session, syncLogFileModel *model.SyncLogF
 		if err != nil {
 			belogs.Error("DelCrlDbWithSession(): getCertIdByFilePathNameWithSession fail, filePath:", syncLogFileModel.FilePath,
 				"  fileName:", syncLogFileModel.FileName, err)
-			return xormdb.RollbackAndLogError(session, "DelCrlDbWithSession(): getCertIdByFilePathNameWithSession fail, syncLogFileModel:"+syncLogFileModel.String(), err)
+			return err
 		}
 		if certId == 0 {
 			belogs.Info("DelCrlDbWithSession(): file not exist in db, just return, filePath:", syncLogFileModel.FilePath,
@@ -149,7 +154,7 @@ func DelCrlDbWithSession(session *xorm.Session, syncLogFileModel *model.SyncLogF
 	err = DelCrlByIdDbWithSession(session, syncLogFileModel.CertId)
 	if err != nil {
 		belogs.Error("DelCrlDbWithSession(): DelCrlByIdDbWithSession fail, syncLogFileModel:", syncLogFileModel.String(), err)
-		return xormdb.RollbackAndLogError(session, "DelCrlDbWithSession(): DelCrlByIdDbWithSession fail, syncLogFileModel:"+syncLogFileModel.String(), err)
+		return err
 	}
 	// only del,will update syncLogFile.
 	// when is add/update, will update syncLogFile in InsertCrlDbWithSession()
@@ -157,15 +162,10 @@ func DelCrlDbWithSession(session *xorm.Session, syncLogFileModel *model.SyncLogF
 		err = UpdateSyncLogFileJsonAllAndStateDbWithSession(session, syncLogFileModel)
 		if err != nil {
 			belogs.Error("DelCrlDbWithSession(): UpdateSyncLogFileJsonAllAndStateDbWithSession fail, syncLogFileModel:", syncLogFileModel.String(), err)
-			return xormdb.RollbackAndLogError(session, "DelCrlDbWithSession(): UpdateSyncLogFileJsonAllAndStateDbWithSession fail, syncLogFileModel:"+syncLogFileModel.String(), err)
+			return err
 		}
 	}
 
-	err = xormdb.CommitSession(session)
-	if err != nil {
-		belogs.Error("DelCrlDbWithSession(): CommitSession fail :", err)
-		return err
-	}
 	belogs.Info("DelCrlDbWithSession(): crl file:", syncLogFileModel.FilePath, syncLogFileModel.FileName, "  time(s):", time.Since(start))
 	return nil
 }
@@ -188,7 +188,7 @@ func DelCrlByIdDbWithSession(session *xorm.Session, crlId uint64) (err error) {
 	count, _ := res.RowsAffected()
 	belogs.Debug("DelCrlByIdDbWithSession():delete lab_rpki_crl_revoked_cert by crlId:", crlId, "  count:", count)
 
-	//lab_rpki_crl_revoked
+	//lab_rpki_crl
 	res, err = session.Exec("delete from  lab_rpki_crl  where id = ?", crlId)
 	if err != nil {
 		belogs.Error("DelCrlByIdDbWithSession():delete  from lab_rpki_crl fail: crlId: ", crlId, err)
