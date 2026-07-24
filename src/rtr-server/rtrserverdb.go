@@ -43,7 +43,7 @@ func getRtrXIncrementalDb(clientSerialNumber uint32) (
 
 	start := time.Now()
 	rtrIncrementals = make([]model.LabRpkiRtrIncremental, 0)
-	err = xormdb.XormEngine.Where("serialNumber > ?", clientSerialNumber).Find(&rtrIncrementals)
+	err = xormdb.XormEngine.Where("serialNumber > ?", clientSerialNumber).OrderBy("serialNumber").Find(&rtrIncrementals)
 	if err != nil {
 		belogs.Error("getRtrXIncrementalDb():get rtrIncrementals fail:  clientSerialNumber is ", clientSerialNumber, err)
 		return nil, nil, sessionId, serialNumber, err
@@ -52,7 +52,7 @@ func getRtrXIncrementalDb(clientSerialNumber uint32) (
 		"  len(rtrIncrementals):", len(rtrIncrementals))
 
 	rtrAsaIncrementals = make([]model.LabRpkiRtrAsaIncremental, 0)
-	err = xormdb.XormEngine.Where("serialNumber > ?", clientSerialNumber).Find(&rtrAsaIncrementals)
+	err = xormdb.XormEngine.Where("serialNumber > ?", clientSerialNumber).OrderBy("serialNumber").Find(&rtrAsaIncrementals)
 	if err != nil {
 		belogs.Error("getRtrXIncrementalDb():get rtrAsaIncrementals fail:  clientSerialNumber is ", clientSerialNumber, err)
 		return nil, nil, sessionId, serialNumber, err
