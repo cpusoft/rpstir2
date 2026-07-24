@@ -45,7 +45,7 @@ func SendSerialNotify() (err error) {
 	// send response rtrpdumodels
 	err = RtrTcpServer.Broadcast(rtrPduModelResponse.Bytes())
 	if err != nil {
-		belogs.Error("sendSerialNotify():Broadcast fail", "err", err)
+		belogs.Error("SendSerialNotify():Broadcast fail", "err", err)
 		return err
 	}
 	belogs.Info("SendSerialNotify(): Broadcast ok, rtrPduModelResponse:", jsonutil.MarshalJson(rtrPduModelResponse), "   time(s):", time.Since(start))

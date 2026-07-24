@@ -67,7 +67,7 @@ func SendResponses(conn *net.TCPConn, rtrPduModelResponses []rtrcore.RtrPduModel
 		//conn.SetWriteBuffer(len(sendBytes))
 		n, err := conn.Write(sendBytes)
 		if err != nil {
-			belogs.Debug("sendResponses():  conn.Write() fail,  ", jsonutil.MarshalJson(one), n, err)
+			belogs.Debug("SendResponses():  conn.Write() fail,  ", jsonutil.MarshalJson(one), n, err)
 			return err
 		}
 		belogs.Debug("SendResponses():send batchId:", batchId, ", rtrPduModel:", jsonutil.MarshalJson(one),
@@ -95,11 +95,11 @@ func sendErrorResponse(conn *net.TCPConn, rtrError *rtrcore.RtrError) (err error
 	start := time.Now()
 	rtrErrorReportModel := rtrcore.NewRtrErrorReportModelByRtrError(rtrError)
 	sendBytes := rtrErrorReportModel.Bytes()
-	belogs.Debug("sendResponses(): send by conn:", convert.Bytes2String(sendBytes))
+	belogs.Debug("SendResponses(): send by conn:", convert.Bytes2String(sendBytes))
 	//conn.SetWriteBuffer(len(sendBytes))
 	n, err := conn.Write(sendBytes)
 	if err != nil {
-		belogs.Debug("sendResponses():  conn.Write() fail,  ", jsonutil.MarshalJson(rtrErrorReportModel), err)
+		belogs.Debug("SendResponses():  conn.Write() fail,  ", jsonutil.MarshalJson(rtrErrorReportModel), err)
 		return err
 	}
 	belogs.Info("SendResponses(): send n, packets:", n, jsonutil.MarshalJson(rtrErrorReportModel), ",   time(s):", time.Since(start))
