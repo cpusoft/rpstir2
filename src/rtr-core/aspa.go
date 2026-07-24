@@ -13,9 +13,9 @@ import (
 type RtrAsaModel struct {
 	ProtocolVersion uint8    `json:"protocolVersion"`
 	PduType         uint8    `json:"pduType"`
-	Zero0           uint16   `json:"zero0"`
-	Length          uint32   `json:"length"`
 	Flags           uint8    `json:"flags"`
+	Zero0           uint8    `json:"zero0"`
+	Length          uint32   `json:"length"`
 	CustomerAsn     uint32   `json:"customerAsn"`
 	ProviderAsns    []uint32 `json:"providerAsns"`
 }
@@ -39,9 +39,9 @@ func (p *RtrAsaModel) Bytes() []byte {
 	wr := bytes.NewBuffer([]byte{})
 	binary.Write(wr, binary.BigEndian, p.ProtocolVersion)
 	binary.Write(wr, binary.BigEndian, p.PduType)
+	binary.Write(wr, binary.BigEndian, p.Flags)
 	binary.Write(wr, binary.BigEndian, p.Zero0)
 	binary.Write(wr, binary.BigEndian, p.Length)
-	binary.Write(wr, binary.BigEndian, p.Flags)
 	binary.Write(wr, binary.BigEndian, p.CustomerAsn)
 	if len(p.ProviderAsns) > 0 {
 		for i := range p.ProviderAsns {
@@ -69,20 +69,44 @@ func ParseToAsa(buf *bytes.Reader, protocolVersion uint8) (rtrPduModel RtrPduMod
 	/*
 		ProtocolVersion uint8    `json:"protocolVersion"`
 		PduType         uint8    `json:"pduType"`
-		Zero0           uint16   `json:"zero0"`
-		Length          uint32   `json:"length"`
 		Flags           uint8    `json:"flags"`
-		Zero1           uint8    `json:"zero1"`
-		ProviderAsCount uint16   `json:"providerAsCount"`
+		Zero0           uint8   `json:"zero0"`
+		Length          uint32   `json:"length"`
 		CustomerAsn     uint32   `json:"customerAsn"`
 		ProviderAsns    []uint32 `json:"providerAsns"`
 	*/
 
-	var zero0 uint16
-	var length uint32
 	var flags uint8
+	var zero0 uint8
+	var length uint32
 	var customerAsn uint32
 	var providerAsns []uint32
+
+	// get flags
+	err = binary.Read(buf, binary.BigEndian, &flags)
+	if err != nil {
+		belogs.Error("ParseToAsa(): PDU_TYPE_ASA get flags fail, buf:", buf, err)
+		rtrError := NewRtrError(
+			err,
+			true, protocolVersion, PDU_TYPE_ERROR_CODE_CORRUPT_DATA,
+			buf, "Fail to get flags")
+		return rtrPduModel, rtrError
+	}
+	/*
+		Bit     Bit Name
+		----    -------------------
+		0      AFI (IPv4 == 0, IPv6 == 1)
+		1      Announce == 1, Delete == 0
+		2-7    Reserved, must be zero
+	*/
+	if flags != 0 && flags != 1 {
+		belogs.Error("ParseToAsa():PDU_TYPE_ASA, flags is only use bits, buf:", buf, "  flags:", flags)
+		rtrError := NewRtrError(
+			errors.New("pduType is IPV4 PREFIX, flags is only use bits"),
+			true, protocolVersion, PDU_TYPE_ERROR_CODE_CORRUPT_DATA,
+			buf, "Fail to get flags")
+		return rtrPduModel, rtrError
+	}
 
 	// get zero0
 	err = binary.Read(buf, binary.BigEndian, &zero0)
@@ -113,32 +137,6 @@ func ParseToAsa(buf *bytes.Reader, protocolVersion uint8) (rtrPduModel RtrPduMod
 			buf, "Fail to get length")
 		return rtrPduModel, rtrError
 
-	}
-
-	// get flags
-	err = binary.Read(buf, binary.BigEndian, &flags)
-	if err != nil {
-		belogs.Error("ParseToAsa(): PDU_TYPE_ASA get flags fail, buf:", buf, err)
-		rtrError := NewRtrError(
-			err,
-			true, protocolVersion, PDU_TYPE_ERROR_CODE_CORRUPT_DATA,
-			buf, "Fail to get flags")
-		return rtrPduModel, rtrError
-	}
-	/*
-		Bit     Bit Name
-		----    -------------------
-		0      AFI (IPv4 == 0, IPv6 == 1)
-		1      Announce == 1, Delete == 0
-		2-7    Reserved, must be zero
-	*/
-	if flags != 0 && flags != 1 {
-		belogs.Error("ParseToAsa():PDU_TYPE_ASA, flags is only use bits, buf:", buf, "  flags:", flags)
-		rtrError := NewRtrError(
-			errors.New("pduType is IPV4 PREFIX, flags is only use bits"),
-			true, protocolVersion, PDU_TYPE_ERROR_CODE_CORRUPT_DATA,
-			buf, "Fail to get flags")
-		return rtrPduModel, rtrError
 	}
 
 	// get customerAsn

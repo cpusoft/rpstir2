@@ -29,6 +29,7 @@ const (
 	PDU_TYPE_ERROR_REPORT = 10
 	PDU_TYPE_ASA          = 11
 	PDU_TYPE_MOA          = 12
+	PDU_TYPE_END          = 13 // not realy type, just end of type
 	// extend
 
 	// min pdu type length is reset query
@@ -202,7 +203,7 @@ func parseProtocolVersionAndPduType(buf *bytes.Reader) (protocolVersion, pduType
 	}
 	belogs.Debug("parseToPduModel():Read pduType:", pduType)
 
-	if pduType > PDU_TYPE_ASA {
+	if pduType >= PDU_TYPE_END {
 		belogs.Error("parseToPduModel(): pduType is illegal, buf:", buf, pduType)
 		rtrError := NewRtrError(
 			errors.New("get Itoa is error "+strconv.Itoa(int(pduType))),
@@ -210,24 +211,27 @@ func parseProtocolVersionAndPduType(buf *bytes.Reader) (protocolVersion, pduType
 			buf, "Fail to get pduType")
 		return 0, 0, rtrError
 	}
-	if pduType == PDU_TYPE_ROUTER_KEY && protocolVersion == 0 {
-		belogs.Error("parseToPduModel():pduType is PDU_TYPE_ROUTER_KEY,  protocolVersion must be more than 0, buf:", buf,
-			"  pduType:", pduType, "  protocolVersion:", protocolVersion)
-		rtrError := NewRtrError(
-			errors.New("pduType is ROUTER KEY,  protocolVersion must be more than 0"),
-			true, uint8(conf.Int("rtr::protocolVersion")), PDU_TYPE_ERROR_CODE_UNSUPPORTED_PROTOCOL_VERSION,
-			buf, "Fail to get pduType")
-		return 0, 0, rtrError
-	}
-	if pduType == PDU_TYPE_ASA && (protocolVersion == 0 || protocolVersion == 1) {
-		belogs.Error("parseToPduModel():pduType is PDU_TYPE_ASA,  protocolVersion must be more than 1, buf:", buf,
-			"  pduType:", pduType, "  protocolVersion:", protocolVersion)
-		rtrError := NewRtrError(
-			errors.New("pduType is PDU_TYPE_ASA,  protocolVersion must be more than 1"),
-			true, uint8(conf.Int("rtr::protocolVersion")), PDU_TYPE_ERROR_CODE_UNSUPPORTED_PROTOCOL_VERSION,
-			buf, "Fail to get pduType")
-		return 0, 0, rtrError
-	}
+	/*
+		if pduType == PDU_TYPE_ROUTER_KEY && protocolVersion == 0 {
+			belogs.Error("parseToPduModel():pduType is PDU_TYPE_ROUTER_KEY,  protocolVersion must be more than 0, buf:", buf,
+				"  pduType:", pduType, "  protocolVersion:", protocolVersion)
+			rtrError := NewRtrError(
+				errors.New("pduType is ROUTER KEY,  protocolVersion must be more than 0"),
+				true, uint8(conf.Int("rtr::protocolVersion")), PDU_TYPE_ERROR_CODE_UNSUPPORTED_PROTOCOL_VERSION,
+				buf, "Fail to get pduType")
+			return 0, 0, rtrError
+		}
+
+		if pduType == PDU_TYPE_ASA && (protocolVersion == 0 || protocolVersion == 1) {
+			belogs.Error("parseToPduModel():pduType is PDU_TYPE_ASA,  protocolVersion must be more than 1, buf:", buf,
+				"  pduType:", pduType, "  protocolVersion:", protocolVersion)
+			rtrError := NewRtrError(
+				errors.New("pduType is PDU_TYPE_ASA,  protocolVersion must be more than 1"),
+				true, uint8(conf.Int("rtr::protocolVersion")), PDU_TYPE_ERROR_CODE_UNSUPPORTED_PROTOCOL_VERSION,
+				buf, "Fail to get pduType")
+			return 0, 0, rtrError
+		}
+	*/
 	belogs.Debug("parseToPduModel():protocolVersion is ", protocolVersion, "  pduType is ", pduType)
 	return protocolVersion, pduType, nil
 }
