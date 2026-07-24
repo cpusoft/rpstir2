@@ -61,7 +61,7 @@ func SendResponses(conn *net.TCPConn, rtrPduModelResponses []rtrcore.RtrPduModel
 	start := time.Now()
 	// batchId Ms is unique id in the same batch, get from start time
 	batchId := start.UnixNano() / 1e6
-	sendIntervalMs := conf.Int("rtr:sendIntervalMs")
+	sendIntervalMs := conf.Int("rtr::sendIntervalMs")
 	for _, one := range rtrPduModelResponses {
 		sendBytes := one.Bytes()
 		//conn.SetWriteBuffer(len(sendBytes))

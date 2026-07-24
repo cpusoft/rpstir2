@@ -76,7 +76,7 @@ func delMftDb(session *xorm.Session, filePathPrefix string) (err error) {
 		}
 	}
 
-	// del siaIds
+	// del aiaIds
 	aiaIdsStr := stringutil.Int64sToInString(aiaIds)
 	if len(aiaIdsStr) > 0 {
 		_, err = session.Exec("delete from  lab_rpki_mft_aia  where id in " + aiaIdsStr)
