@@ -6,7 +6,6 @@ type SysStyle struct {
 	// SysStyle
 	// "init" :  will create all table;
 	// "fullsync": will remove current data to forece full sync data, and retain rtr/slurm/transfer data.
-	// "resetall" will remove all data including rtr/slurm/transfer;
 	SysStyle string `json:"sysStyle"`
 
 	// SyncPolicy distributed/entire

@@ -138,7 +138,7 @@ func getResultsDb() (results CertResults, err error) {
 
 func getResultDb(table, fileType string) (result CertResult, err error) {
 	sql :=
-		`select al.count as allCount, va.count as validCount, wa.count as warnigCount, ia.count as invalidCount , '` + fileType + `' as fileType  from 
+		`select al.count as allCount, va.count as validCount, wa.count as warningCount, ia.count as invalidCount , '` + fileType + `' as fileType  from 
 		(select count(*) as count from ` + table + ` c) al,
 		(select count(*) as count from ` + table + ` c where c.state->>"$.state" ='valid' ) va,
 		(select count(*) as count from ` + table + ` c where c.state->>"$.state" ='warning') wa,

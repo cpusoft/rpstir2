@@ -28,9 +28,9 @@ func InitReset(c *gin.Context) {
 		return
 	}
 	belogs.Info("InitReset():get sysStyle:", jsonutil.MarshalJson(sysStyle))
-	if sysStyle.SysStyle != "init" && sysStyle.SysStyle != "fullsync" && sysStyle.SysStyle != "resetall" {
-		belogs.Error("InitReset(): SysStyle should be init or fullsync or resetall, it is ", sysStyle.SysStyle)
-		ginserver.ResponseFail(c, errors.New("SysStyle should be init or fullsync or resetall"), "")
+	if sysStyle.SysStyle != "init" && sysStyle.SysStyle != "fullsync" {
+		belogs.Error("InitReset(): SysStyle should be init or fullsync, it is ", sysStyle.SysStyle)
+		ginserver.ResponseFail(c, errors.New("SysStyle should be init or fullsync"), "")
 		return
 	}
 	belogs.Debug("InitReset(): sysStyle:", sysStyle)

@@ -194,8 +194,23 @@ func AssembleResetResponses(rtrFulls []model.LabRpkiRtrFull,
 }
 
 func convertRtrFullToRtrPduModel(rtrFull *model.LabRpkiRtrFull, protocolVersion uint8) (rtrPduModel RtrPduModel, err error) {
+	belogs.Debug("convertRtrFullToRtrPduModel(): input param", "rtrFull.Address", rtrFull.Address,
+		"protocolVersion", protocolVersion)
+	if len(rtrFull.Address) == 0 {
+		belogs.Error("convertRtrFullToRtrPduModel(): rtrFull.Address is empty fail",
+			"rtrFull.Address", rtrFull.Address)
+		return rtrPduModel, errors.New("rtrFull address is empty")
+	}
 
 	ipHex, ipType, err := iputil.AddressToRtrFormatByte(rtrFull.Address)
+	if err != nil {
+		belogs.Error("convertRtrFullToRtrPduModel(): AddressToRtrFormatByte fail", "rtrFull.Address", rtrFull.Address,
+			"err", err)
+		return rtrPduModel, err
+	}
+	belogs.Debug("convertRtrFullToRtrPduModel(): AddressToRtrFormatByte ok", "rtrFull.Address", rtrFull.Address,
+		"ipHex", ipHex, "ipType", ipType)
+
 	if ipType == iputil.Ipv4Type {
 		ipv4 := [4]byte{0x00}
 		copy(ipv4[:], ipHex[:])

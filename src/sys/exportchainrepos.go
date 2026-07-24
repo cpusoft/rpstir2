@@ -93,8 +93,8 @@ func mergeCertIdAndRepo(chainCertIds []ChainCertId, certIdRepos []CertIdRepo) (c
 		reposMaps[reposJson] = reposJson
 
 		//sort.Reverse(sort.StringSlice(repos))
-		for i, j := 0, len(repos)-1; i < j; i, j = i+1, j-1 {
-			repos[i], repos[j] = repos[j], repos[i]
+		for m, n := 0, len(repos)-1; m < n; m, n = m+1, n-1 {
+			repos[m], repos[n] = repos[n], repos[m]
 		}
 		chainRepos := ChainRepos{Repos: repos}
 		belogs.Debug("mergeCertIdAndRepo(): chainRepos:", jsonutil.MarshalJson(chainRepos))

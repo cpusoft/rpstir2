@@ -132,9 +132,18 @@ func callSync(syncLogId uint64, talModels []model.TalModel, syncState *coremodel
 			belogs.Debug("callSync(): talSyncUrl:", jsonutil.MarshalJson(talSyncUrl), "  url:", url)
 
 			if len(url) > 0 {
+				var destPath string
+				if strings.HasPrefix(url, "https://") {
+					destPath = conf.String("rrdp::destPath") + "/"
+				} else if strings.HasPrefix(url, "rsync://") {
+					destPath = conf.String("rsync::destPath") + "/"
+				} else {
+					continue
+				}
 				atomic.AddInt64(&spQueue.SyncingAndParsingCount, int64(1))
-				belogs.Info("callSync(): will add url:", url, "   current SyncingAndParsingCount:", atomic.LoadInt64(&spQueue.SyncingAndParsingCount))
-				go spQueue.AddSyncUrl(url, conf.String("rrdp::destPath")+"/")
+				belogs.Info("callSync(): will add url:", url,
+					"   current SyncingAndParsingCount:", atomic.LoadInt64(&spQueue.SyncingAndParsingCount))
+				go spQueue.AddSyncUrl(url, destPath)
 			}
 		}
 	}

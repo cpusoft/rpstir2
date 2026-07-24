@@ -107,6 +107,7 @@ func parseTalFile(file string) (talModel model.TalModel, err error) {
 		belogs.Error("parseTalFile(): file Open err:", file, err)
 		return talModel, err
 	}
+	defer f.Close()
 
 	input := bufio.NewScanner(f)
 	var buffer bytes.Buffer

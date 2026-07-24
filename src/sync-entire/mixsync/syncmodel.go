@@ -179,7 +179,7 @@ func (r *SyncParseQueue) GetSyncUrls() (urls []string) {
 // rrdp channel
 type SyncChan struct {
 	Url  string `json:"url"`
-	Dest string `jsong:"dest"`
+	Dest string `json:"dest"`
 }
 
 // parse channel

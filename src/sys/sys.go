@@ -25,7 +25,11 @@ func initReset(sysStyle SysStyle) (err error) {
 	}
 	belogs.Debug("initReset(): initResetDb ok, will reset local file cache", sysStyle)
 
-	initResetPath()
+	err = initResetPath()
+	if err != nil {
+		belogs.Error("initReset(): initResetPath  fail:", err)
+		return err
+	}
 	belogs.Debug("initReset(): initResetPath ok, reset local file cache", sysStyle)
 
 	belogs.Info("initReset():ok", sysStyle, "  time(s):", time.Since(start))
@@ -33,12 +37,29 @@ func initReset(sysStyle SysStyle) (err error) {
 }
 
 // initResetPath 初始化本地缓存目录
-func initResetPath() {
+func initResetPath() (err error) {
 	//delete repo dir
-	os.RemoveAll(conf.String("rsync::destPath"))
-	os.MkdirAll(conf.String("rsync::destPath"), os.ModePerm)
+	err = os.RemoveAll(conf.String("rsync::destPath"))
+	if err != nil {
+		belogs.Error("initResetPath(): RemoveAll rsync::destPath fail:", conf.String("rsync::destPath"), err)
+		return err
+	}
+	err = os.MkdirAll(conf.String("rsync::destPath"), os.ModePerm)
+	if err != nil {
+		belogs.Error("initResetPath(): MkdirAll rsync::destPath fail:", conf.String("rsync::destPath"), err)
+		return err
+	}
 
 	//delete repo rrdpdir
-	os.RemoveAll(conf.String("rrdp::destPath"))
-	os.MkdirAll(conf.String("rrdp::destPath"), os.ModePerm)
+	err = os.RemoveAll(conf.String("rrdp::destPath"))
+	if err != nil {
+		belogs.Error("initResetPath(): RemoveAll rrdp::destPath fail:", conf.String("rrdp::destPath"), err)
+		return err
+	}
+	err = os.MkdirAll(conf.String("rrdp::destPath"), os.ModePerm)
+	if err != nil {
+		belogs.Error("initResetPath(): MkdirAll rrdp::destPath fail:", conf.String("rrdp::destPath"), err)
+		return err
+	}
+	return nil
 }
