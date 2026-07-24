@@ -132,7 +132,7 @@ func getRtrFullFromRtrFullLogDb(serialNumber uint64) (rtrFulls map[string]model.
 	}
 	if len(rtrFs) == 0 {
 		belogs.Debug("getRtrFullFromRtrFullLogDb(): len(rtrFs)==0: serialNumber", serialNumber)
-		return rtrFulls, nil
+		return make(map[string]model.LabRpkiRtrFull), nil
 	}
 	belogs.Debug("getRtrFullFromRtrFullLogDb():model.LabRpkiRtrFull, serialNumber, len(rtrFs) : ", serialNumber, len(rtrFs))
 

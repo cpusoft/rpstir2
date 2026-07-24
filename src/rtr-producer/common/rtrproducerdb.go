@@ -42,7 +42,7 @@ func GetSerialNumberDb() (serialNumberModel *SerialNumberModel, err error) {
 		serialNumberModel.GlobalSerialNumber = 1
 		serialNumberModel.SubpartSerialNumber = 1
 	}
-	belogs.Debug("GetSerialNumberDb():select max(serialNumberModel) lab_rpki_rtr_serial_number, serialNumberModel :", jsonutil.MarshalJson(serialNumberModel))
+	belogs.Debug("GetSerialNumberDb():select serialNumber lab_rpki_rtr_serial_number, serialNumberModel :", jsonutil.MarshalJson(serialNumberModel))
 	return serialNumberModel, nil
 }
 
@@ -207,6 +207,7 @@ func InsertSerialNumberDb(session *xorm.Session, newSerialNumberModel *SerialNum
 			newSerialNumberModel.SerialNumber, newSerialNumberModel.GlobalSerialNumber,
 			newSerialNumberModel.SubpartSerialNumber, start)
 		if err != nil {
+			atomic.StoreUint32(&newSerialNumberModel.HaveSaveToDb, 0) // ← 重置
 			belogs.Error("InsertSerialNumberDb():insert into lab_rpki_rtr_serial_number fail:", jsonutil.MarshalJson(newSerialNumberModel), err)
 			return err
 		}

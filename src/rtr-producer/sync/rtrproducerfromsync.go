@@ -22,9 +22,9 @@ func RtrUpdateFromSync() (nextStep string, err error) {
 	belogs.Info("RtrUpdateFromSync():start")
 	var g errgroup.Group
 	// update lab_rpki_sync_log set rtring
-	labRpkiSyncLogId, err := updateRsyncLogRtrStateStartDb("rtring")
+	labRpkiSyncLogId, err := updateSyncLogRtrStateStartDb("rtring")
 	if err != nil {
-		belogs.Error("RtrUpdateFromSync():updateRsyncLogRtrStateStartDb fail:", err, "  time(s):", time.Since(start))
+		belogs.Error("RtrUpdateFromSync():updateSyncLogRtrStateStartDb fail:", err, "  time(s):", time.Since(start))
 		return "", err
 	}
 	belogs.Info("RtrUpdateFromSync(): labRpkiSyncLogId:", labRpkiSyncLogId, "  time(s):", time.Since(start))
@@ -42,7 +42,7 @@ func RtrUpdateFromSync() (nextStep string, err error) {
 	g.Go(func() error {
 		err1 := rtrroa.RtrUpdateByRoaFromSync(curSerialNumberModel, newSerialNumberModel)
 		if err1 != nil {
-			belogs.Error("RtrUpdateFromSync():RtrUpdateByRoaFromSync fail:", err, "  time(s):", time.Since(start))
+			belogs.Error("RtrUpdateFromSync():RtrUpdateByRoaFromSync fail:", err1, "  time(s):", time.Since(start))
 			return err1
 		}
 		belogs.Info("RtrUpdateFromSync(): RtrUpdateByRoaFromSync pass, curSerialNumberModel:", jsonutil.MarshalJson(curSerialNumberModel),
@@ -55,7 +55,7 @@ func RtrUpdateFromSync() (nextStep string, err error) {
 	g.Go(func() error {
 		err1 := rtrasa.RtrUpdateByAsaFromSync(curSerialNumberModel, newSerialNumberModel)
 		if err1 != nil {
-			belogs.Error("RtrUpdateFromSync(): RtrUpdateByAsaFromSync fail:", err, "  time(s):", time.Since(start))
+			belogs.Error("RtrUpdateFromSync(): RtrUpdateByAsaFromSync fail:", err1, "  time(s):", time.Since(start))
 			return err1
 		}
 		belogs.Info("RtrUpdateFromSync(): RtrUpdateByAsaFromSync pass, curSerialNumberModel:", jsonutil.MarshalJson(curSerialNumberModel),
@@ -68,7 +68,7 @@ func RtrUpdateFromSync() (nextStep string, err error) {
 	g.Go(func() error {
 		err1 := rtrmoa.RtrUpdateByMoaFromSync(curSerialNumberModel, newSerialNumberModel)
 		if err1 != nil {
-			belogs.Error("RtrUpdateFromSync(): RtrUpdateByMoaFromSync fail:", err, "  time(s):", time.Since(start))
+			belogs.Error("RtrUpdateFromSync(): RtrUpdateByMoaFromSync fail:", err1, "  time(s):", time.Since(start))
 			return err1
 		}
 		belogs.Info("RtrUpdateFromSync(): RtrUpdateByMoaFromSync pass, curSerialNumberModel:", jsonutil.MarshalJson(curSerialNumberModel),
@@ -83,13 +83,13 @@ func RtrUpdateFromSync() (nextStep string, err error) {
 	}
 
 	// update state
-	err = updateRsyncLogRtrStateEndDb(labRpkiSyncLogId, "rtred")
+	err = updateSyncLogRtrStateEndDb(labRpkiSyncLogId, "rtred")
 	if err != nil {
-		belogs.Error("RtrUpdateFromSync():updateRsyncLogRtrStateEndDb fail: newSerialNumber, labRpkiSyncLogId: ",
+		belogs.Error("RtrUpdateFromSync():updateSyncLogRtrStateEndDb fail: newSerialNumber, labRpkiSyncLogId: ",
 			jsonutil.MarshalJson(newSerialNumberModel), labRpkiSyncLogId, err, "  time(s):", time.Since(start))
 		return "", err
 	}
-	belogs.Info("RtrUpdateFromSync(): updateRsyncLogRtrStateEndDb,  labRpkiSyncLogId:", labRpkiSyncLogId, "  time(s):", time.Since(start))
+	belogs.Info("RtrUpdateFromSync(): updateSyncLogRtrStateEndDb,  labRpkiSyncLogId:", labRpkiSyncLogId, "  time(s):", time.Since(start))
 
 	// get next step
 	nextStep, err = getNextStep()
