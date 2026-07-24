@@ -42,17 +42,6 @@ func RtrUpdateByAsaFromSync(curSerialNumberModel, newSerialNumberModel *rtrcommo
 	belogs.Info("RtrUpdateByAsaFromSync():insertRtrAsaFullLogFromAsaDb new serialNumber:", newSerialNumberModel.SerialNumber,
 		"   len(asaToRtrFullLogs):", len(asaToRtrFullLogs), "  time(s):", time.Since(start))
 
-	/*
-		_, err = rtrcommon.UpdateRtrAsaFullOrFullLogFromSlurmDb("lab_rpki_rtr_asa_full_log", newSerialNumberModel.SerialNumber, slurmToRtrFullLogs, false)
-		if err != nil {
-			belogs.Error("RtrUpdateByAsaFromSync(): UpdateRtrAsaFullOrFullLogFromSlurmDb lab_rpki_rtr_asa_full_log, fail:", err)
-			return err
-		}
-		belogs.Info("RtrUpdateByAsaFromSync():UpdateRtrAsaFullOrFullLogFromSlurmDb new serialNumber:", newSerialNumberModel.SerialNumber,
-			"  len(asaToRtrFullLogs):", len(asaToRtrFullLogs),
-			"  len(slurmToRtrFullLogs):", len(slurmToRtrFullLogs), "  time(s):", time.Since(start))
-	*/
-
 	// get incrementals from curRtrFullLog and newRtrFullLog different
 	rtrAsaIncrementals, err := getRtrAsaIncrementals(curSerialNumberModel, newSerialNumberModel)
 	if err != nil {

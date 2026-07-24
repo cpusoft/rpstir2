@@ -46,12 +46,6 @@ func insertRtrIncrementalByEffectSlurmDb(newSerialNumberModel *rtrcommon.SerialN
 	belogs.Debug("insertRtrIncrementalByEffectSlurmDb(): newSerialNumberModel:", jsonutil.MarshalJson(newSerialNumberModel),
 		"   len(slurmToRtrFullLogs):", len(slurmToRtrFullLogs))
 
-	session, err := xormdb.NewSession()
-	if err != nil {
-		belogs.Error("insertRtrIncrementalByEffectSlurmDb(): NewSession fail :", err)
-		return err
-	}
-	defer session.Close()
 	// lab_rpki_rtr_incremental
 	var style string
 	sql := `insert ignore into lab_rpki_rtr_incremental
@@ -59,6 +53,13 @@ func insertRtrIncrementalByEffectSlurmDb(newSerialNumberModel *rtrcommon.SerialN
 				 (?,?,?,?,  ?,?,?)`
 	belogs.Debug("insertRtrIncrementalByEffectSlurmDb():lab_rpki_rtr_incremental, len(slurmToRtrFullLogs):", len(slurmToRtrFullLogs))
 	for i := range slurmToRtrFullLogs {
+		session, err := xormdb.NewSession()
+		if err != nil {
+			belogs.Error("insertRtrIncrementalByEffectSlurmDb(): NewSession fail :", err)
+			return err
+		}
+		defer session.Close()
+
 		if slurmToRtrFullLogs[i].Style == "prefixAssertions" {
 			style = "announce"
 		} else if slurmToRtrFullLogs[i].Style == "prefixFilters" {
@@ -72,13 +73,12 @@ func insertRtrIncrementalByEffectSlurmDb(newSerialNumberModel *rtrcommon.SerialN
 				newSerialNumberModel.SerialNumber, jsonutil.MarshalJson(slurmToRtrFullLogs[i]), err)
 			return xormdb.RollbackAndLogError(session, "insertRtrIncrementalByEffectSlurmDb insert into lab_rpki_rtr_incremental fail: ", err)
 		}
-	}
-
-	// commit
-	err = xormdb.CommitSession(session)
-	if err != nil {
-		belogs.Error("insertRtrIncrementalByEffectSlurmDb(): CommitSession fail :", err)
-		return xormdb.RollbackAndLogError(session, "insertRtrIncrementalByEffectSlurmDb(): CommitSession fail: ", err)
+		// commit
+		err = xormdb.CommitSession(session)
+		if err != nil {
+			belogs.Error("insertRtrIncrementalByEffectSlurmDb(): CommitSession fail :", err)
+			return xormdb.RollbackAndLogError(session, "insertRtrIncrementalByEffectSlurmDb(): CommitSession fail: ", err)
+		}
 	}
 
 	belogs.Info("insertRtrIncrementalByEffectSlurmDb(): CommitSession ok: len(slurmToRtrFullLogs):", len(slurmToRtrFullLogs),
@@ -215,51 +215,5 @@ func insertNewSerialNumberDb(newSerialNumberModel *rtrcommon.SerialNumberModel) 
 	}
 
 	belogs.Info("insertNewSerialNumberDb():CommitSession ok, new SerialNumber:", jsonutil.MarshalJson(newSerialNumberModel), "  time(s):", time.Since(start))
-	return nil
-}
-
-func insertRtrAsaIncrementalByEffectSlurmDb(newSerialNumberModel *rtrcommon.SerialNumberModel, slurmToRtrFullLogs []model.SlurmToRtrFullLog) (err error) {
-	start := time.Now()
-	belogs.Debug("insertRtrAsaIncrementalByEffectSlurmDb(): newSerialNumberModel:", jsonutil.MarshalJson(newSerialNumberModel),
-		"   len(slurmToRtrFullLogs):", len(slurmToRtrFullLogs))
-
-	session, err := xormdb.NewSession()
-	if err != nil {
-		belogs.Error("insertRtrAsaIncrementalByEffectSlurmDb(): NewSession fail :", err)
-		return err
-	}
-	defer session.Close()
-
-	// lab_rpki_rtr_asa_incremental
-	var style string
-	sql := `insert ignore into lab_rpki_rtr_asa_incremental
-				 (serialNumber,style,customerAsn,ProviderAsn,  AddressFamily,sourceFrom) values
-				 (?,?,?,?,  ?,?)`
-	belogs.Debug("insertRtrAsaIncrementalByEffectSlurmDb():lab_rpki_rtr_asa_incremental, len(slurmToRtrFullLogs):", len(slurmToRtrFullLogs))
-	for i := range slurmToRtrFullLogs {
-		if slurmToRtrFullLogs[i].Style == "aspaAssertions" {
-			style = "announce"
-		} else if slurmToRtrFullLogs[i].Style == "aspaFilters" {
-			style = "withdraw"
-		}
-		_, err = session.Exec(sql,
-			newSerialNumberModel.SerialNumber, style, slurmToRtrFullLogs[i].CustomerAsn, slurmToRtrFullLogs[i].ProviderAsn,
-			slurmToRtrFullLogs[i].AddressFamily, slurmToRtrFullLogs[i].SourceFromJson)
-		if err != nil {
-			belogs.Error("insertRtrAsaIncrementalByEffectSlurmDb():insert into lab_rpki_rtr_asa_incremental fail: new SerialNumber:",
-				newSerialNumberModel.SerialNumber, jsonutil.MarshalJson(slurmToRtrFullLogs[i]), err)
-			return xormdb.RollbackAndLogError(session, "insertRtrAsaIncrementalByEffectSlurmDb insert into lab_rpki_rtr_asa_incremental fail: ", err)
-		}
-	}
-
-	// commit
-	err = xormdb.CommitSession(session)
-	if err != nil {
-		belogs.Error("insertRtrAsaIncrementalByEffectSlurmDb(): CommitSession fail :", err)
-		return xormdb.RollbackAndLogError(session, "insertRtrAsaIncrementalByEffectSlurmDb(): CommitSession fail: ", err)
-	}
-
-	belogs.Info("insertRtrAsaIncrementalByEffectSlurmDb(): CommitSession ok: len(slurmToRtrFullLogs):", len(slurmToRtrFullLogs),
-		"   newSerialNumberModel:", jsonutil.MarshalJson(newSerialNumberModel), " time(s):", time.Since(start))
 	return nil
 }

@@ -51,12 +51,6 @@ func GetSerialNumberDb() (serialNumberModel *SerialNumberModel, err error) {
 func UpdateRtrFullOrFullLogFromSlurmDb(tableName string, newSerialNumber uint64,
 	slurmToRtrFullLogs []model.SlurmToRtrFullLog, getEffectSlurm bool) (effectSlurmToRtrFullLogs []model.SlurmToRtrFullLog, err error) {
 	start := time.Now()
-	session, err := xormdb.NewSession()
-	if err != nil {
-		belogs.Error("UpdateRtrFullOrFullLogFromSlurmDb(): NewSession fail :", err)
-		return nil, err
-	}
-	defer session.Close()
 
 	effectSlurmToRtrFullLogs = make([]model.SlurmToRtrFullLog, 0)
 	// insert into rtr_full_log/lab_rpki_rtr_full
@@ -66,6 +60,13 @@ func UpdateRtrFullOrFullLogFromSlurmDb(tableName string, newSerialNumber uint64,
 	belogs.Debug("UpdateRtrFullOrFullLogFromSlurmDb(): will insert/del lab_rpki_rtr_full_log/lab_rpki_rtr_full from slurmToRtrFullLogs,sqlInsertSlurm:", sqlInsertSlurm,
 		" newSerialNumber:", newSerialNumber, "    len(slurmToRtrFullLogs):", len(slurmToRtrFullLogs))
 	for i := range slurmToRtrFullLogs {
+		session, err := xormdb.NewSession()
+		if err != nil {
+			belogs.Error("UpdateRtrFullOrFullLogFromSlurmDb(): NewSession fail :", err)
+			return nil, err
+		}
+		defer session.Close()
+
 		var address string
 		sourceFrom := model.LabRpkiRtrSourceFrom{
 			Source:         "slurm",
@@ -153,347 +154,19 @@ func UpdateRtrFullOrFullLogFromSlurmDb(tableName string, newSerialNumber uint64,
 			belogs.Info("UpdateRtrFullOrFullLogFromSlurmDb(): delete lab_rpki_rtr_full_log/lab_rpki_rtr_full from slurmToRtrFullLogs, newSerialNumber:",
 				newSerialNumber, ",  slurmToRtrFullLogs[i]: ", jsonutil.MarshalJson(slurmToRtrFullLogs[i]), " delete  affected:", affected)
 		}
+		// commit
+		err = xormdb.CommitSession(session)
+		if err != nil {
+			belogs.Error("UpdateRtrFullOrFullLogFromSlurmDb(): CommitSession fail :", err)
+			return nil, xormdb.RollbackAndLogError(session, "UpdateRtrFullOrFullLogFromSlurmDb(): CommitSession fail: ", err)
+		}
 	}
-	// commit
-	err = xormdb.CommitSession(session)
-	if err != nil {
-		belogs.Error("UpdateRtrFullOrFullLogFromSlurmDb(): CommitSession fail :", err)
-		return nil, xormdb.RollbackAndLogError(session, "UpdateRtrFullOrFullLogFromSlurmDb(): CommitSession fail: ", err)
-	}
+
 	belogs.Info("UpdateRtrFullOrFullLogFromSlurmDb():CommitSession ok,  len(slurmToRtrFullLogs):", len(slurmToRtrFullLogs),
 		"   len(effectSlurmToRtrFullLogs):", len(effectSlurmToRtrFullLogs), " time(s):", time.Since(start))
 	belogs.Debug("UpdateRtrFullOrFullLogFromSlurmDb():effectSlurmToRtrFullLogs:", jsonutil.MarshalJson(effectSlurmToRtrFullLogs))
 	return effectSlurmToRtrFullLogs, nil
 }
-
-// tableName:lab_rpki_rtr_asa_full_log / lab_rpki_rtr_asa_full
-func UpdateRtrAsaFullOrFullLogFromSlurmDb(tableName string, newSerialNumber uint64,
-	slurmToRtrFullLogs []model.SlurmToRtrFullLog, getEffectSlurm bool) (effectSlurmToRtrFullLogs []model.SlurmToRtrFullLog, err error) {
-	start := time.Now()
-	session, err := xormdb.NewSession()
-	if err != nil {
-		belogs.Error("UpdateRtrAsaFullOrFullLogFromSlurmDb(): NewSession fail :", err)
-		return nil, err
-	}
-	defer session.Close()
-	effectSlurmToRtrFullLogs = make([]model.SlurmToRtrFullLog, 0)
-
-	// insert ignore into rtr_asa_full_log
-	sqlInsertSlurm := `insert   into ` + tableName + `
-				(serialNumber,customerAsn,providerAsn,sourceFrom) values
-				(?,?,?,  ?)`
-
-	belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): will insert/del lab_rpki_rtr_asa_full_log/lab_rpki_rtr_asa_full from slurmToRtrFullLogs,sqlInsertSlurm:", sqlInsertSlurm,
-		" newSerialNumber:", newSerialNumber, "    len(slurmToRtrFullLogs):", len(slurmToRtrFullLogs))
-	for i := range slurmToRtrFullLogs {
-		sourceFrom := model.LabRpkiRtrSourceFrom{
-			Source:         "slurm",
-			SlurmId:        slurmToRtrFullLogs[i].SlurmId,
-			SlurmLogId:     slurmToRtrFullLogs[i].SlurmLogId,
-			SlurmLogFileId: slurmToRtrFullLogs[i].SlurmLogFileId,
-		}
-		sourceFormJson := jsonutil.MarshalJson(sourceFrom)
-		slurmToRtrFullLogs[i].SourceFromJson = sourceFormJson
-		belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): slurmToRtrFullLogs[i]:", jsonutil.MarshalJson(slurmToRtrFullLogs[i]),
-			" sourceFrom:", sourceFrom, "  i:", i)
-		customerAsn := slurmToRtrFullLogs[i].CustomerAsn
-		providerAsn := slurmToRtrFullLogs[i].ProviderAsn
-		addressFamilyIpv4, addressFamilyIpv6, err := ConvertSlurmAddressFamilyToRtr(slurmToRtrFullLogs[i].AddressFamily)
-		if err != nil {
-			belogs.Error("UpdateRtrAsaFullOrFullLogFromSlurmDb(): ConvertSlurmAddressFamilyToRtr fail :", err)
-			return nil, xormdb.RollbackAndLogError(session, "UpdateRtrAsaFullOrFullLogFromSlurmDb(): ConvertSlurmAddressFamilyToRtr fail: ", err)
-		}
-
-		if slurmToRtrFullLogs[i].Style == "aspaAssertions" {
-
-			belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaAssertions from slurm, i:", i, "  slurmToRtrFullLogs:",
-				"  newSerialNumber:", newSerialNumber, "  customerAsn: ", customerAsn, "  providerAsn:", providerAsn,
-				"  addressFamilyIpv4:", addressFamilyIpv4, "  addressFamilyIpv6:", addressFamilyIpv6,
-				"  sourceFormJson:", sourceFormJson)
-
-			if addressFamilyIpv4.Valid {
-				affected, err := session.Exec(sqlInsertSlurm,
-					newSerialNumber,
-					customerAsn,
-					providerAsn,
-					addressFamilyIpv4,
-					sourceFormJson)
-
-				if err != nil {
-					belogs.Error("UpdateRtrAsaFullOrFullLogFromSlurmDb():aspaAssertions from slurm ipv4 fail:",
-						"  newSerialNumber:", newSerialNumber, "  customerAsn:", customerAsn, "  providerAsn:", providerAsn,
-						"  addressFamilyIpv4:", addressFamilyIpv4, "  sourceFormJson:", sourceFormJson,
-						"  affected:", affected, err)
-					return nil, xormdb.RollbackAndLogError(session, "UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaAssertions insert into lab_rpki_rtr_asa_full_log/lab_rpki_rtr_asa_full from slurm ipv4 fail: ", err)
-				}
-				addRows, _ := affected.RowsAffected()
-				belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaAssertions from slurm ipv4, slurmToRtrFullLogs:",
-					"  newSerialNumber:", newSerialNumber, "  customerAsn: ", customerAsn, "  providerAsn:", providerAsn,
-					"  addressFamilyIpv4:", addressFamilyIpv4, "  sourceFormJson:", sourceFormJson,
-					"  insert  affected:", addRows)
-
-			}
-			if addressFamilyIpv6.Valid {
-				affected, err := session.Exec(sqlInsertSlurm,
-					newSerialNumber,
-					customerAsn,
-					providerAsn,
-					addressFamilyIpv6,
-					sourceFormJson)
-
-				if err != nil {
-					belogs.Error("UpdateRtrAsaFullOrFullLogFromSlurmDb():aspaAssertions insert into lab_rpki_rtr_asa_full_log/lab_rpki_rtr_asa_full from slurm ipv6 fail:",
-						"  newSerialNumber:", newSerialNumber, "  customerAsn:", customerAsn, "  providerAsn:", providerAsn,
-						"  addressFamilyIpv6:", addressFamilyIpv6, "  sourceFormJson:", sourceFormJson,
-						"  affected:", affected, err)
-					return nil, xormdb.RollbackAndLogError(session, "UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaAssertions insert into lab_rpki_rtr_asa_full_log/lab_rpki_rtr_asa_full from slurm ipv6 fail: ", err)
-				}
-				addRows, _ := affected.RowsAffected()
-				belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaAssertions from slurm ipv6, slurmToRtrFullLogs:",
-					"  newSerialNumber:", newSerialNumber, "  customerAsn: ", customerAsn, "  providerAsn:", providerAsn,
-					"  addressFamilyIpv4:", addressFamilyIpv4, "  sourceFormJson:", sourceFormJson,
-					"  insert  affected:", addRows)
-			}
-
-			if getEffectSlurm {
-				effectSlurmToRtrFullLogs = append(effectSlurmToRtrFullLogs, slurmToRtrFullLogs[i])
-				belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaAssertions getEffectSlurm, slurmToRtrFullLogs:", jsonutil.MarshalJson(slurmToRtrFullLogs[i]))
-			}
-
-		} else if slurmToRtrFullLogs[i].Style == "aspaFilters" {
-			belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaFilters from slurm, i:", i, "  slurmToRtrFullLogs:",
-				"  newSerialNumber:", newSerialNumber, "  customerAsn: ", customerAsn, "  providerAsn:", providerAsn,
-				"  addressFamilyIpv4:", addressFamilyIpv4, "  addressFamilyIpv6:", addressFamilyIpv6,
-				"  sourceFormJson:", sourceFormJson)
-
-			labRpkiRtrAsaFullLog := new(model.LabRpkiRtrAsaFullLog)
-			engEffect := xormdb.XormEngine.Table(tableName).Where(" serialNumber= ? ", newSerialNumber)
-			session = session.Table(tableName).Where(" serialNumber= ? ", newSerialNumber)
-
-			if customerAsn.Valid {
-				belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaFilters from slurm, customerAsn.Valid, i:", i, "  customerAsn:", customerAsn)
-				engEffect = engEffect.And(` customerAsn = ? `, customerAsn)
-				session = session.And(` customerAsn = ? `, customerAsn)
-			}
-			if providerAsn.Valid {
-				belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaFilters from slurm, providerAsn.Valid, i:", i, "  providerAsn:", providerAsn)
-				engEffect = engEffect.And(` providerAsn = ? `, providerAsn.ValueOrZero())
-				session = session.And(` providerAsn = ? `, providerAsn.ValueOrZero())
-			}
-
-			if addressFamilyIpv4.Valid && addressFamilyIpv6.Valid {
-				belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaFilters from slurm, Ipv4 and Ipv6.Valid, i:", i,
-					"  addressFamilyIpv4:", addressFamilyIpv4, "   addressFamilyIpv6:", addressFamilyIpv6)
-				engEffect = engEffect.In(`addressFamily`, addressFamilyIpv4.ValueOrZero(), addressFamilyIpv6.ValueOrZero())
-				session = session.In(`addressFamily`, addressFamilyIpv4.ValueOrZero(), addressFamilyIpv6.ValueOrZero())
-			} else if addressFamilyIpv4.Valid && !addressFamilyIpv6.Valid {
-				belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaFilters from slurm, Ipv4 Valid, i:", i,
-					"  addressFamilyIpv4:", addressFamilyIpv4, "   addressFamilyIpv6:", addressFamilyIpv6)
-				engEffect = engEffect.In(`addressFamily`, addressFamilyIpv4.ValueOrZero())
-				session = session.In(`addressFamily`, addressFamilyIpv4.ValueOrZero())
-			} else if !addressFamilyIpv4.Valid && addressFamilyIpv6.Valid {
-				belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaFilters from slurm, Ipv6 Valid, i:", i,
-					"  addressFamilyIpv4:", addressFamilyIpv4, "   addressFamilyIpv6:", addressFamilyIpv6)
-				engEffect = engEffect.In(`addressFamily`, addressFamilyIpv6.ValueOrZero())
-				session = session.In(`addressFamily`, addressFamilyIpv6.ValueOrZero())
-			}
-
-			if getEffectSlurm {
-				effectSlurmToRtrFullLogsTmp := make([]model.SlurmToRtrFullLog, 0)
-				err = engEffect.Cols("id,customerAsn,providerAsn,addressFamily,sourceFrom as sourceFromJson").Find(&effectSlurmToRtrFullLogsTmp)
-				if err != nil {
-					belogs.Error("UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaFilters effectSlurmToRtrFullLogsTmp fail:", err)
-					return nil, err
-				}
-				belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaFilters len(effectSlurmToRtrFullLogsTmp):", len(effectSlurmToRtrFullLogsTmp),
-					"   effectSlurmToRtrFullLogsTmp:", jsonutil.MarshalJson(effectSlurmToRtrFullLogsTmp))
-				effectSlurmToRtrFullLogs = append(effectSlurmToRtrFullLogs, effectSlurmToRtrFullLogsTmp...)
-
-			}
-
-			affected, err := session.Delete(labRpkiRtrAsaFullLog)
-			if err != nil {
-				belogs.Error("UpdateRtrAsaFullOrFullLogFromSlurmDb():aspaFilters del from slurm fail,  slurmToRtrFullLogs:",
-					jsonutil.MarshalJson(slurmToRtrFullLogs[i]), affected, err)
-				return nil, xormdb.RollbackAndLogError(session, "UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaFilters del from slurm fail: ", err)
-			}
-
-			belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaFilters delete from slurmToRtrFullLogs ",
-				"  newSerialNumber:", newSerialNumber, "  customerAsn: ", customerAsn, "  providerAsn:", providerAsn,
-				"  addressFamilyIpv4:", addressFamilyIpv4, "  addressFamilyIpv6:", addressFamilyIpv6,
-				"  sourceFormJson:", sourceFormJson, " delete  affected:", affected)
-		}
-	}
-	// commit
-	err = xormdb.CommitSession(session)
-	if err != nil {
-		belogs.Error("UpdateRtrAsaFullOrFullLogFromSlurmDb(): CommitSession fail :", err)
-		return nil, xormdb.RollbackAndLogError(session, "UpdateRtrAsaFullOrFullLogFromSlurmDb(): CommitSession fail: ", err)
-	}
-
-	belogs.Info("UpdateRtrAsaFullOrFullLogFromSlurmDb():CommitSession ok,  len(slurmToRtrFullLogs):", len(slurmToRtrFullLogs),
-		"   len(effectSlurmToRtrFullLogs):", len(effectSlurmToRtrFullLogs), " time(s):", time.Since(start))
-	belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb():effectSlurmToRtrFullLogs:", jsonutil.MarshalJson(effectSlurmToRtrFullLogs))
-	return effectSlurmToRtrFullLogs, nil
-}
-
-/*
-// tableName:rtr_asa_full_log / rtr_asa_full
-func UpdateRtrAsaFullOrFullLogFromSlurmDb(tableName string, newSerialNumber uint64,
-	slurmToRtrFullLogs []model.SlurmToRtrFullLog, getEffectSlurm bool) (effectSlurmToRtrFullLogs []model.SlurmToRtrFullLog, err error) {
-	start := time.Now()
-	session, err := xormdb.NewSession()
-	if err != nil {
-		belogs.Error("UpdateRtrAsaFullOrFullLogFromSlurmDb(): NewSession fail :", err)
-		return nil, err
-	}
-	defer session.Close()
-	effectSlurmToRtrFullLogs = make([]model.SlurmToRtrFullLog, 0)
-
-	// insert ignore into rtr_asa_full_log
-	sqlInsertSlurm := `insert   into ` + tableName + `
-				(serialNumber,customerAsn,providerAsn,addressFamily,sourceFrom) values
-				(?,?,?,  ?,?)`
-
-	belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): will insert/del asa_full_log/asa_full from slurmToRtrFullLogs,sqlInsertSlurm:", sqlInsertSlurm,
-		" newSerialNumber:", newSerialNumber, "    len(slurmToRtrFullLogs):", len(slurmToRtrFullLogs))
-	for i := range slurmToRtrFullLogs {
-		sourceFrom := model.LabRpkiRtrSourceFrom{
-			Source:         "slurm",
-			SlurmId:        slurmToRtrFullLogs[i].SlurmId,
-			SlurmLogId:     slurmToRtrFullLogs[i].SlurmLogId,
-			SlurmLogFileId: slurmToRtrFullLogs[i].SlurmLogFileId,
-		}
-		sourceFormJson := jsonutil.MarshalJson(sourceFrom)
-		slurmToRtrFullLogs[i].SourceFromJson = sourceFormJson
-		belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): slurmToRtrFullLogs[i]:", jsonutil.MarshalJson(slurmToRtrFullLogs[i]),
-			" sourceFrom:", sourceFrom, "  i:", i)
-		customerAsn := slurmToRtrFullLogs[i].CustomerAsn
-		providerAsn := slurmToRtrFullLogs[i].ProviderAsn
-		addressFamilyIpv4, addressFamilyIpv6, err := ConvertSlurmAddressFamilyToRtr(slurmToRtrFullLogs[i].AddressFamily)
-		if err != nil {
-			belogs.Error("UpdateRtrAsaFullOrFullLogFromSlurmDb(): ConvertSlurmAddressFamilyToRtr fail :", err)
-			return nil, xormdb.RollbackAndLogError(session, "UpdateRtrAsaFullOrFullLogFromSlurmDb(): ConvertSlurmAddressFamilyToRtr fail: ", err)
-		}
-
-		if slurmToRtrFullLogs[i].Style == "aspaAssertions" {
-
-			belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaAssertions from slurm, i:", i, "  slurmToRtrFullLogs:",
-				"  newSerialNumber:", newSerialNumber, "  customerAsn: ", customerAsn, "  providerAsn:", providerAsn,
-				"  addressFamilyIpv4:", addressFamilyIpv4, "  addressFamilyIpv6:", addressFamilyIpv6,
-				"  sourceFormJson:", sourceFormJson)
-
-			if addressFamilyIpv4.Valid {
-				affected, err := session.Exec(sqlInsertSlurm,
-					newSerialNumber,
-					customerAsn,
-					providerAsn,
-					addressFamilyIpv4,
-					sourceFormJson)
-
-				if err != nil {
-					belogs.Error("UpdateRtrAsaFullOrFullLogFromSlurmDb():aspaAssertions from slurm ipv4 fail:",
-						"  newSerialNumber:", newSerialNumber, "  customerAsn:", customerAsn, "  providerAsn:", providerAsn,
-						"  addressFamilyIpv4:", addressFamilyIpv4, "  sourceFormJson:", sourceFormJson,
-						"  affected:", affected, err)
-					return nil, xormdb.RollbackAndLogError(session, "UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaAssertions insert into lab_rpki_rtr_asa_full_log/lab_rpki_rtr_asa_full from slurm ipv4 fail: ", err)
-				}
-				addRows, _ := affected.RowsAffected()
-				belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaAssertions from slurm ipv4, slurmToRtrFullLogs:",
-					"  newSerialNumber:", newSerialNumber, "  customerAsn: ", customerAsn, "  providerAsn:", providerAsn,
-					"  addressFamilyIpv4:", addressFamilyIpv4, "  sourceFormJson:", sourceFormJson,
-					"  insert  affected:", addRows)
-
-			}
-			if addressFamilyIpv6.Valid {
-				affected, err := session.Exec(sqlInsertSlurm,
-					newSerialNumber,
-					customerAsn,
-					providerAsn,
-					addressFamilyIpv6,
-					sourceFormJson)
-
-				if err != nil {
-					belogs.Error("UpdateRtrAsaFullOrFullLogFromSlurmDb():aspaAssertions insert into lab_rpki_rtr_asa_full_log/lab_rpki_rtr_asa_full from slurm ipv6 fail:",
-						"  newSerialNumber:", newSerialNumber, "  customerAsn:", customerAsn, "  providerAsn:", providerAsn,
-						"  addressFamilyIpv6:", addressFamilyIpv6, "  sourceFormJson:", sourceFormJson,
-						"  affected:", affected, err)
-					return nil, xormdb.RollbackAndLogError(session, "UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaAssertions insert into lab_rpki_rtr_asa_full_log/lab_rpki_rtr_asa_full from slurm ipv6 fail: ", err)
-				}
-				addRows, _ := affected.RowsAffected()
-				belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaAssertions from slurm ipv6, slurmToRtrFullLogs:",
-					"  newSerialNumber:", newSerialNumber, "  customerAsn: ", customerAsn, "  providerAsn:", providerAsn,
-					"  addressFamilyIpv4:", addressFamilyIpv4, "  sourceFormJson:", sourceFormJson,
-					"  insert  affected:", addRows)
-			}
-
-			if getEffectSlurm {
-				effectSlurmToRtrFullLogs = append(effectSlurmToRtrFullLogs, slurmToRtrFullLogs[i])
-				belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaAssertions getEffectSlurm, slurmToRtrFullLogs:", jsonutil.MarshalJson(slurmToRtrFullLogs[i]))
-			}
-
-		} else if slurmToRtrFullLogs[i].Style == "aspaFilters" {
-			belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaFilters from slurm, i:", i, "  slurmToRtrFullLogs:",
-				"  newSerialNumber:", newSerialNumber, "  customerAsn: ", customerAsn, "  providerAsn:", providerAsn,
-				"  addressFamilyIpv4:", addressFamilyIpv4, "  addressFamilyIpv6:", addressFamilyIpv6,
-				"  sourceFormJson:", sourceFormJson)
-
-			labRpkiRtrAsaFullLog := new(model.LabRpkiRtrAsaFullLog)
-			session = session.Table(tableName).Where(" serialNumber= ? ", newSerialNumber)
-
-			if customerAsn.Valid {
-				belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaFilters from slurm, customerAsn.Valid, i:", i, "  customerAsn:", customerAsn)
-				session = session.And(` customerAsn = ? `, customerAsn)
-			}
-			if providerAsn.Valid {
-				belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaFilters from slurm, providerAsn.Valid, i:", i, "  providerAsn:", providerAsn)
-				session = session.And(` providerAsn = ? `, providerAsn.ValueOrZero())
-			}
-
-			if addressFamilyIpv4.Valid && addressFamilyIpv6.Valid {
-				belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaFilters from slurm, Ipv4 and Ipv6.Valid, i:", i,
-					"  addressFamilyIpv4:", addressFamilyIpv4, "   addressFamilyIpv6:", addressFamilyIpv6)
-				session = session.In(`addressFamily`, addressFamilyIpv4.ValueOrZero(), addressFamilyIpv6.ValueOrZero())
-			} else if addressFamilyIpv4.Valid && !addressFamilyIpv6.Valid {
-				belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaFilters from slurm, Ipv4 Valid, i:", i,
-					"  addressFamilyIpv4:", addressFamilyIpv4, "   addressFamilyIpv6:", addressFamilyIpv6)
-				session = session.In(`addressFamily`, addressFamilyIpv4.ValueOrZero())
-			} else if !addressFamilyIpv4.Valid && addressFamilyIpv6.Valid {
-				belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaFilters from slurm, Ipv6 Valid, i:", i,
-					"  addressFamilyIpv4:", addressFamilyIpv4, "   addressFamilyIpv6:", addressFamilyIpv6)
-				session = session.In(`addressFamily`, addressFamilyIpv6.ValueOrZero())
-			}
-
-			if getEffectSlurm {
-
-			}
-
-			affected, err := session.Delete(labRpkiRtrAsaFullLog)
-			if err != nil {
-				belogs.Error("UpdateRtrAsaFullOrFullLogFromSlurmDb():aspaFilters del from slurm fail,  slurmToRtrFullLogs:",
-					jsonutil.MarshalJson(slurmToRtrFullLogs[i]), affected, err)
-				return nil, xormdb.RollbackAndLogError(session, "UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaFilters del from slurm fail: ", err)
-			}
-
-			belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb(): aspaFilters delete from slurmToRtrFullLogs ",
-				"  newSerialNumber:", newSerialNumber, "  customerAsn: ", customerAsn, "  providerAsn:", providerAsn,
-				"  addressFamilyIpv4:", addressFamilyIpv4, "  addressFamilyIpv6:", addressFamilyIpv6,
-				"  sourceFormJson:", sourceFormJson, " delete  affected:", affected)
-		}
-	}
-	// commit
-	err = xormdb.CommitSession(session)
-	if err != nil {
-		belogs.Error("UpdateRtrAsaFullOrFullLogFromSlurmDb(): CommitSession fail :", err)
-		return nil, xormdb.RollbackAndLogError(session, "UpdateRtrAsaFullOrFullLogFromSlurmDb(): CommitSession fail: ", err)
-	}
-
-	belogs.Info("UpdateRtrAsaFullOrFullLogFromSlurmDb():CommitSession ok,  len(slurmToRtrFullLogs):", len(slurmToRtrFullLogs),
-		"   len(effectSlurmToRtrFullLogs):", len(effectSlurmToRtrFullLogs), " time(s):", time.Since(start))
-	belogs.Debug("UpdateRtrAsaFullOrFullLogFromSlurmDb():effectSlurmToRtrFullLogs:", jsonutil.MarshalJson(effectSlurmToRtrFullLogs))
-	return effectSlurmToRtrFullLogs, nil
-}
-*/
 
 // style=prefix/asa/
 func GetAllSlurmsDb(style string) (slurmToRtrFullLogs []model.SlurmToRtrFullLog, err error) {
@@ -508,14 +181,6 @@ func GetAllSlurmsDb(style string) (slurmToRtrFullLogs []model.SlurmToRtrFullLog,
 			slurmLogId,
 		    slurmLogFileId 
 	    from lab_rpki_slurm  where style in ('prefixFilters','prefixAssertions')
-		order by id `
-	} else if style == "asa" {
-		sql = `select id as slurmId, style,  
-			customerAsn,
-			providerAsn, 
-			slurmLogId,
-		    slurmLogFileId 
-	    from lab_rpki_slurm  where style in ('aspaFilters','aspaAssertions') 
 		order by id `
 	}
 	belogs.Debug("GetAllSlurmsDb(): sql:", sql)
