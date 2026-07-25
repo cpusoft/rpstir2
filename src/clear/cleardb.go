@@ -27,7 +27,8 @@ func clearSyncLogFileDb() (err error) {
 	deleteLabRpkiSyncLogId := int64(labRpkiSyncLogId - 24)
 	belogs.Info("clearSyncLogFileDb():labRpkiSyncLogId:", labRpkiSyncLogId, "   deleteLabRpkiSyncLogId:", deleteLabRpkiSyncLogId)
 	if deleteLabRpkiSyncLogId <= 0 {
-		return
+		xormdb.CommitSession(session) // just commit nothing
+		return nil
 	}
 
 	// mft
@@ -72,7 +73,8 @@ func clearSyncLogFileDb() (err error) {
 	return nil
 }
 
-//  tableName: lab_rpki_mft
+//	tableName: lab_rpki_mft
+//
 // fileType: mft
 func clearSyncLogFileImplDb(session *xorm.Session, deleteLabRpkiSyncLogId int64, tableName string, fileType string) (err error) {
 	sql := `delete from lab_rpki_sync_log_file f 

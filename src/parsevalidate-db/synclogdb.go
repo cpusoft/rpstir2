@@ -22,7 +22,7 @@ func UpdateSyncLogParseValidateStartDb(state string) (labRpkiSyncLogId uint64, e
 	defer session.Close()
 
 	var id int64
-	_, err = session.Table("lab_rpki_sync_log").Select("max(id)").Get(&id)
+	_, err = session.SQL("SELECT MAX(id) AS id FROM lab_rpki_sync_log").Get(&id) //_, err = session.Table("lab_rpki_sync_log").Select("max(id)").Get(&id)
 	if err != nil {
 		return 0, xormdb.RollbackAndLogError(session, "UpdateSyncLogParseValidateStartDb(): update sync_log fail: state:"+state, err)
 	}
