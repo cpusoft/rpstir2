@@ -19,7 +19,7 @@ func clearSyncLogFileDb() (err error) {
 
 	// get max labRpkiSyncLogId
 	var labRpkiSyncLogId int64
-	_, err = session.Table("lab_rpki_sync_log").Select("max(id)").Get(&labRpkiSyncLogId)
+	_, err = session.SQL("SELECT MAX(id) AS id FROM lab_rpki_sync_log").Get(&labRpkiSyncLogId) //session.Table("lab_rpki_sync_log").Select(`"max(id)" as id`).Get(&labRpkiSyncLogId)
 	if err != nil {
 		return xormdb.RollbackAndLogError(session, "clearSyncLogFileDb(): max labRpkiSyncLogId fail: ", err)
 	}
@@ -136,7 +136,7 @@ func clearRtrFullLogRtrIncremet(tableName string, serialNumber int) (err error) 
 	// commit
 	err = xormdb.CommitSession(session)
 	if err != nil {
-		return xormdb.RollbackAndLogError(session, "clearSyncLogFileDb(): CommitSession fail:", err)
+		return xormdb.RollbackAndLogError(session, "clearRtrFullLogRtrIncremet(): CommitSession fail:", err)
 	}
 	belogs.Info("clearRtrFullLogRtrIncremet(): end, serialNumber:", serialNumber,
 		"   deleteRows:", deleteRows, "    tableName:", tableName, "  time(s):", time.Since(start))
