@@ -89,7 +89,7 @@ func parseValidate(syncLogFileModels []*model.SyncLogFileModel, syncLogFileModel
 				"  fileType:", syncLogFileModels[i].FileType, "   syncType:", syncLogFileModels[i].SyncType)
 			err = parseValidateImpl(syncLogFileModels[i])
 			if err != nil {
-				belogs.Error("parseValidateStart(): parseValidateImpl fail, syncLogFileModel:", syncLogFileModels[i].String(),
+				belogs.Error("parseValidate(): parseValidateImpl fail, syncLogFileModel:", syncLogFileModels[i].String(),
 					err, "  time(s):", time.Since(startOne))
 				continue
 			}
@@ -169,7 +169,7 @@ func delAndInsertCert(syncLogFileModels []*model.SyncLogFileModel, wg *sync.Wait
 			}
 		case "roa":
 			err = parsevalidatedb.DelRoaDb(syncLogFileModel)
-			if syncType == "update" || syncType == "add" {
+			if err == nil && (syncType == "update" || syncType == "add") {
 				err = parsevalidatedb.InsertRoaDb(syncLogFileModel)
 			}
 		case "asa":
