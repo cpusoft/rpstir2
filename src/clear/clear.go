@@ -48,5 +48,5 @@ func clearRtr() {
 		belogs.Error("clearRtr():clearRtrFullLogRtrIncremental lab_rpki_rtr_full_log fail:deleteSerialNumber:", deleteSerialNumber, err)
 		// no return
 	}
-	belogs.Info("clearRtr(): end, time(s):", time.Since(start))
+	belogs.Info("clearRtr(): end,  time(s):", time.Since(start))
 }
