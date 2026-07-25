@@ -98,37 +98,37 @@ func clearSyncLogFileImplDb(session *xorm.Session, deleteLabRpkiSyncLogId int64,
 }
 
 // tableName: lab_rpki_rtr_full_log/lab_rpki_rtr_incremental
-func clearRtrFullLogRtrIncremet(tableName string, serialNumber int) (err error) {
-	belogs.Debug("clearRtrFullLogRtrIncremet():tableName:", tableName, " ,   serialNumber:", serialNumber)
+func clearRtrFullLogRtrIncremental(tableName string, serialNumber int) (err error) {
+	belogs.Debug("clearRtrFullLogRtrIncremental():tableName:", tableName, " ,   serialNumber:", serialNumber)
 
 	start := time.Now()
 	session, err := xormdb.NewSession()
 	if err != nil {
-		belogs.Error("clearRtrFullLogRtrIncremet(): NewSession fail:", err)
+		belogs.Error("clearRtrFullLogRtrIncremental(): NewSession fail:", err)
 		return err
 	}
 	defer session.Close()
 
 	// delete too old
-	belogs.Debug("clearRtrFullLogRtrIncremet():will delete too old serialNumber in "+tableName+" ,serialNumber:", serialNumber)
+	belogs.Debug("clearRtrFullLogRtrIncremental():will delete too old serialNumber in "+tableName+" ,serialNumber:", serialNumber)
 	sql := `delete from ` + tableName + ` where serialNumber < ? `
 	affected, err := session.Exec(sql, serialNumber)
-	belogs.Debug("clearRtrFullLogRtrIncremet():delete "+tableName+" serialNumber:", serialNumber, "   affected:", affected)
+	belogs.Debug("clearRtrFullLogRtrIncremental():delete "+tableName+" serialNumber:", serialNumber, "   affected:", affected)
 	if err != nil {
-		belogs.Error("clearRtrFullLogRtrIncremet():delete serialNumber:", serialNumber, err)
+		belogs.Error("clearRtrFullLogRtrIncremental():delete serialNumber:", serialNumber, err)
 		return err
 	}
 	deleteRows, err := affected.RowsAffected()
 	if err != nil {
-		belogs.Error("clearRtrFullLogRtrIncremet():delete serialNumber, RowsAffected :", affected, err)
+		belogs.Error("clearRtrFullLogRtrIncremental():delete serialNumber, RowsAffected :", affected, err)
 		return err
 	}
 	if deleteRows > 10000 {
 		sql = `optimize  table  ` + tableName
 		_, err = session.Exec(sql)
-		belogs.Debug("clearRtrFullLogRtrIncremet():affected > 10000,  optimize "+tableName+", deleteRows:", deleteRows)
+		belogs.Debug("clearRtrFullLogRtrIncremental():affected > 10000,  optimize "+tableName+", deleteRows:", deleteRows)
 		if err != nil {
-			belogs.Error("clearRtrFullLogRtrIncremet():optimize "+tableName+":", err)
+			belogs.Error("clearRtrFullLogRtrIncremental():optimize "+tableName+":", err)
 			return err
 		}
 	}
@@ -136,9 +136,9 @@ func clearRtrFullLogRtrIncremet(tableName string, serialNumber int) (err error) 
 	// commit
 	err = xormdb.CommitSession(session)
 	if err != nil {
-		return xormdb.RollbackAndLogError(session, "clearRtrFullLogRtrIncremet(): CommitSession fail:", err)
+		return xormdb.RollbackAndLogError(session, "clearRtrFullLogRtrIncremental(): CommitSession fail:", err)
 	}
-	belogs.Info("clearRtrFullLogRtrIncremet(): end, serialNumber:", serialNumber,
+	belogs.Info("clearRtrFullLogRtrIncremental(): end, serialNumber:", serialNumber,
 		"   deleteRows:", deleteRows, "    tableName:", tableName, "  time(s):", time.Since(start))
 
 	return nil

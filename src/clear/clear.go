@@ -36,16 +36,16 @@ func clearRtr() {
 	}
 
 	// delete too old from lab_rpki_rtr_incremental
-	err = clearRtrFullLogRtrIncremet("lab_rpki_rtr_incremental", deleteSerialNumber)
+	err = clearRtrFullLogRtrIncremental("lab_rpki_rtr_incremental", deleteSerialNumber)
 	if err != nil {
-		belogs.Error("clearRtr():clearRtrFullLogRtrIncremet lab_rpki_rtr_incremental fail:deleteSerialNumber:", deleteSerialNumber, err)
+		belogs.Error("clearRtr():clearRtrFullLogRtrIncremental lab_rpki_rtr_incremental fail:deleteSerialNumber:", deleteSerialNumber, err)
 		// no return
 	}
 
 	// delete too old from lab_rpki_rtr_full_log
-	err = clearRtrFullLogRtrIncremet("lab_rpki_rtr_full_log", deleteSerialNumber)
+	err = clearRtrFullLogRtrIncremental("lab_rpki_rtr_full_log", deleteSerialNumber)
 	if err != nil {
-		belogs.Error("clearRtr():clearRtrFullLogRtrIncremet lab_rpki_rtr_full_log fail:deleteSerialNumber:", deleteSerialNumber, err)
+		belogs.Error("clearRtr():clearRtrFullLogRtrIncremental lab_rpki_rtr_full_log fail:deleteSerialNumber:", deleteSerialNumber, err)
 		// no return
 	}
 	belogs.Info("clearRtr(): end, time(s):", time.Since(start))
