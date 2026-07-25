@@ -185,7 +185,8 @@ func delAndInsertCert(syncLogFileModels []*model.SyncLogFileModel, wg *sync.Wait
 		}
 		if err != nil {
 			belogs.Error("delAndInsertCert(): Del or Insert fail, syncLogFileModel:", syncLogFileModel.String(), err, " time(s):", time.Since(startOne))
-			return err
+			//return err
+			continue // go next
 		}
 		belogs.Info("delAndInsertCert(): Del or Insert ok, filePathName:", syncLogFileModel.FilePath, syncLogFileModel.FileName,
 			"  fileType:", syncLogFileModel.FileType, "   syncType:", syncLogFileModel.SyncType, " time(s):", time.Since(startOne))
