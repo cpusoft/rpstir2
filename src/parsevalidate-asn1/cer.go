@@ -1,6 +1,7 @@
 package parsevalidateasn1
 
 import (
+	"crypto/rsa"
 	"crypto/x509"
 	"encoding/asn1"
 	"encoding/hex"
@@ -87,12 +88,15 @@ func parseCerIpAddressModelByAsn1(data []byte) (cerIpAddressModel model.CerIpAdd
 			cerIpAddress.AddressFamily = uint64(ipType)
 			for j := range addressChoiceAsn1s {
 				if addressChoiceAsn1s[j].Tag == asn1.TagBitString {
-
 					addressPrefix, err := ParseBytesToAddressPrefix(addressChoiceAsn1s[j].Bytes, int(ipType))
 					if err != nil {
-						belogs.Error("parseCerIpAddressModelByAsn1():TagBitString ParseBytesToAddressPrefix fail:",
-							convert.PrintBytesOneLine(addressChoiceAsn1s[j].Bytes), "  ipType:", ipType, err)
-						return cerIpAddressModel, false, err
+						// try again
+						addressPrefix, err = ParseBytesToAddressPrefix(addressChoiceAsn1s[j].FullBytes, int(ipType))
+						if err != nil {
+							belogs.Error("parseCerIpAddressModelByAsn1():TagBitString ParseBytesToAddressPrefix fail:",
+								convert.PrintBytesOneLine(addressChoiceAsn1s[j].Bytes), "  ipType:", ipType, err)
+							return cerIpAddressModel, false, err
+						}
 					}
 					cerIpAddress.AddressPrefix, err = iputil.TrimAddressPrefixZero(addressPrefix, int(ipType))
 					if err != nil {
@@ -164,7 +168,7 @@ func parseAsnModelByAsn1(data []byte) (asnModel model.AsnModel, noAsn bool, err 
 
 	for i := range asnBlockAsn1.AsnChoiceAsn1.AsnSequenceAsn1 {
 		if asnBlockAsn1.AsnChoiceAsn1.AsnSequenceAsn1[i].Tag == asn1.TagInteger {
-			noAsn = true
+			noAsn = false
 			asn := model.NewAsn()
 			b := asnBlockAsn1.AsnChoiceAsn1.AsnSequenceAsn1[i].Bytes
 			asnInt := big.NewInt(0).SetBytes(b)
@@ -172,7 +176,7 @@ func parseAsnModelByAsn1(data []byte) (asnModel model.AsnModel, noAsn bool, err 
 			belogs.Debug("parseAsnModelByAsn1(): TagInteger asn:", jsonutil.MarshalJson(asn))
 			asnModel.Asns = append(asnModel.Asns, asn)
 		} else if asnBlockAsn1.AsnChoiceAsn1.AsnSequenceAsn1[i].Tag == asn1.TagSequence {
-			noAsn = true
+			noAsn = false
 			asn := model.NewAsn()
 			var ansRangeAsn1 AnsRangeAsn1
 			_, err := asn1.Unmarshal(asnBlockAsn1.AsnChoiceAsn1.AsnSequenceAsn1[i].FullBytes, &ansRangeAsn1)
@@ -246,6 +250,15 @@ func parseSiaModelByAsn1(data []byte) (siaModel model.SiaModel, err error) {
 	return siaModel, nil
 }
 
+type PolicyInformation struct {
+	PolicyIdentifier asn1.ObjectIdentifier
+	PolicyQualifiers []PolicyQualifierInfo `asn1:"optional"`
+}
+type PolicyQualifierInfo struct {
+	PolicyQualifierId asn1.ObjectIdentifier
+	Qualifier         string `asn1:"ia5"` // 或使用 RawValue 判断
+}
+
 type PolicyBlockAsn1 struct {
 	PolicyOidAsn1 asn1.ObjectIdentifier
 	PolicyAsn1s   []PolicyAsn1 `asn1:"optional"`
@@ -258,24 +271,45 @@ type PolicyAsn1 struct {
 
 func parseCertPolicyModelByAsn1(data []byte) (certPolicyModel model.CertPolicyModel, err error) {
 	belogs.Debug("parseCertPolicyModelByAsn1(): len(data):", len(data), " data:", convert.PrintBytesOneLine(data))
-	policyBlockAsn1s := make([]PolicyBlockAsn1, 0)
-	_, err = asn1.Unmarshal(data, &policyBlockAsn1s)
-	if err != nil {
-		belogs.Error("parseCertPolicyModelByAsn1(): Unmarshal fail, len(data):", len(data),
-			"  data:", hex.EncodeToString(data), err)
-		return certPolicyModel, err
-	}
-	belogs.Debug("parseCertPolicyModelByAsn1(): len(policyBlockAsn1s):", len(policyBlockAsn1s))
 
-	for i := range policyBlockAsn1s {
-		policyAsn1 := policyBlockAsn1s[i].PolicyAsn1s
-		for j := range policyAsn1 {
-			certPolicyModel.Cps = policyAsn1[j].PolicyUrl
-			break
+	var policyInfos []PolicyInformation
+	_, err = asn1.Unmarshal(data, &policyInfos)
+	if err == nil {
+		belogs.Debug("parseCertPolicyModelByAsn1(): len(policyInfos):", len(policyInfos))
+
+		// 提取第一个 CPS URI（id-qt-cps = 1.3.6.1.5.5.7.2.1）
+		const cpsOid = "1.3.6.1.5.5.7.2.1"
+		for _, info := range policyInfos {
+			for _, qualifier := range info.PolicyQualifiers {
+				if qualifier.PolicyQualifierId.String() == cpsOid {
+					certPolicyModel.Cps = qualifier.Qualifier
+					belogs.Debug("parseCertPolicyModelByAsn1(): found CPS:", certPolicyModel.Cps)
+					return certPolicyModel, nil // 找到第一个即返回
+				}
+			}
 		}
+		belogs.Debug("parseCertPolicyModelByAsn1(): no CPS found, certPolicyModel:", jsonutil.MarshalJson(certPolicyModel))
+		return certPolicyModel, nil
+	} else {
+		// try again
+		policyBlockAsn1s := make([]PolicyBlockAsn1, 0)
+		_, err = asn1.Unmarshal(data, &policyBlockAsn1s)
+		if err != nil {
+			belogs.Error("parseCertPolicyModelByAsn1(): Unmarshal fail, len(data):", len(data),
+				"  data:", hex.EncodeToString(data), err)
+			return certPolicyModel, err
+		}
+		belogs.Debug("parseCertPolicyModelByAsn1(): len(policyBlockAsn1s):", len(policyBlockAsn1s))
+		for i := range policyBlockAsn1s {
+			policyAsn1 := policyBlockAsn1s[i].PolicyAsn1s
+			for j := range policyAsn1 {
+				certPolicyModel.Cps = policyAsn1[j].PolicyUrl
+				break
+			}
+		}
+		belogs.Debug("parseCertPolicyModelByAsn1(): certPolicyModel:", jsonutil.MarshalJson(certPolicyModel))
+		return certPolicyModel, nil
 	}
-	belogs.Debug("parseCertPolicyModelByAsn1(): certPolicyModel:", jsonutil.MarshalJson(certPolicyModel))
-	return certPolicyModel, nil
 }
 
 func parseSignatureInnerAlgorithmByAsn1(signatureAlgorithm x509.SignatureAlgorithm) (signatureInnerAlgorithm model.Sha256RsaModel, err error) {
@@ -326,18 +360,25 @@ func parsePublicKeyAlgorithmByAsn1(publicKeyAlgorithmx509 x509.PublicKeyAlgorith
 	*/
 	if publicKeyAlgorithmx509 == x509.RSA {
 		publicKeyAlgorithmModel.Name = "rsaEncryption"
-		var rsaNEModel RsaNEModel
-		err = jsonutil.UnmarshalJson(publicKeyJson, &rsaNEModel)
-		if err != nil {
-			belogs.Error("parsePublicKeyAlgorithmByAsn1(): Unmarshal rsaNEModel fail, publicKeyJson:", publicKeyJson, err)
-			return publicKeyAlgorithmModel, err
-		}
-		if rsaNEModel.E != nil || rsaNEModel.N != nil {
-			publicKeyAlgorithmModel.Exponent = uint64(rsaNEModel.E.Int64())
-			publicKeyAlgorithmModel.Modulus = fmt.Sprintf("%x", rsaNEModel.N)
+		rsaPublicKey, ok := publicKey.(*rsa.PublicKey)
+		if ok {
+			publicKeyAlgorithmModel.Exponent = uint64(rsaPublicKey.E)
+			publicKeyAlgorithmModel.Modulus = fmt.Sprintf("%x", rsaPublicKey.N)
 		} else {
-			belogs.Error("parsePublicKeyAlgorithmByAsn1():rsaNEModel.E or N is nil:", jsonutil.MarshalJson(rsaNEModel))
-			return publicKeyAlgorithmModel, errors.New("fail to parse rsaNEModel")
+			// try again
+			var rsaNEModel RsaNEModel
+			err = jsonutil.UnmarshalJson(publicKeyJson, &rsaNEModel)
+			if err != nil {
+				belogs.Error("parsePublicKeyAlgorithmByAsn1(): Unmarshal rsaNEModel fail, publicKeyJson:", publicKeyJson, err)
+				return publicKeyAlgorithmModel, err
+			}
+			if rsaNEModel.E != nil || rsaNEModel.N != nil {
+				publicKeyAlgorithmModel.Exponent = uint64(rsaNEModel.E.Int64())
+				publicKeyAlgorithmModel.Modulus = fmt.Sprintf("%x", rsaNEModel.N)
+			} else {
+				belogs.Error("parsePublicKeyAlgorithmByAsn1():rsaNEModel.E or N is nil:", jsonutil.MarshalJson(rsaNEModel))
+				return publicKeyAlgorithmModel, errors.New("fail to parse rsaNEModel")
+			}
 		}
 	} else if publicKeyAlgorithmx509 == x509.DSA {
 		publicKeyAlgorithmModel.Name = "id-dsa"
@@ -504,7 +545,7 @@ func parseCerModelUseFileByteByAsn1(fileModel *model.FileModel, fileByte []byte,
 			cerModel.KeyUsageModel.KeyUsageValue = "Certificate Sign, CRL Sign"
 			belogs.Debug("parseCerModelUseFileByteByAsn1(): cerModel.KeyUsageModel:", jsonutil.MarshalJson(cerModel.KeyUsageModel))
 
-		} else if extensionModel.Oid == "2.5.29.3" {
+		} else if extensionModel.Oid == "2.5.29.31" {
 			// already have cerModel.CrldpModel.Crldps
 			cerModel.CrldpModel.Critical = ext.Critical
 			belogs.Debug("parseCerModelUseFileByteByAsn1(): cerModel.CrldpModel:", jsonutil.MarshalJson(cerModel.CrldpModel))

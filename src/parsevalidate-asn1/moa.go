@@ -70,21 +70,38 @@ func ParseMoaModelByAsn1(fileModel *model.FileModel, moaModel *model.MoaModel, s
 			moaModel.EContentType = eContentType
 			belogs.Debug("ParseMoaModelByAsn1(): parseToMoaIpMapping get eContentType",
 				"moaModel.EContentType", moaModel.EContentType)
+
+			if len(moaIpMapping.MoaMappingOctetStringAsn1) <= 1 {
+				belogs.Error("ParseMoaModelByAsn1(): len(moaIpMapping.MoaMappingOctetStringAsn1)<1, fail",
+					"len(seq.FullBytes)", len(seq.FullBytes),
+					"len(moaIpMapping.MoaMappingOctetStringAsn1)", len(moaIpMapping.MoaMappingOctetStringAsn1),
+					"fileModel", jsonutil.MarshalJson(fileModel))
+				stateMsg := model.StateMsg{Stage: "parsevalidate",
+					Fail:   "Fail to parse moa by asn1",
+					Detail: "parse moaIpMapping.MoaMappingOctetStringAsn1 fail"}
+				stateModel.AddError(&stateMsg)
+				//continue
+				return err
+			}
 			moaMapping0 := moaIpMapping.MoaMappingOctetStringAsn1[0]
 			belogs.Debug("ParseMoaModelByAsn1(): get moaIpMapping0",
 				"moaMapping0.FullBytes", convert.PrintBytesOneLine(moaMapping0.FullBytes),
 				"moaMapping0", jsonutil.MarshalJson(moaMapping0))
 
 			var ipv6BitString asn1.BitString
-			_, err = asn1.Unmarshal(moaMapping0.Bytes, &ipv6BitString)
+			_, err = asn1.Unmarshal(moaMapping0.FullBytes, &ipv6BitString)
 			if err != nil {
-				belogs.Error("ParseMoaModelByAsn1(): Unmarshal moaMapping0 fail",
-					"moaMapping0.Bytes", convert.PrintBytesOneLine(moaMapping0.Bytes), "err", err)
-				stateMsg := model.StateMsg{Stage: "parsevalidate",
-					Fail:   "Fail to parse moa by asn1",
-					Detail: err.Error()}
-				stateModel.AddError(&stateMsg)
-				return err
+				// try again
+				_, err = asn1.Unmarshal(moaMapping0.Bytes, &ipv6BitString)
+				if err != nil {
+					belogs.Error("ParseMoaModelByAsn1(): Unmarshal moaMapping0 fail",
+						"moaMapping0.Bytes", convert.PrintBytesOneLine(moaMapping0.Bytes), "err", err)
+					stateMsg := model.StateMsg{Stage: "parsevalidate",
+						Fail:   "Fail to parse moa by asn1",
+						Detail: err.Error()}
+					stateModel.AddError(&stateMsg)
+					return err
+				}
 			}
 			ipv6Prefix, err := ParseBitStringToAddressPrefix(ipv6BitString, iputil.Ipv6Type)
 			if err != nil {
@@ -107,13 +124,17 @@ func ParseMoaModelByAsn1(fileModel *model.FileModel, moaModel *model.MoaModel, s
 			var ipv4BitStrings []asn1.BitString
 			_, err = asn1.Unmarshal(moaMapping1.FullBytes, &ipv4BitStrings)
 			if err != nil {
-				belogs.Error("ParseMoaModelByAsn1(): Unmarshal ipv4BitStrings fail",
-					"moaMapping1.FullBytes", convert.PrintBytesOneLine(moaMapping1.FullBytes), "err", err)
-				stateMsg := model.StateMsg{Stage: "parsevalidate",
-					Fail:   "Fail to parse moa by asn1",
-					Detail: err.Error()}
-				stateModel.AddError(&stateMsg)
-				return err
+				// try again
+				_, err = asn1.Unmarshal(moaMapping1.Bytes, &ipv4BitStrings)
+				if err != nil {
+					belogs.Error("ParseMoaModelByAsn1(): Unmarshal ipv4BitStrings fail",
+						"moaMapping1.FullBytes", convert.PrintBytesOneLine(moaMapping1.FullBytes), "err", err)
+					stateMsg := model.StateMsg{Stage: "parsevalidate",
+						Fail:   "Fail to parse moa by asn1",
+						Detail: err.Error()}
+					stateModel.AddError(&stateMsg)
+					return err
+				}
 			}
 			ipv4Prefixs := make([]string, 0)
 			var ipv4Prefix string
