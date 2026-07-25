@@ -187,9 +187,9 @@ func ParseMoaModelByAsn1(fileModel *model.FileModel, moaModel *model.MoaModel, s
 				continue
 			}
 			belogs.Debug("ParseMoaModelByAsn1(): eeStart", eeStart, "eeEnd", eeEnd)
-			moaModel.EeModel = *model.ConvertCertModelToEeCertModel(&cerModel, uint64(eeStart), uint64(eeEnd))
+			moaModel.EeCertModel = *model.ConvertCertModelToEeCertModel(&cerModel, uint64(eeStart), uint64(eeEnd))
 			belogs.Debug("ParseMoaModelByAsn1(): ConvertCertModelToEeCertModel get moaModel.EeModel",
-				"moaModel.EeModel", jsonutil.MarshalJson(moaModel.EeModel))
+				"moaModel.EeModel", jsonutil.MarshalJson(moaModel.EeCertModel))
 
 		} else if seq.Class == 0 && seq.Tag == 17 && seq.IsCompound && len(seq.Bytes) > 100 {
 			moaModel.SignerInfoModel, err = ParseToSignerInfoModel(seq.Bytes)

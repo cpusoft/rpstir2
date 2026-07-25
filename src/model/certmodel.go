@@ -282,7 +282,7 @@ func (c CrlModel) String() string {
 
 type RevokedCertModel struct {
 	Sn             string           `json:"sn" xorm:"sn varchar(512)"`
-	RevocationTime time.Time        `json:"revocationTime" xorm:"revocationTime dateimte"`
+	RevocationTime time.Time        `json:"revocationTime" xorm:"revocationTime datetime"`
 	Extensions     []pkix.Extension `json:"extensions"`
 }
 
@@ -610,7 +610,7 @@ type MoaModel struct {
 	SiaModel          SiaModel `json:"siaModel"`
 	AiaModel          AiaModel `json:"aiaModel"`
 
-	EeModel         EeCertModel     `json:"eeModel"`
+	EeCertModel     EeCertModel     `json:"eeCertModel"`
 	SignerInfoModel SignerInfoModel `json:"signerInfoModel"`
 }
 

@@ -410,8 +410,8 @@ func (c *ChainCertData) ToChainMoa() (chainMoa ChainMoa, err error) {
 	chainMoa.FileName = moaModel.FileName
 	chainMoa.Ski = moaModel.Ski
 	chainMoa.Aki = moaModel.Aki
-	chainMoa.EeCertStart = moaModel.EeModel.EeCertStart
-	chainMoa.EeCertEnd = moaModel.EeModel.EeCertEnd
+	chainMoa.EeCertStart = moaModel.EeCertModel.EeCertStart
+	chainMoa.EeCertEnd = moaModel.EeCertModel.EeCertEnd
 
 	chainMoa.StateModel = model.GetStateModelAndResetStage(c.State, "chainvalidate")
 	chainMoa.ChainSnInCrlRevoked = ChainSnInCrlRevoked{

@@ -367,7 +367,7 @@ func JudgeOriginByFilePath(filePath string) (originModel *OriginModel) {
 			rir = ORIGIN_RIR_ARIN
 			repo = "rpki.zappiehost.com"
 		}
-	} else if strings.Index(filePath, "rpki.zappiehost.com/repo/ZAPPIE-RPKI/3/ ") > 0 {
+	} else if strings.Index(filePath, "rpki.zappiehost.com/repo/ZAPPIE-RPKI/3/") > 0 {
 		rir = ORIGIN_RIR_APNIC
 		repo = "rpki.zappiehost.com"
 	} else if strings.Index(filePath, "krill.accuristechnologies.ca") > 0 { //  arin-rpki-ta.cer
