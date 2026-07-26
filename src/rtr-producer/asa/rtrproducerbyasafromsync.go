@@ -20,16 +20,18 @@ func RtrUpdateByAsaFromSync(curSerialNumberModel, newSerialNumberModel *rtrcommo
 	}
 	belogs.Info("RtrUpdateByAsaFromSync(): len(asaToRtrFullLogs):", len(asaToRtrFullLogs), "  time(s):", time.Since(start))
 
-	// get all slurm
-	slurmToRtrFullLogs, err := rtrcommon.GetAllSlurmsDb("asa")
-	if err != nil {
-		belogs.Error("RtrUpdateByAsaFromSync(): GetAllSlurmsDb fail:", err)
-		return err
-	}
-	belogs.Info("RtrUpdateByAsaFromSync(): len(slurmToRtrFullLogs):", len(slurmToRtrFullLogs), "  time(s):", time.Since(start))
+	/*
+		// get all slurm
+		slurmToRtrFullLogs, err := rtrcommon.GetAllSlurmsDb("asa")
+		if err != nil {
+			belogs.Error("RtrUpdateByAsaFromSync(): GetAllSlurmsDb fail:", err)
+			return err
+		}
+		belogs.Info("RtrUpdateByAsaFromSync(): len(slurmToRtrFullLogs):", len(slurmToRtrFullLogs), "  time(s):", time.Since(start))
+	*/
 
 	//when both  len are 0, return nil
-	if len(asaToRtrFullLogs) == 0 && len(slurmToRtrFullLogs) == 0 {
+	if len(asaToRtrFullLogs) == 0 { // && len(slurmToRtrFullLogs) == 0 {
 		belogs.Info("RtrUpdateByAsaFromSync():asa or slurm are both empty")
 		return nil
 	}
