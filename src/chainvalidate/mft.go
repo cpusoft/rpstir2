@@ -27,7 +27,7 @@ func getChainMfts(chains *Chains, chainWg *sync.WaitGroup, syncLogId uint64) {
 	go callAddMftToChain(chains, syncLogId, chainMftDatasCh, &mftWg)
 	err := GetChainMftData(chainMftDatasCh, &mftWg)
 	if err != nil {
-		belogs.Error("getChainMfts(): GetChainCrlData fail: ", err)
+		belogs.Error("getChainMfts(): GetChainMftData fail: ", err)
 		close(chainMftDatasCh)
 		return
 	}

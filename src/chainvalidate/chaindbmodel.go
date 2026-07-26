@@ -108,7 +108,7 @@ type ChainDbCrlModel struct {
 func NewChainDbCrlModel(chainCrl *ChainCrl) *ChainDbCrlModel {
 	chainDbCrlModel := &ChainDbCrlModel{}
 	chainDbCrlModel.Id = chainCrl.Id
-	belogs.Debug("NewChainDbCrlModel():chainDbCerModel.Id:", chainDbCrlModel.Id, "   len(chainCrl.ParentChainCerAlones):", len(chainCrl.ParentChainCerAlones))
+	belogs.Debug("NewChainDbCrlModel():chainDbCrlModel.Id:", chainDbCrlModel.Id, "   len(chainCrl.ParentChainCerAlones):", len(chainCrl.ParentChainCerAlones))
 	chainDbCrlModel.ParentChainCers = make([]ChainDbCerModel, 0, len(chainCrl.ParentChainCerAlones))
 	for i := range chainCrl.ParentChainCerAlones {
 		// only save id
