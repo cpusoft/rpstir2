@@ -47,12 +47,12 @@ func updateRsyncLogChainValidateStateStartDb(state string) (labRpkiSyncLogId uin
 	return uint64(id), nil
 }
 
-func updateRsyncLogChainValidateStateEndDb(labRpkiSyncLogId uint64, state string) (err error) {
+func updateSyncLogChainValidateStateEndDb (labRpkiSyncLogId uint64, state string) (err error) {
 	// get current chainValidateState, the set new value
 	start := time.Now()
 	session, err := xormdb.NewSession()
 	if err != nil {
-		belogs.Error("updateRsyncLogChainValidateStateEndDb(): NewSession fail:", err)
+		belogs.Error("updateSyncLogChainValidateStateEndDb (): NewSession fail:", err)
 		return err
 	}
 	defer session.Close()
@@ -60,26 +60,26 @@ func updateRsyncLogChainValidateStateEndDb(labRpkiSyncLogId uint64, state string
 	var chainValidateState string
 	_, err = session.Table("lab_rpki_sync_log").Cols("chainValidateState").Where("id = ?", labRpkiSyncLogId).Get(&chainValidateState)
 	if err != nil {
-		belogs.Error("updateRsyncLogChainValidateStateEndDb(): lab_rpki_sync_log Get parseValidateState :", labRpkiSyncLogId, err)
+		belogs.Error("updateSyncLogChainValidateStateEndDb (): lab_rpki_sync_log Get parseValidateState :", labRpkiSyncLogId, err)
 		return err
 	}
 	syncLogChainValidateState := model.SyncLogChainValidateState{}
 	jsonutil.UnmarshalJson(chainValidateState, &syncLogChainValidateState)
 	syncLogChainValidateState.EndTime = time.Now()
 	chainValidateState = jsonutil.MarshalJson(syncLogChainValidateState)
-	belogs.Debug("updateRsyncLogChainValidateStateEndDb():syncLogChainValidateState:", syncLogChainValidateState)
+	belogs.Debug("updateSyncLogChainValidateStateEndDb ():syncLogChainValidateState:", syncLogChainValidateState)
 
 	sqlStr := `UPDATE lab_rpki_sync_log set chainValidateState=?, state=? where id=? `
 	_, err = session.Exec(sqlStr, chainValidateState, state, labRpkiSyncLogId)
 	if err != nil {
-		return xormdb.RollbackAndLogError(session, "updateRsyncLogChainValidateStateEndDb(): UPDATE sync_log fail : chainValidateState: "+
+		return xormdb.RollbackAndLogError(session, "updateSyncLogChainValidateStateEndDb (): UPDATE sync_log fail : chainValidateState: "+
 			chainValidateState+"   state:"+state+"    labRpkiSyncLogId:"+convert.ToString(labRpkiSyncLogId), err)
 	}
 	err = xormdb.CommitSession(session)
 	if err != nil {
-		return xormdb.RollbackAndLogError(session, "updateRsyncLogChainValidateStateEndDb(): CommitSession fail:"+
+		return xormdb.RollbackAndLogError(session, "updateSyncLogChainValidateStateEndDb (): CommitSession fail:"+
 			chainValidateState+","+state+","+"    labRpkiSyncLogId:"+convert.ToString(labRpkiSyncLogId), err)
 	}
-	belogs.Debug("updateRsyncLogChainValidateStateEndDb(): ok, time(s):", time.Since(start))
+	belogs.Debug("updateSyncLogChainValidateStateEndDb (): ok, time(s):", time.Since(start))
 	return nil
 }

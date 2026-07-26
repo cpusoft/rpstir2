@@ -13,7 +13,7 @@ import (
 )
 
 // GetChainRoaData 实现 SQLDataSource 的方法
-func   GetChainRoaData(chainRoaDataCh chan []*ChainCertData, roaWg *sync.WaitGroup) error {
+func GetChainRoaData(chainRoaDataCh chan []*ChainCertData, roaWg *sync.WaitGroup) error {
 	start := time.Now()
 	belogs.Debug("getChainRoaSqlDb(): will select rpki_roa")
 	var myCount int64
@@ -190,7 +190,7 @@ func updateRoaDb(session *xorm.Session, chains *Chains, roaId uint64,
 	return nil
 }
 
-func   UpdateRoas(chains *Chains) error {
+func UpdateRoas(chains *Chains) error {
 	start := time.Now()
 	session, err := xormdb.NewSession()
 	if err != nil {
@@ -199,7 +199,7 @@ func   UpdateRoas(chains *Chains) error {
 	}
 	defer session.Close()
 	roaIds := chains.RoaIds
-	belogs.Debug("updateCersDb():len(roaIds):", len(roaIds))
+	belogs.Debug("UpdateRoas():len(roaIds):", len(roaIds))
 
 	var updateWg sync.WaitGroup
 	updateConcurrentCountCh := make(chan int, conf.Int("chain::updateConcurrentCount"))
@@ -216,6 +216,6 @@ func   UpdateRoas(chains *Chains) error {
 		belogs.Error("UpdateRoas(): CommitSession fail :", err)
 		return err
 	}
-	belogs.Info("UpdateRoas(): ok, len(cerIds):", len(roaIds), "  time(s):", time.Since(start))
+	belogs.Info("UpdateRoas(): ok, len(roaIds):", len(roaIds), "  time(s):", time.Since(start))
 	return nil
 }

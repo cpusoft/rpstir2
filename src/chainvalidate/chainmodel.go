@@ -179,7 +179,7 @@ func (c *ChainCertSql) ToChainAsa() (chainAsa ChainAsa, err error) {
 	asaModel := model.AsaModel{}
 	err = jsonutil.UnmarshalJson(c.JsonAll, &asaModel)
 	if err != nil {
-		belogs.Error("ToChainCrl(): UnmarshalJson fail, jsonAll:", c.JsonAll)
+		belogs.Error("ToChainAsa(): UnmarshalJson fail, jsonAll:", c.JsonAll)
 		return chainAsa, err
 	}
 	belogs.Debug("ToChainAsa(): asaModel:", asaModel.String())
@@ -376,7 +376,7 @@ func (c *ChainCertData) ToChainAsa() (chainAsa ChainAsa, err error) {
 	asaModel := model.AsaModel{}
 	err = jsonutil.UnmarshalJson(c.JsonAll, &asaModel)
 	if err != nil {
-		belogs.Error("ToChainCrl(): UnmarshalJson fail, jsonAll:", c.JsonAll)
+		belogs.Error("ToChainAsa(): UnmarshalJson fail, jsonAll:", c.JsonAll)
 		return chainAsa, err
 	}
 	belogs.Debug("ToChainAsa(): asaModel:", asaModel.String())
@@ -401,7 +401,7 @@ func (c *ChainCertData) ToChainMoa() (chainMoa ChainMoa, err error) {
 	moaModel := model.MoaModel{}
 	err = jsonutil.UnmarshalJson(c.JsonAll, &moaModel)
 	if err != nil {
-		belogs.Error("ToChainCrl(): UnmarshalJson fail, jsonAll:", c.JsonAll)
+		belogs.Error("ToChainMoa(): UnmarshalJson fail, jsonAll:", c.JsonAll)
 		return chainMoa, err
 	}
 	belogs.Debug("ToChainMoa(): moaModel:", moaModel.String())

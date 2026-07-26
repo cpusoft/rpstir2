@@ -307,6 +307,6 @@ func UpdateMfts(chains *Chains) error {
 		belogs.Error("UpdateMfts(): CommitSession fail :", err)
 		return err
 	}
-	belogs.Info("UpdateMfts(): ok, len(cerIds):", len(mftIds), "  time(s):", time.Since(start))
+	belogs.Info("UpdateMfts(): ok, len(mftIds):", len(mftIds), "  time(s):", time.Since(start))
 	return nil
 }

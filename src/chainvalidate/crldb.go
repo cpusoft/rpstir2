@@ -12,7 +12,7 @@ import (
 	"xorm.io/xorm"
 )
 
-func   GetChainCrlData(chainCrlDataCh chan []*ChainCertData, crlWg *sync.WaitGroup) error {
+func GetChainCrlData(chainCrlDataCh chan []*ChainCertData, crlWg *sync.WaitGroup) error {
 
 	start := time.Now()
 	belogs.Debug("getChainCrlSqlDb(): will select rpki_crl")
@@ -177,7 +177,7 @@ func updateCrlDb(session *xorm.Session, chains *Chains, crlId uint64,
 	return nil
 }
 
-func   UpdateCrls(chains *Chains) error {
+func UpdateCrls(chains *Chains) error {
 	start := time.Now()
 	session, err := xormdb.NewSession()
 	if err != nil {
@@ -186,7 +186,7 @@ func   UpdateCrls(chains *Chains) error {
 	}
 	defer session.Close()
 	crlIds := chains.CrlIds
-	belogs.Debug("updateCersDb():len(cerIds):", len(crlIds))
+	belogs.Debug("UpdateCrls():len(crlIds):", len(crlIds))
 
 	var updateWg sync.WaitGroup
 	updateConcurrentCountCh := make(chan int, conf.Int("chain::updateConcurrentCount"))
@@ -203,6 +203,6 @@ func   UpdateCrls(chains *Chains) error {
 		belogs.Error("UpdateCrls(): CommitSession fail :", err)
 		return err
 	}
-	belogs.Info("UpdateCrls(): ok, len(cerIds):", len(crlIds), "  time(s):", time.Since(start))
+	belogs.Info("UpdateCrls(): ok, len(crlIds):", len(crlIds), "  time(s):", time.Since(start))
 	return nil
 }

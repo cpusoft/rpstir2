@@ -70,7 +70,6 @@ func addCrlToChain(chains *Chains, chainCrlDatas []*ChainCertData, syncLogId uin
 			belogs.Error("addCrlToChain(): ToChainCrl fail, chainCrlData.Id:", chainCrlDatas[i].Id, err)
 			return
 		}
-		
 
 		chains.AddCrlId(chainCrlDatas[i].Id)
 		chains.AddCrl(&chainCrl)
@@ -119,7 +118,7 @@ func validateCrl(chains *Chains, crlId uint64, wg *sync.WaitGroup, chainCrlCh ch
 	// set parent cer
 	chainCrl.ParentChainCerAlones, err = getCrlParentChainCers(chains, crlId)
 	if err != nil {
-		belogs.Error("addCrlToChain(): getCrlParentChainCers fail:", crlId, err)
+		belogs.Error("validateCrl(): getCrlParentChainCers fail:", crlId, err)
 		chainCrl.StateModel.JudgeState()
 		chains.UpdateFileTypeIdToCrl(&chainCrl)
 		return
@@ -127,7 +126,6 @@ func validateCrl(chains *Chains, crlId uint64, wg *sync.WaitGroup, chainCrlCh ch
 	belogs.Debug("validateCrl():getCrlParentChainCers, crlId:", crlId, "  len(chainCrl.ParentChainCerAlones):", len(chainCrl.ParentChainCerAlones),
 		"  time(s):", time.Since(start))
 
-	
 	// exist parent cer
 	if len(chainCrl.ParentChainCerAlones) > 0 {
 		// get one parent

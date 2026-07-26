@@ -30,9 +30,9 @@ func chainValidateStart() (nextStep string, err error) {
 	}
 
 	// save  chain validate end time
-	err = updateRsyncLogChainValidateStateEndDb(syncLogId, "chainvalidated")
+	err = updateSyncLogChainValidateStateEndDb(syncLogId, "chainvalidated")
 	if err != nil {
-		belogs.Error("chainValidateStart():updateRsyncLogChainValidateStateEndDb fail:", err)
+		belogs.Error("chainValidateStart():updateSyncLogChainValidateStateEndDb  fail:", err)
 		return "", err
 	}
 

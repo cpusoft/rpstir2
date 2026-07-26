@@ -443,13 +443,13 @@ func validateMft(chains *Chains, mftId uint64, wg *sync.WaitGroup, chainMftCh ch
 		// compare prev thisUpdate/nextUpdate and cur thisUpdate/nextUpdate
 		if !chainMft.ThisUpdate.After(chainMft.PreviousMft.ThisUpdate) {
 			stateMsg := model.StateMsg{Stage: "chainvalidate",
-				Fail:   "The ThisUpdate of this Manifest is is later than the previous ThisUpdate",
+				Fail:   "The ThisUpdate of this Manifest is not later than the previous ThisUpdate",
 				Detail: "The ThisUpdate of this Manifest is " + chainMft.ThisUpdate.String() + ", and the previouse ThisUpdate is " + chainMft.PreviousMft.ThisUpdate.String()}
 			chainMft.StateModel.AddError(&stateMsg)
 		}
 		if !chainMft.NextUpdate.After(chainMft.PreviousMft.NextUpdate) {
 			stateMsg := model.StateMsg{Stage: "chainvalidate",
-				Fail:   "The NextUpdate of this Manifest is is later than the previous NextUpdate",
+				Fail:   "The NextUpdate of this Manifest is not later than the previous NextUpdate",
 				Detail: "The NextUpdate of this Manifest is " + chainMft.NextUpdate.String() + ", and the previouse NextUpdate is " + chainMft.PreviousMft.NextUpdate.String()}
 			chainMft.StateModel.AddError(&stateMsg)
 		}
