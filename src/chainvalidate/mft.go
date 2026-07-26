@@ -47,7 +47,7 @@ func callAddMftToChain(chains *Chains, syncLogId uint64,
 			belogs.Debug("callAddMftToChain(): get from chainMftDatasCh, len(chainMftDatas):", len(chainMftDatas),
 				"  index:", index, "  ok:", ok)
 			if ok {
-				addMftToChain(chains, chainMftDatas, syncLogId, mftWg)
+				go addMftToChain(chains, chainMftDatas, syncLogId, mftWg)
 				index++
 				belogs.Debug("callAddMftToChain(): addMftToChain, syncLogId:", syncLogId, " index:", index)
 			} else {
