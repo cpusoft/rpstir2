@@ -29,7 +29,7 @@ function startFunc()
 
 function stopFunc()
 {
-  pidhttp=`ps -ef|grep 'rpstir2'|grep -v grep|grep -v 'rpstir2.sh' |awk '{print $2}'`
+  pidhttp=`ps -ef|grep 'rpstir2'|grep -v grep|grep -v 'rpstir2.sh'|grep -v 'rpstir2-rp'|grep -v 'rpstir2-vc' |awk '{print $2}'`
   echo "The current rpstir2 process id is $pidhttp"
   for pid in $pidhttp
   do
