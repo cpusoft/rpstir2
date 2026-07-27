@@ -35,7 +35,7 @@ require (
 
 require (
 	github.com/bytedance/sonic v1.15.2 // indirect
-	github.com/cpusoft/goutil v1.0.33-0.20260727035903-099520020dac
+	github.com/cpusoft/goutil v1.0.33-0.20260727051337-9171c1198979
 	github.com/gabriel-vasile/mimetype v1.4.15 // indirect
 	github.com/gin-contrib/sse v1.1.1 // indirect
 	github.com/gin-gonic/gin v1.12.0
