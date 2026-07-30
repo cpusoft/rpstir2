@@ -74,7 +74,7 @@ func ConvertToSyncLogFile(syncLogId uint64, rsyncTime time.Time,
 		Rtr:             rtr,
 	}
 	state := jsonutil.MarshalJson(syncLogFileState)
-	// /root/rpki/data/rrdprepo/rpki.ripe.net/repository/*** --> rsync://rpki.ripe.net/repository/***
+	// /home/rpki/data/rrdprepo/rpki.ripe.net/repository/*** --> rsync://rpki.ripe.net/repository/***
 	// so, when replace, keep "/" and add "rsync:/"
 	sourceUrl := strings.Replace(rsyncFileHash.FilePath, conf.String("rsync::destPath"), "rsync:/", -1)
 	// syncLogFile

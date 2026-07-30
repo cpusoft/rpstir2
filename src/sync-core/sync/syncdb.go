@@ -7,7 +7,7 @@ import (
 	"github.com/cpusoft/goutil/xormdb"
 )
 
-// filePath, is nic dest path, eg: /root/rpki/data/reporrdp/rpki.apnic.cn/
+// filePath, is nic dest path, eg: /home/rpki/data/reporrdp/rpki.apnic.cn/
 func DelByFilePathDb(filePath string) (err error) {
 	start := time.Now()
 	belogs.Debug("DelByFilePathDb(): filePath:", filePath)

@@ -105,7 +105,7 @@ You can use crontab to perform scheduled synchronization tasks. Then RPSTIR2 wil
 
 ```shell
 $ crontab -e
-10 */4 * * *  cd /home/rpki/rpstir2/bin/;./rpstir2.sh sync
+10 */4 * * *  /home/rpki/rpstir2/bin/rpstir2.sh sync
 ```
 Note: The RPSTIR2 service must start first. 
 
@@ -132,7 +132,7 @@ When you get the following JSON message, if "isRunning" is "true", it means that
 	"result": "ok",
 	"msg": "",
 	"data": {
-		"startTime": "2020-01-01 01:01:01 CST",
+		"startTime": "2026-01-01 01:01:01 CST",
 		"isRunning": "false",
 		"runningState": "idle"
 	}
