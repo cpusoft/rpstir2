@@ -66,7 +66,7 @@ func insertRtrMoaFullLogFromMoaDb(newSerialNumber uint64, moaToRtrFullLogs []mod
 	defer session.Close()
 
 	// insert moa into rtr_moa_full_log
-	sql := `insert  into lab_rpki_rtr_moa_full_log
+	sql := `insert ignore into lab_rpki_rtr_moa_full_log
 				(serialNumber,ipv6MappingPrefix,ipv4Prefixes,
 					sourceFrom) values
 				(?,?,?,    ?)`

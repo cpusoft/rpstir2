@@ -131,7 +131,7 @@ func insertRtrFullLogFromCurSerialNumberDb(curSerialNumberModel *rtrcommon.Seria
 	// lab_rpki_rtr_full_log
 	// should ignore last slurm, not insert to new rtr_full_log
 	// insert into rtr_full_log and use new slurm update
-	sql := `insert into lab_rpki_rtr_full_log (serialNumber,asn,address,prefixLength, maxLength,sourceFrom) 
+	sql := `insert ignore into lab_rpki_rtr_full_log (serialNumber,asn,address,prefixLength, maxLength,sourceFrom) 
 		select ` + convert.ToString(newSerialNumberModel.SerialNumber) + `,asn,address,prefixLength, maxLength,sourceFrom from lab_rpki_rtr_full_log
 		where serialNumber=? and sourceFrom->'$.source' !='slurm' order by id`
 	belogs.Debug("insertRtrFullLogFromCurSerialNumberDb():`insert into lab_rpki_rtr_full_log, sql:", sql)
@@ -167,7 +167,7 @@ func insertRtrAsaFullLogFromCurSerialNumberDb(curSerialNumberModel *rtrcommon.Se
 	// lab_rpki_rtr_asa_full_log
 	// should ignore last slurm, not insert to new rtr_full_log
 	// insert into rtr_full_log and use new slurm update
-	sql := `insert into lab_rpki_rtr_asa_full_log (serialNumber,customerAsn,providerAsn,addressFamily,sourceFrom) 
+	sql := `insert ignore into lab_rpki_rtr_asa_full_log (serialNumber,customerAsn,providerAsn,addressFamily,sourceFrom) 
 		select ` + convert.ToString(newSerialNumberModel.SerialNumber) + `,customerAsn,providerAsn,addressFamily,sourceFrom from lab_rpki_rtr_asa_full_log
 		where serialNumber=? and sourceFrom->'$.source' !='slurm' order by id`
 	belogs.Debug("insertRtrAsaFullLogFromCurSerialNumberDb():`insert into lab_rpki_rtr_asa_full_log, sql:", sql)

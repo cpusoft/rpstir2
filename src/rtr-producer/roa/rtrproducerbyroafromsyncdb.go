@@ -157,7 +157,7 @@ func insertRtrFullLogFromRoaDb(newSerialNumber uint64, roaToRtrFullLogs []model.
 	defer session.Close()
 
 	// insert roa into rtr_full_log
-	sql := `insert  into lab_rpki_rtr_full_log
+	sql := `insert ignore into lab_rpki_rtr_full_log
 				(serialNumber,asn,address,prefixLength, maxLength,sourceFrom) values
 				(?,?,?,  ?,?,?)`
 	sourceFrom := model.LabRpkiRtrSourceFrom{

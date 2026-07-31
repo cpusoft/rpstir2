@@ -93,7 +93,7 @@ func insertRtrAsaFullLogFromAsaDb(newSerialNumber uint64, asaToRtrFullLogs []mod
 	defer session.Close()
 
 	// insert asa into rtr_asa_full_log
-	sql := `insert  into lab_rpki_rtr_asa_full_log
+	sql := `insert ignore into lab_rpki_rtr_asa_full_log
 				(serialNumber,customerAsn,providerAsns,
 					sourceFrom) values
 				(?,?,?,   ?)`
