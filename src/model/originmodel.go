@@ -109,10 +109,10 @@ func JudgeOriginByFilePath(filePath string) (originModel *OriginModel) {
 
 						rpki.komorebi.network   rpki.komorebi.network/repo/komorebi/1/  "ARIN",
 		                                        rpki.komorebi.network/repo/komorebi/0/ /3/ /4/  RIPE
-		                rpki.nap.re  /root/rpki/data/rrdprepo/rpki.nap.re/repo/pongery/3/  -->   rpki.komorebi.network/repo/komorebi/1/   -->  ARIN
+		                rpki.nap.re  /home/rpki/data/rrdprepo/rpki.nap.re/repo/pongery/3/  -->   rpki.komorebi.network/repo/komorebi/1/   -->  ARIN
 		                             other RIPE
 
-		                cloudie-repo.rpki.app   /root/rpki/data/rrdprepo/cloudie-repo.rpki.app/repo/CLOUDIE-RPKI/0/  --> RIPE
+		                cloudie-repo.rpki.app   /home/rpki/data/rrdprepo/cloudie-repo.rpki.app/repo/CLOUDIE-RPKI/0/  --> RIPE
 		                             other ARIN
 	*/
 	var rir string

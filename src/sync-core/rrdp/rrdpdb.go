@@ -11,7 +11,7 @@ import (
 	"github.com/cpusoft/goutil/xormdb"
 )
 
-// repoHostPath, is nic dest path, eg: /root/rpki/data/reporrdp/rpki.apnic.cn/
+// repoHostPath, is nic dest path, eg: /home/rpki/data/reporrdp/rpki.apnic.cn/
 func updateRrdpSnapshotDb(syncLogId uint64, notificationModel *rrdputil.NotificationModel,
 	snapshotModel *rrdputil.SnapshotModel, snapshotDeltaResult *SnapshotDeltaResult,
 	syncLogFilesCh chan []model.LabRpkiSyncLogFile) (err error) {
@@ -76,7 +76,6 @@ func updateRrdpSnapshotDb(syncLogId uint64, notificationModel *rrdputil.Notifica
 	return nil
 }
 
-//
 func updateRrdpDeltaDb(syncLogId uint64, deltaModels []rrdputil.DeltaModel,
 	snapshotDeltaResult *SnapshotDeltaResult, syncLogFilesCh chan []model.LabRpkiSyncLogFile) (err error) {
 	belogs.Debug("updateRrdpDeltaDb():syncLogId :", syncLogId, "    snapshotDeltaResult:", jsonutil.MarshalJson(snapshotDeltaResult))

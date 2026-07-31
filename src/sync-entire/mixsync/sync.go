@@ -221,7 +221,6 @@ func parseCerAndGetSubRepoUrl(spQueue *SyncParseQueue, cerFile string) (subRepoU
 		"  subRepoUrl:", subRepoUrl, "  time(s):", time.Since(start))
 	belogs.Debug("parseCerAndGetSubRepoUrl(): cerFile:", cerFile, " parseCerSimple:", jsonutil.MarshalJson(parseCerSimple))
 	return subRepoUrl, nil
-
 }
 
 func addSubRepoUrlsToSpQueue(spQueue *SyncParseQueue, subRepoUrls []string) {

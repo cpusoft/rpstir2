@@ -46,7 +46,7 @@ func processRrdpDelta(syncLogId uint64, notificationModel *rrdputil.Notification
 		snapshotDeltaResult.DestPath, "   time(s):", time.Since(start))
 
 	// del old cer/crl/mft/roa and update to rrdplog
-	// get dest path : /root/rpki/data/reporrdp/
+	// get dest path : /home/rpki/data/reporrdp/
 	err = updateRrdpDeltaDb(syncLogId, deltaModels, snapshotDeltaResult, syncLogFilesCh)
 	if err != nil {
 		belogs.Error("processRrdpDelta(): updateRrdpDeltaDb fail,notifyUrl:", snapshotDeltaResult.NotifyUrl,

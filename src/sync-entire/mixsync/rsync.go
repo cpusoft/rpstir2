@@ -53,7 +53,6 @@ func rsyncByUrl(spQueue *SyncParseQueue, syncChan SyncChan) {
 		"     SyncingCount:", atomic.LoadInt64(&spQueue.SyncingCount),
 		"     rsyncDestPath:", rsyncDestPath,
 		"     time(s):", time.Since(start))
-
 }
 
 func parseRsyncCerFiles(spQueue *SyncParseQueue, parseChan ParseChan) {
