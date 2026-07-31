@@ -4,6 +4,7 @@ import (
 	"encoding/asn1"
 	"encoding/hex"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -67,10 +68,19 @@ func convertAsaBlockAsn1ToCustomerAsns(asaBlockAsn1 AsaBlockAsn1) (customerAsns 
 	for i := range asaBlockAsn1.ProviderBlockAsn1s {
 		providerAsns = append(providerAsns, uint64(asaBlockAsn1.ProviderBlockAsn1s[i].ProviderAsnAsn1))
 	}
+	// 对 providerAsns 从小到大排序
+	sort.Slice(providerAsns, func(i, j int) bool {
+		return providerAsns[i] < providerAsns[j]
+	})
+
 	customerAsn.ProviderAsns = providerAsns
 	customerAsns = append(customerAsns, customerAsn)
-	belogs.Debug("convertAsaBlockAsn1ToCustomerAsns(): customerAsns:", jsonutil.MarshalJson(customerAsns))
+	// 对 customerAsns 按 CustomerAsn 从小到大排序
+	sort.Slice(customerAsns, func(i, j int) bool {
+		return customerAsns[i].CustomerAsn < customerAsns[j].CustomerAsn
+	})
 
+	belogs.Info("convertAsaBlockAsn1ToCustomerAsns(): customerAsns:", jsonutil.MarshalJson(customerAsns))
 	return customerAsns, nil
 }
 

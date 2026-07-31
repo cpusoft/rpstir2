@@ -1,6 +1,8 @@
 package openssl
 
 import (
+	"sort"
+
 	"github.com/bgpsecurity/rpstir2/model"
 	"github.com/cpusoft/goutil/belogs"
 	"github.com/cpusoft/goutil/jsonutil"
@@ -17,9 +19,19 @@ func convertAsProviderAttestationToCustomerAsns(asProviderAttestation AsProvider
 	for i := range asProviderAttestation.ProviderAsns {
 		providerAsns = append(providerAsns, uint64(asProviderAttestation.ProviderAsns[i]))
 	}
+	// 对 providerAsns 从小到大排序
+	sort.Slice(providerAsns, func(i, j int) bool {
+		return providerAsns[i] < providerAsns[j]
+	})
+
 	customerAsn.ProviderAsns = providerAsns
 	customerAsns = append(customerAsns, customerAsn)
-	belogs.Debug("convertAsProviderAttestationToCustomerAsns(): customerAsns:", jsonutil.MarshalJson(customerAsns))
+	// 对 customerAsns 按 CustomerAsn 从小到大排序
+	sort.Slice(customerAsns, func(i, j int) bool {
+		return customerAsns[i].CustomerAsn < customerAsns[j].CustomerAsn
+	})
+
+	belogs.Info("convertAsProviderAttestationToCustomerAsns(): customerAsns:", jsonutil.MarshalJson(customerAsns))
 
 	return customerAsns, nil
 }
