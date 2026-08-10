@@ -6,7 +6,7 @@ import (
 
 	"github.com/bgpsecurity/rpstir2/model"
 	"github.com/cpusoft/goutil/belogs"
-	"github.com/guregu/null"
+	"github.com/guregu/null/v6"
 )
 
 func ConvertSlurmAddressFamilyToRtr(addressFamilyStr string) (addressFamilyIpv4 null.Int, addressFamilyIpv6 null.Int, err error) {

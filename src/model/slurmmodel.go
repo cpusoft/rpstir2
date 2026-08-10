@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/guregu/null"
+	"github.com/guregu/null/v6"
 )
 
 //////////////////////////////////////

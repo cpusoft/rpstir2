@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/cpusoft/goutil/jsonutil"
-	"github.com/guregu/null"
+	"github.com/guregu/null/v6"
 )
 
 // ////////////////
