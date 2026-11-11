@@ -6,7 +6,7 @@ import (
 	"github.com/bgpsecurity/rpstir2/model"
 	"github.com/cpusoft/goutil/belogs"
 	"github.com/cpusoft/goutil/conf"
-	"github.com/cpusoft/goutil/httpclient"
+	"github.com/cpusoft/goutil/httpclient2"
 	"github.com/cpusoft/goutil/jsonutil"
 	"github.com/cpusoft/goutil/rrdputil"
 )
@@ -16,10 +16,17 @@ func processRrdpDelta(syncLogId uint64, notificationModel *rrdputil.Notification
 	snapshotDeltaResult *SnapshotDeltaResult, syncLogFilesCh chan []model.LabRpkiSyncLogFile) (err error) {
 
 	start := time.Now()
-	timeoutMins := conf.Int("rrdp::rrdpDeltaTimeoutSeconds") / 60
+	rrdpDeltaTimeoutSeconds := conf.Int("rrdp::rrdpDeltaTimeoutSeconds")
 	externalVerifyHttps := conf.Bool("sync::externalVerifyHttps")
-	httpConfig := httpclient.NewHttpClientConfigWithParam(uint64(timeoutMins), 3, "all", externalVerifyHttps)
-	deltaModels, err := rrdputil.GetRrdpDeltasWithConfig(notificationModel, snapshotDeltaResult.LastSerial, httpConfig)
+	//httpConfig := httpclient.NewHttpClientConfigWithParam(uint64(timeoutMins), 3, "all", externalVerifyHttps)
+	//deltaModels, err := rrdputil.GetRrdpDeltasWithConfig(notificationModel, snapshotDeltaResult.LastSerial, httpConfig)
+	cfg := httpclient2.NewHttpClientConfig(
+		httpclient2.WithAllTimeoutSeconds(uint64(rrdpDeltaTimeoutSeconds)),
+		httpclient2.WithVerifyHttps(externalVerifyHttps),
+		httpclient2.WithTryCurl(true))
+	belogs.Debug("getRrdpDelta(): NewHttpClientConfig",
+		"cfg", jsonutil.MarshalJson(cfg), "syncRrdpResult.LastSerial", snapshotDeltaResult.LastSerial)
+	deltaModels, err := rrdputil.GetRrdpDeltasWithConfig(notificationModel, snapshotDeltaResult.LastSerial, cfg)
 	if err != nil {
 		belogs.Error("processRrdpDelta(): GetRrdpDeltasWithConfig fail, notifyUrl:", snapshotDeltaResult.NotifyUrl,
 			", len(notificationModel.Deltas): ", len(notificationModel.Deltas), err)

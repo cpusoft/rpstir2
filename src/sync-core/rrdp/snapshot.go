@@ -6,7 +6,7 @@ import (
 	"github.com/bgpsecurity/rpstir2/model"
 	"github.com/cpusoft/goutil/belogs"
 	"github.com/cpusoft/goutil/conf"
-	"github.com/cpusoft/goutil/httpclient"
+	"github.com/cpusoft/goutil/httpclient2"
 	"github.com/cpusoft/goutil/jsonutil"
 	"github.com/cpusoft/goutil/rrdputil"
 	"github.com/cpusoft/goutil/urlutil"
@@ -15,10 +15,17 @@ import (
 func getRrdpSnapshot(notificationModel *rrdputil.NotificationModel) (snapshotModel *rrdputil.SnapshotModel, err error) {
 
 	belogs.Debug("getRrdpSnapshot(): Snapshot.Uri :", notificationModel.Snapshot.Uri)
-	timeoutMins := conf.Int("rrdp::rrdpSnapshotTimeoutSeconds") / 60
+	rrdpSnapshotTimeoutSeconds := conf.Int("rrdp::rrdpSnapshotTimeoutSeconds")
 	externalVerifyHttps := conf.Bool("sync::externalVerifyHttps")
-	httpConfig := httpclient.NewHttpClientConfigWithParam(uint64(timeoutMins), 3, "all", externalVerifyHttps)
-	snapshotModel, err = rrdputil.GetRrdpSnapshotWithConfig(notificationModel.Snapshot.Uri, httpConfig)
+	//httpConfig := httpclient.NewHttpClientConfigWithParam(uint64(timeoutMins), 3, "all", externalVerifyHttps)
+	//snapshotModel, err = rrdputil.GetRrdpSnapshotWithConfig(notificationModel.Snapshot.Uri, httpConfig)
+	cfg := httpclient2.NewHttpClientConfig(
+		httpclient2.WithAllTimeoutSeconds(uint64(rrdpSnapshotTimeoutSeconds)),
+		httpclient2.WithVerifyHttps(externalVerifyHttps),
+		httpclient2.WithTryCurl(true))
+	belogs.Debug("getRrdpSnapshot(): NewHttpClientConfig",
+		"cfg", jsonutil.MarshalJson(cfg), "notificationModel.Snapshot.Uri", notificationModel.Snapshot.Uri)
+	snapshotModel, err = rrdputil.GetRrdpSnapshotWithConfig(notificationModel.Snapshot.Uri, cfg)
 	if err != nil {
 		belogs.Error("getRrdpSnapshot(): GetRrdpSnapshotWithConfig fail,Snapshot.Uri :",
 			notificationModel.Snapshot.Uri, err)

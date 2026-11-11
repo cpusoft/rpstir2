@@ -17,6 +17,7 @@ import (
 	"github.com/cpusoft/goutil/conf"
 	"github.com/cpusoft/goutil/fileutil"
 	"github.com/cpusoft/goutil/httpclient"
+	"github.com/cpusoft/goutil/httpclient2"
 	"github.com/cpusoft/goutil/jsonutil"
 	"github.com/cpusoft/goutil/osutil"
 	"github.com/cpusoft/goutil/rrdputil"
@@ -300,12 +301,18 @@ func parseAndValidateCer(talUrl, subjectPublicKeyInfo, tmpDir string, talSyncUrl
 	// check rpkiNotify(rrdp)
 	if len(parseCerSimple.RpkiNotify) > 0 {
 		start := time.Now()
-		timeoutMins := conf.Int("rrdp::rrdpNoticationTimeoutSeconds") / 60
+		rrdpNoticationTimeoutSeconds := conf.Int("rrdp::rrdpNoticationTimeoutSeconds")
 		externalVerifyHttps := conf.Bool("sync::externalVerifyHttps")
-		belogs.Debug("parseAndValidateCer(): test rrdp is ok:", parseCerSimple.RpkiNotify, " timeoutMins:", timeoutMins,
+		belogs.Debug("parseAndValidateCer(): test rrdp is ok:", parseCerSimple.RpkiNotify, " rrdpNoticationTimeoutSeconds:", rrdpNoticationTimeoutSeconds,
 			"  externalVerifyHttps:", externalVerifyHttps)
-		httpConfig := httpclient.NewHttpClientConfigWithParam(uint64(timeoutMins), 3, "all", externalVerifyHttps)
-		_, err = rrdputil.GetRrdpNotificationWithConfig(parseCerSimple.RpkiNotify, httpConfig)
+		//	httpConfig := httpclient.NewHttpClientConfigWithParam(uint64(timeoutMins), 3, "all", externalVerifyHttps)
+		//	_, err = rrdputil.GetRrdpNotificationWithConfig(parseCerSimple.RpkiNotify, httpConfig)
+
+		cfg := httpclient2.NewHttpClientConfig(
+			httpclient2.WithAllTimeoutSeconds(uint64(rrdpNoticationTimeoutSeconds)),
+			httpclient2.WithVerifyHttps(externalVerifyHttps),
+			httpclient2.WithTryCurl(true))
+		_, err := rrdputil.GetAndCheckRrdpNotificationWithConfig(parseCerSimple.RpkiNotify, cfg)
 		if err != nil {
 			belogs.Error("parseAndValidateCer(): rrdputil.GetRrdpNotificationWithConfig fail:", parseCerSimple.RpkiNotify,
 				"  time(s):", time.Since(start), err)

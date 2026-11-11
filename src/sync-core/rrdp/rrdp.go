@@ -7,7 +7,7 @@ import (
 	"github.com/cpusoft/goutil/belogs"
 	"github.com/cpusoft/goutil/conf"
 	"github.com/cpusoft/goutil/hashutil"
-	"github.com/cpusoft/goutil/httpclient"
+	"github.com/cpusoft/goutil/httpclient2"
 	"github.com/cpusoft/goutil/jsonutil"
 	"github.com/cpusoft/goutil/osutil"
 	"github.com/cpusoft/goutil/rrdputil"
@@ -20,11 +20,18 @@ func RrdpByUrlImpl(rrdpByUrlModel RrdpByUrlModel, connectRrdpUrlCh chan bool,
 	start := time.Now()
 	//defer RrdpByUrlDefer(rrdpUrl, rrdpUrlCh)
 	belogs.Debug("RrdpByUrlImpl():start, rrdpByUrlModel:", jsonutil.MarshalJson(rrdpByUrlModel))
-	timeoutMins := conf.Int("rrdp::rrdpNoticationTimeoutSeconds") / 60
+	rrdpNoticationTimeoutSeconds := conf.Int("rrdp::rrdpNoticationTimeoutSeconds")
 	externalVerifyHttps := conf.Bool("sync::externalVerifyHttps")
 	// get notify xml
-	notificationModel, err := rrdputil.GetAndCheckRrdpNotificationWithConfig(rrdpByUrlModel.NotifyUrl,
-		httpclient.NewHttpClientConfigWithParam(uint64(timeoutMins), 1, "all", externalVerifyHttps))
+	//notificationModel, err := rrdputil.GetAndCheckRrdpNotificationWithConfig(rrdpByUrlModel.NotifyUrl,
+	//	httpclient.NewHttpClientConfigWithParam(uint64(timeoutMins), 1, "all", externalVerifyHttps))
+	cfg := httpclient2.NewHttpClientConfig(
+		httpclient2.WithAllTimeoutSeconds(uint64(rrdpNoticationTimeoutSeconds)),
+		httpclient2.WithVerifyHttps(externalVerifyHttps),
+		httpclient2.WithTryCurl(true))
+	belogs.Debug("RrdpByUrlImpl(): NewHttpClientConfig",
+		"cfg", jsonutil.MarshalJson(cfg), "rrdpByUrlModel.NotifyUrl", rrdpByUrlModel.NotifyUrl)
+	notificationModel, err := rrdputil.GetAndCheckRrdpNotificationWithConfig(rrdpByUrlModel.NotifyUrl, cfg)
 	if err != nil {
 		// connect false
 		connectRrdpUrlCh <- false
