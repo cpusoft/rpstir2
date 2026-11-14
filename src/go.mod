@@ -3,7 +3,7 @@ module github.com/bgpsecurity/rpstir2
 go 1.27.1
 
 require (
-	github.com/cpusoft/goutil v1.0.33-0.20261111142250-c89474fcdb5f
+	github.com/cpusoft/goutil v1.0.33-0.20261114032953-af70d57148fc
 	github.com/gin-gonic/gin v1.12.0
 	github.com/guregu/null/v6 v6.0.0
 	golang.org/x/sync v0.25.0
@@ -58,7 +58,7 @@ require (
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
 	go.mongodb.org/mongo-driver/v2 v2.10.0 // indirect
 	golang.org/x/arch v0.33.0 // indirect
-	golang.org/x/crypto v0.58.0 // indirect
+	golang.org/x/crypto v0.59.0 // indirect
 	golang.org/x/net v0.62.0 // indirect
 	golang.org/x/sys v0.50.0 // indirect
 	golang.org/x/text v0.44.0 // indirect
