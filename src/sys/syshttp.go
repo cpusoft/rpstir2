@@ -109,7 +109,7 @@ func ExportRtrForManrsConsole() (err error) {
 	if len(os.Args) < 2 {
 		return errors.New("no file name")
 	}
-	fileName := os.Args[1]
+	fileName := os.Args[2]
 
 	r, err := exportRtrForManrs()
 	if err != nil {

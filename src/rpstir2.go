@@ -52,7 +52,7 @@ func main() {
 }
 
 func startConsole() {
-	belogs.Info("startConsole(): args", os.Args)
+	fmt.Println("input args", os.Args)
 	command := os.Args[1]
 	switch command {
 	case "exportrtr":
