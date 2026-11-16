@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
 	"time"
 
 	chainvalidate "github.com/bgpsecurity/rpstir2/chainvalidate"
@@ -26,7 +27,7 @@ import (
 
 func main() {
 
-	// start mysql
+	// 1. init db
 	err := xormdb.InitMySql()
 	if err != nil {
 		belogs.Error("main(): start InitMySql failed:", err)
@@ -34,13 +35,41 @@ func main() {
 		return
 	}
 	defer xormdb.XormEngine.Close()
-	// start rp server
+
+	// 2. check args,
+	if len(os.Args) > 1 {
+		startConsole()
+		return
+	}
+
+	// 3. start server
 	go startRpServer()
 
 	go startVcServer()
 	go startTcpServer()
 
 	select {}
+}
+
+func startConsole() {
+	belogs.Info("startConsole(): args", os.Args)
+	command := os.Args[1]
+	switch command {
+	case "exportrtr":
+		if len(os.Args) < 3 {
+			fmt.Println("Error: missing file path, usage: ./rpstir2 exportrtr <file_path>")
+			return
+		}
+		err := sys.ExportRtrForManrsConsole()
+		if err != nil {
+			fmt.Println("Error: Exportrtr failed, reason:", err.Error())
+			return
+		}
+		return // 执行完退出
+	default:
+		fmt.Printf("Error: Unknown command: %s\n", command)
+		return
+	}
 }
 
 // start server

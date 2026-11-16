@@ -104,16 +104,6 @@ func ExportRoas(c *gin.Context) {
 // https://github.com/manrs-tools/MANRS-IXP-validation-tool
 // https://github.com/manrs-tools/MANRS-IXP-validation-tool/blob/main/validator/tests/roa_test.json
 // https://github.com/manrs-tools/MANRS-IXP-validation-tool/blob/main/validator/tests/test_validate.py
-func ExportRtrForManrs(c *gin.Context) {
-	belogs.Info("ExportRtrForManrs()")
-	r, err := exportRtrForManrs()
-	if err != nil {
-		ginserver.ResponseFail(c, err, "")
-		return
-	}
-	belogs.Info("ExportRtrForManrs():exportRtrForManrs:", jsonutil.MarshalJson(r))
-	c.JSON(http.StatusOK, r)
-}
 
 func ExportRtrForManrsConsole() (err error) {
 	if len(os.Args) < 2 {
